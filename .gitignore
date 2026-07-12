@@ -41,3 +41,11 @@ example
 # generated native folders
 /ios
 /android
+
+# ErgoPrevent
+node_modules/
+.expo/
+dist/
+web-build/
+.env
+.DS_Store
