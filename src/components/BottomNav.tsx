@@ -9,6 +9,11 @@ const navItems = [
     href: "/",
   },
   {
+    label: "Plan",
+    icon: "🧭",
+    href: "/personal-plan",
+  },
+  {
     label: "Minuterie",
     icon: "⏱️",
     href: "/timer",
@@ -17,11 +22,6 @@ const navItems = [
     label: "Exercices",
     icon: "💪",
     href: "/exercises",
-  },
-  {
-    label: "Formation",
-    icon: "🎓",
-    href: "/education",
   },
   {
     label: "Dashboard",

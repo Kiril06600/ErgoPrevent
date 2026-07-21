@@ -172,6 +172,14 @@ export default function HomeScreen() {
             </Pressable>
           </Link>
 
+<Link href="/personal-plan" asChild>
+  <Pressable style={styles.quickCard}>
+    <Text style={styles.quickIcon}>🧭</Text>
+    <Text style={styles.quickTitle}>Plan</Text>
+    <Text style={styles.quickText}>Actions personnalisées</Text>
+  </Pressable>
+</Link>
+
           <Link href="/timer" asChild>
             <Pressable style={styles.quickCard}>
               <Text style={styles.quickIcon}>⏱️</Text>

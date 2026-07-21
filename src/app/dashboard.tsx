@@ -192,6 +192,12 @@ export default function DashboardScreen() {
           </Pressable>
         </Link>
 
+        <Link href="/personal-plan" asChild>
+  <Pressable style={styles.secondaryButton}>
+    <Text style={styles.secondaryButtonText}>Voir mon plan personnalisé</Text>
+  </Pressable>
+</Link>
+
         <Link href="/timer" asChild>
           <Pressable style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Démarrer une pause</Text>
