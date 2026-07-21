@@ -186,6 +186,12 @@ export default function DashboardScreen() {
 
         <Text style={styles.sectionTitle}>Actions rapides</Text>
 
+<Link href="/routine" asChild>
+  <Pressable style={styles.primaryButton}>
+    <Text style={styles.primaryButtonText}>Voir ma routine du jour</Text>
+  </Pressable>
+</Link>
+
         <Link href="/questionnaire" asChild>
           <Pressable style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Refaire le questionnaire</Text>

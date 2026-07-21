@@ -9,6 +9,11 @@ const navItems = [
     href: "/",
   },
   {
+    label: "Routine",
+    icon: "✅",
+    href: "/routine",
+  },
+  {
     label: "Plan",
     icon: "🧭",
     href: "/personal-plan",

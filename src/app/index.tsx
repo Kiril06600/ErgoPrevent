@@ -155,62 +155,70 @@ export default function HomeScreen() {
 
         <Text style={styles.sectionTitle}>Accès rapide</Text>
 
-        <View style={styles.quickGrid}>
-          <Link href="/questionnaire" asChild>
-            <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>🧠</Text>
-              <Text style={styles.quickTitle}>Questionnaire</Text>
-              <Text style={styles.quickText}>Évaluer le risque TMS</Text>
-            </Pressable>
-          </Link>
+<View style={styles.quickGrid}>
+  <Link href="/routine" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>✅</Text>
+      <Text style={styles.quickTitle}>Routine</Text>
+      <Text style={styles.quickText}>Actions du jour</Text>
+    </Pressable>
+  </Link>
 
-          <Link href="/workstation-audit" asChild>
-            <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>🖥️</Text>
-              <Text style={styles.quickTitle}>Audit du poste</Text>
-              <Text style={styles.quickText}>Analyser l’environnement</Text>
-            </Pressable>
-          </Link>
+  <Link href="/questionnaire" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>🧠</Text>
+      <Text style={styles.quickTitle}>Questionnaire</Text>
+      <Text style={styles.quickText}>Évaluer le risque TMS</Text>
+    </Pressable>
+  </Link>
 
-<Link href="/personal-plan" asChild>
-  <Pressable style={styles.quickCard}>
-    <Text style={styles.quickIcon}>🧭</Text>
-    <Text style={styles.quickTitle}>Plan</Text>
-    <Text style={styles.quickText}>Actions personnalisées</Text>
-  </Pressable>
-</Link>
+  <Link href="/workstation-audit" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>🖥️</Text>
+      <Text style={styles.quickTitle}>Audit du poste</Text>
+      <Text style={styles.quickText}>Analyser l’environnement</Text>
+    </Pressable>
+  </Link>
 
-          <Link href="/timer" asChild>
-            <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>⏱️</Text>
-              <Text style={styles.quickTitle}>Minuterie</Text>
-              <Text style={styles.quickText}>Pause active 25/2</Text>
-            </Pressable>
-          </Link>
+  <Link href="/personal-plan" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>🧭</Text>
+      <Text style={styles.quickTitle}>Plan</Text>
+      <Text style={styles.quickText}>Actions personnalisées</Text>
+    </Pressable>
+  </Link>
 
-          <Link href="/exercises" asChild>
-            <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>💪</Text>
-              <Text style={styles.quickTitle}>Exercices</Text>
-              <Text style={styles.quickText}>Bouger simplement</Text>
-            </Pressable>
-          </Link>
+  <Link href="/timer" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>⏱️</Text>
+      <Text style={styles.quickTitle}>Minuterie</Text>
+      <Text style={styles.quickText}>Pause active 25/2</Text>
+    </Pressable>
+  </Link>
 
-          <Link href="/education" asChild>
-            <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>🎓</Text>
-              <Text style={styles.quickTitle}>Formation</Text>
-              <Text style={styles.quickText}>Capsules courtes</Text>
-            </Pressable>
-          </Link>
+  <Link href="/exercises" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>💪</Text>
+      <Text style={styles.quickTitle}>Exercices</Text>
+      <Text style={styles.quickText}>Bouger simplement</Text>
+    </Pressable>
+  </Link>
 
-          <Link href="/dashboard" asChild>
-            <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>📊</Text>
-              <Text style={styles.quickTitle}>Dashboard</Text>
-              <Text style={styles.quickText}>Voir la progression</Text>
-            </Pressable>
-          </Link>
+  <Link href="/education" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>🎓</Text>
+      <Text style={styles.quickTitle}>Formation</Text>
+      <Text style={styles.quickText}>Capsules courtes</Text>
+    </Pressable>
+  </Link>
+
+  <Link href="/dashboard" asChild>
+    <Pressable style={styles.quickCard}>
+      <Text style={styles.quickIcon}>📊</Text>
+      <Text style={styles.quickTitle}>Dashboard</Text>
+      <Text style={styles.quickText}>Voir la progression</Text>
+    </Pressable>
+  </Link>
         </View>
 
         <View style={styles.warningBox}>
