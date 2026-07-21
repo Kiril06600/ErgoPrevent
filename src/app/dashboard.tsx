@@ -192,6 +192,12 @@ export default function DashboardScreen() {
   </Pressable>
 </Link>
 
+<Link href="/daily-checkin" asChild>
+  <Pressable style={styles.secondaryButton}>
+    <Text style={styles.secondaryButtonText}>Faire mon check-in quotidien</Text>
+  </Pressable>
+</Link>
+
         <Link href="/questionnaire" asChild>
           <Pressable style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Refaire le questionnaire</Text>

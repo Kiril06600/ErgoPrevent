@@ -24,6 +24,14 @@ const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
 
 const routineTasks: RoutineTask[] = [
   {
+    id: "checkin",
+    icon: "📝",
+    title: "Faire mon check-in",
+    text: "Notez rapidement votre douleur, votre fatigue et la zone principale du jour.",
+    href: "/daily-checkin",
+    buttonText: "Faire le check-in",
+  },
+  {
     id: "pause",
     icon: "⏱️",
     title: "Faire une pause active",
