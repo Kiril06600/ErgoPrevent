@@ -13,7 +13,10 @@ import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 
 type DailyCheckin = {
+  id: string;
+  createdAt: string;
   date: string;
+  time: string;
   painLevel: number;
   fatigueLevel: string;
   mainZone: string;
@@ -32,39 +35,73 @@ const zoneOptions = [
   "Aucune zone",
 ];
 
-function getTodayKey() {
-  return new Date().toISOString().split("T")[0];
+function getCurrentDateAndTime() {
+  const now = new Date();
+
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, "0");
+  const day = String(now.getDate()).padStart(2, "0");
+  const hours = String(now.getHours()).padStart(2, "0");
+  const minutes = String(now.getMinutes()).padStart(2, "0");
+
+  return {
+    date: `${year}-${month}-${day}`,
+    time: `${hours}:${minutes}`,
+  };
 }
 
-function getSavedCheckins(): Record<string, DailyCheckin> {
+function normalizeCheckin(checkin: any, index: number): DailyCheckin {
+  const date = checkin.date ?? "Date inconnue";
+  const time = checkin.time ?? "00:00";
+
+  return {
+    id: checkin.id ?? `${date}-${time}-${index}`,
+    createdAt: checkin.createdAt ?? `${date}T${time}:00`,
+    date,
+    time,
+    painLevel: checkin.painLevel ?? 0,
+    fatigueLevel: checkin.fatigueLevel ?? "Moyenne",
+    mainZone: checkin.mainZone ?? "Aucune zone",
+    note: checkin.note ?? "",
+  };
+}
+
+function getSavedCheckins(): DailyCheckin[] {
   if (typeof window === "undefined") {
-    return {};
+    return [];
   }
 
   const savedData = window.localStorage.getItem(CHECKIN_STORAGE_KEY);
 
   if (!savedData) {
-    return {};
+    return [];
   }
 
   try {
-    return JSON.parse(savedData);
+    const parsedData = JSON.parse(savedData);
+
+    if (Array.isArray(parsedData)) {
+      return parsedData
+        .map((checkin, index) => normalizeCheckin(checkin, index))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    }
+
+    return Object.values(parsedData)
+      .map((checkin, index) => normalizeCheckin(checkin, index))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   } catch {
-    return {};
+    return [];
   }
 }
 
-function saveTodayCheckin(checkin: DailyCheckin) {
+function saveNewCheckin(checkin: DailyCheckin) {
   if (typeof window === "undefined") {
     return;
   }
 
   const savedCheckins = getSavedCheckins();
 
-  const updatedCheckins = {
-    ...savedCheckins,
-    [checkin.date]: checkin,
-  };
+  const updatedCheckins = [checkin, ...savedCheckins];
 
   window.localStorage.setItem(
     CHECKIN_STORAGE_KEY,
@@ -73,42 +110,31 @@ function saveTodayCheckin(checkin: DailyCheckin) {
 }
 
 export default function DailyCheckinScreen() {
-  const todayKey = getTodayKey();
+  const currentDateAndTime = getCurrentDateAndTime();
 
   const [stats, setStats] = useState<AppStats | null>(null);
   const [painLevel, setPainLevel] = useState(0);
   const [fatigueLevel, setFatigueLevel] = useState("Moyenne");
   const [mainZone, setMainZone] = useState("Aucune zone");
   const [note, setNote] = useState("");
+  const [date, setDate] = useState(currentDateAndTime.date);
+  const [time, setTime] = useState(currentDateAndTime.time);
   const [savedMessage, setSavedMessage] = useState("");
   const [previousCheckins, setPreviousCheckins] = useState<DailyCheckin[]>([]);
 
   useEffect(() => {
     const savedStats = getAppStats();
     const savedCheckins = getSavedCheckins();
-    const todayCheckin = savedCheckins[todayKey];
 
     setStats(savedStats);
-
-    if (todayCheckin) {
-      setPainLevel(todayCheckin.painLevel);
-      setFatigueLevel(todayCheckin.fatigueLevel);
-      setMainZone(todayCheckin.mainZone);
-      setNote(todayCheckin.note);
-    }
-
-    const checkinList = Object.values(savedCheckins)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 5);
-
-    setPreviousCheckins(checkinList);
+    setPreviousCheckins(savedCheckins.slice(0, 8));
   }, []);
 
   const profile = stats?.profile ?? null;
 
   function getPainMessage() {
     if (painLevel === 0) {
-      return "Aucune douleur rapportée aujourd’hui.";
+      return "Aucune douleur rapportée pour ce check-in.";
     }
 
     if (painLevel <= 3) {
@@ -122,53 +148,92 @@ export default function DailyCheckinScreen() {
     return "Douleur élevée : évitez de forcer et consultez un professionnel si la douleur persiste ou vous inquiète.";
   }
 
+  function handleUseCurrentTime() {
+    const now = getCurrentDateAndTime();
+
+    setDate(now.date);
+    setTime(now.time);
+    setSavedMessage("");
+  }
+
   function handleSaveCheckin() {
-    const checkin: DailyCheckin = {
-      date: todayKey,
+    const newCheckin: DailyCheckin = {
+      id: `${Date.now()}`,
+      createdAt: `${date}T${time}:00`,
+      date,
+      time,
       painLevel,
       fatigueLevel,
       mainZone,
       note,
     };
 
-    saveTodayCheckin(checkin);
+    saveNewCheckin(newCheckin);
 
     const savedCheckins = getSavedCheckins();
-    const checkinList = Object.values(savedCheckins)
-      .sort((a, b) => b.date.localeCompare(a.date))
-      .slice(0, 5);
 
-    setPreviousCheckins(checkinList);
-    setSavedMessage("Check-in sauvegardé ✓");
+    setPreviousCheckins(savedCheckins.slice(0, 8));
+    setSavedMessage("Nouveau check-in ajouté ✓");
+
+    const now = getCurrentDateAndTime();
+    setDate(now.date);
+    setTime(now.time);
+    setNote("");
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Check-in quotidien</Text>
+        <Text style={styles.pageTitle}>Check-in</Text>
 
         <Text style={styles.subtitle}>
-          Notez rapidement votre état du jour pour suivre votre évolution dans le
-          temps.
+          Ajoutez autant de check-ins que vous voulez, à n’importe quel moment de
+          la journée.
         </Text>
 
         <View style={styles.heroCard}>
           <Text style={styles.heroGreeting}>
             {profile?.firstName
               ? `Bonjour ${profile.firstName}`
-              : "Suivi du jour"}
+              : "Nouveau suivi"}
           </Text>
 
-          <Text style={styles.heroTitle}>Comment vous sentez-vous aujourd’hui ?</Text>
+          <Text style={styles.heroTitle}>Comment vous sentez-vous maintenant ?</Text>
 
           <Text style={styles.heroText}>
-            Ce check-in prend moins d’une minute et vous aide à repérer les
-            tendances : douleur, fatigue et zones sensibles.
+            Chaque check-in est sauvegardé séparément avec une date et une heure.
+            Vous pouvez donc en faire plusieurs dans la même journée.
           </Text>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Douleur aujourd’hui</Text>
+          <Text style={styles.sectionTitle}>Date et heure</Text>
+
+          <Text style={styles.label}>Date</Text>
+          <TextInput
+            style={styles.input}
+            value={date}
+            onChangeText={setDate}
+            placeholder="YYYY-MM-DD"
+          />
+
+          <Text style={styles.label}>Heure</Text>
+          <TextInput
+            style={styles.input}
+            value={time}
+            onChangeText={setTime}
+            placeholder="HH:MM"
+          />
+
+          <Pressable style={styles.secondaryButton} onPress={handleUseCurrentTime}>
+            <Text style={styles.secondaryButtonText}>
+              Utiliser la date et l’heure actuelles
+            </Text>
+          </Pressable>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Douleur</Text>
 
           <Text style={styles.painNumber}>{painLevel}/10</Text>
 
@@ -266,7 +331,7 @@ export default function DailyCheckinScreen() {
 
           <TextInput
             style={styles.textArea}
-            placeholder="Ex. J’ai travaillé longtemps sur ordinateur aujourd’hui, douleur au cou en fin de journée..."
+            placeholder="Ex. Douleur au cou après 2 heures sur ordinateur, fatigue élevée en fin de journée..."
             value={note}
             onChangeText={setNote}
             multiline
@@ -276,7 +341,7 @@ export default function DailyCheckinScreen() {
         </View>
 
         <Pressable style={styles.primaryButton} onPress={handleSaveCheckin}>
-          <Text style={styles.primaryButtonText}>Sauvegarder mon check-in</Text>
+          <Text style={styles.primaryButtonText}>Ajouter ce check-in</Text>
         </Pressable>
 
         {savedMessage.length > 0 && (
@@ -284,7 +349,17 @@ export default function DailyCheckinScreen() {
         )}
 
         <View style={styles.summaryCard}>
-          <Text style={styles.sectionTitle}>Résumé du jour</Text>
+          <Text style={styles.sectionTitle}>Résumé du check-in</Text>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Date</Text>
+            <Text style={styles.summaryValue}>{date}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Heure</Text>
+            <Text style={styles.summaryValue}>{time}</Text>
+          </View>
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Douleur</Text>
@@ -307,8 +382,11 @@ export default function DailyCheckinScreen() {
             <Text style={styles.sectionTitle}>Derniers check-ins</Text>
 
             {previousCheckins.map((checkin) => (
-              <View key={checkin.date} style={styles.historyCard}>
-                <Text style={styles.historyDate}>{checkin.date}</Text>
+              <View key={checkin.id} style={styles.historyCard}>
+                <Text style={styles.historyDate}>
+                  {checkin.date} à {checkin.time}
+                </Text>
+
                 <Text style={styles.historyText}>
                   Douleur : {checkin.painLevel}/10 · Fatigue :{" "}
                   {checkin.fatigueLevel} · Zone : {checkin.mainZone}
@@ -330,6 +408,12 @@ export default function DailyCheckinScreen() {
             de la santé.
           </Text>
         </View>
+
+        <Link href="/progress" asChild>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Voir mon évolution</Text>
+          </Pressable>
+        </Link>
 
         <Link href="/routine" asChild>
           <Pressable style={styles.secondaryButton}>
@@ -407,6 +491,24 @@ const styles = StyleSheet.create({
     fontWeight: "900",
     color: "#183642",
     marginBottom: 14,
+  },
+  label: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: "#183642",
+    marginBottom: 8,
+    marginTop: 8,
+  },
+  input: {
+    borderWidth: 1,
+    borderColor: "#C7D7DF",
+    borderRadius: 16,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    fontSize: 16,
+    color: "#183642",
+    backgroundColor: "#FFFFFF",
+    marginBottom: 10,
   },
   painNumber: {
     fontSize: 48,
