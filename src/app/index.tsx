@@ -1,5 +1,4 @@
-import React from "react";
-import { Link } from "expo-router";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -8,9 +7,93 @@ import {
   Pressable,
   StyleSheet,
 } from "react-native";
+import { Link } from "expo-router";
+import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 
 export default function HomeScreen() {
+  const [stats, setStats] = useState<AppStats | null>(null);
+
+  useEffect(() => {
+    const savedStats = getAppStats();
+    setStats(savedStats);
+  }, []);
+
+  const profile = stats?.profile ?? null;
+  const questionnaireResult = stats?.questionnaireResult ?? null;
+  const workstationAuditResult = stats?.workstationAuditResult ?? null;
+
+  const firstName = profile?.firstName;
+  const points = stats?.points ?? 0;
+  const completedBreaks = stats?.completedBreaks ?? 0;
+  const completedExercises = stats?.completedExercises ?? 0;
+  const completedCapsules = stats?.completedCapsules ?? 0;
+
+  function getNextAction() {
+    if (!profile) {
+      return {
+        title: "Créer votre profil",
+        text: "Commencez par personnaliser votre profil pour adapter l’application à votre situation.",
+        href: "/profile",
+        button: "Créer mon profil",
+      };
+    }
+
+    if (!questionnaireResult) {
+      return {
+        title: "Évaluer votre risque TMS",
+        text: "Complétez le questionnaire pour obtenir votre premier score musculo-squelettique.",
+        href: "/questionnaire",
+        button: "Faire le questionnaire",
+      };
+    }
+
+    if (!workstationAuditResult) {
+      return {
+        title: "Analyser votre poste",
+        text: "Faites l’audit de votre poste de travail pour identifier vos priorités ergonomiques.",
+        href: "/workstation-audit",
+        button: "Faire l’audit du poste",
+      };
+    }
+
+    if (completedBreaks === 0) {
+      return {
+        title: "Commencer une pause active",
+        text: "Lancez la minuterie 25/2 pour intégrer le mouvement dans votre journée.",
+        href: "/timer",
+        button: "Démarrer la minuterie",
+      };
+    }
+
+    if (completedExercises === 0) {
+      return {
+        title: "Faire un premier exercice",
+        text: "Essayez un exercice simple pour le cou, le dos, les épaules ou les poignets.",
+        href: "/exercises",
+        button: "Voir les exercices",
+      };
+    }
+
+    if (completedCapsules === 0) {
+      return {
+        title: "Lire une capsule éducative",
+        text: "Apprenez une notion simple d’ergonomie en moins de 2 minutes.",
+        href: "/education",
+        button: "Lire une capsule",
+      };
+    }
+
+    return {
+      title: "Continuer votre progression",
+      text: "Continuez vos pauses, exercices et capsules pour renforcer vos habitudes.",
+      href: "/dashboard",
+      button: "Voir mon tableau de bord",
+    };
+  }
+
+  const nextAction = getNextAction();
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -20,89 +103,106 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.heroCard}>
+          <Text style={styles.greeting}>
+            {firstName ? `Bonjour ${firstName}` : "Bienvenue"}
+          </Text>
+
           <Text style={styles.title}>
             Prévenez vos douleurs avant qu’elles n’apparaissent.
           </Text>
 
           <Text style={styles.subtitle}>
-            Évaluez vos risques de troubles musculo-squelettiques, adoptez de
-            meilleures habitudes et recevez des rappels pour bouger régulièrement.
+            Suivez vos scores, bougez régulièrement et adoptez de meilleures
+            habitudes au quotidien.
           </Text>
-
-<Link href="/questionnaire" asChild>
-  <Pressable style={styles.primaryButton}>
-    <Text style={styles.primaryButtonText}>Commencer gratuitement</Text>
-  </Pressable>
-</Link>
-<Link href="/timer" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Démarrer la minuterie</Text>
-  </Pressable>
-</Link>
-<Link href="/exercises" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Voir les exercices</Text>
-  </Pressable>
-</Link>
-<Link href="/education" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Formation quotidienne</Text>
-  </Pressable>
-</Link>
-
-<Link href="/workstation-audit" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Faire l’audit du poste</Text>
-  </Pressable>
-</Link>
-
-<Link href="/dashboard" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Voir mon tableau de bord</Text>
-  </Pressable>
-</Link>
-<Link href="/profile" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Mon profil</Text>
-  </Pressable>
-</Link>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionTitle}>Ce que l’application vous aide à faire</Text>
-
-          <View style={styles.featureCard}>
-            <Text style={styles.featureIcon}>🧠</Text>
-            <View style={styles.featureTextContainer}>
-              <Text style={styles.featureTitle}>Comprendre vos risques</Text>
-              <Text style={styles.featureText}>
-                Questionnaire simple pour identifier vos priorités : cou, dos,
-                épaules, poignets et jambes.
-              </Text>
-            </View>
+        <View style={styles.statsGrid}>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Score TMS</Text>
+            <Text style={styles.statNumber}>
+              {questionnaireResult ? questionnaireResult.score : "--"}
+            </Text>
+            <Text style={styles.statSmall}>/100</Text>
           </View>
 
-          <View style={styles.featureCard}>
-            <Text style={styles.featureIcon}>⏱️</Text>
-            <View style={styles.featureTextContainer}>
-              <Text style={styles.featureTitle}>Bouger toutes les 25 minutes</Text>
-              <Text style={styles.featureText}>
-                Minuterie intelligente pour vous rappeler de vous lever et de
-                faire des pauses actives.
-              </Text>
-            </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Poste</Text>
+            <Text style={styles.statNumber}>
+              {workstationAuditResult ? workstationAuditResult.score : "--"}
+            </Text>
+            <Text style={styles.statSmall}>/100</Text>
           </View>
 
-          <View style={styles.featureCard}>
-            <Text style={styles.featureIcon}>🏆</Text>
-            <View style={styles.featureTextContainer}>
-              <Text style={styles.featureTitle}>Rester motivé</Text>
-              <Text style={styles.featureText}>
-                Points, niveaux, badges et progression pour transformer la
-                prévention en habitude quotidienne.
-              </Text>
-            </View>
+          <View style={styles.statCard}>
+            <Text style={styles.statLabel}>Points</Text>
+            <Text style={styles.statNumber}>{points}</Text>
+            <Text style={styles.statSmall}>total</Text>
           </View>
+        </View>
+
+        <View style={styles.nextActionCard}>
+          <Text style={styles.nextActionLabel}>Prochaine étape</Text>
+          <Text style={styles.nextActionTitle}>{nextAction.title}</Text>
+          <Text style={styles.nextActionText}>{nextAction.text}</Text>
+
+          <Link href={nextAction.href} asChild>
+            <Pressable style={styles.primaryButton}>
+              <Text style={styles.primaryButtonText}>{nextAction.button}</Text>
+            </Pressable>
+          </Link>
+        </View>
+
+        <Text style={styles.sectionTitle}>Accès rapide</Text>
+
+        <View style={styles.quickGrid}>
+          <Link href="/questionnaire" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>🧠</Text>
+              <Text style={styles.quickTitle}>Questionnaire</Text>
+              <Text style={styles.quickText}>Évaluer le risque TMS</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/workstation-audit" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>🖥️</Text>
+              <Text style={styles.quickTitle}>Audit du poste</Text>
+              <Text style={styles.quickText}>Analyser l’environnement</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/timer" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>⏱️</Text>
+              <Text style={styles.quickTitle}>Minuterie</Text>
+              <Text style={styles.quickText}>Pause active 25/2</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/exercises" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>💪</Text>
+              <Text style={styles.quickTitle}>Exercices</Text>
+              <Text style={styles.quickText}>Bouger simplement</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/education" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>🎓</Text>
+              <Text style={styles.quickTitle}>Formation</Text>
+              <Text style={styles.quickText}>Capsules courtes</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/dashboard" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>📊</Text>
+              <Text style={styles.quickTitle}>Dashboard</Text>
+              <Text style={styles.quickText}>Voir la progression</Text>
+            </Pressable>
+          </Link>
         </View>
 
         <View style={styles.warningBox}>
@@ -112,6 +212,7 @@ export default function HomeScreen() {
             un physiothérapeute ou un médecin.
           </Text>
         </View>
+
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
@@ -129,12 +230,12 @@ const styles = StyleSheet.create({
   },
   logoContainer: {
     marginTop: 20,
-    marginBottom: 32,
+    marginBottom: 24,
     alignItems: "center",
   },
   logo: {
     fontSize: 34,
-    fontWeight: "800",
+    fontWeight: "900",
     color: "#1E5B7A",
   },
   tagline: {
@@ -146,28 +247,83 @@ const styles = StyleSheet.create({
     backgroundColor: "#FFFFFF",
     borderRadius: 28,
     padding: 26,
-    shadowColor: "#000",
-    shadowOpacity: 0.08,
-    shadowRadius: 16,
-    shadowOffset: { width: 0, height: 8 },
-    elevation: 4,
+    marginBottom: 18,
+  },
+  greeting: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: "#1E8A6A",
+    textAlign: "center",
+    marginBottom: 10,
   },
   title: {
-    fontSize: 30,
-    lineHeight: 38,
-    fontWeight: "800",
+    fontSize: 28,
+    lineHeight: 36,
+    fontWeight: "900",
     color: "#183642",
     textAlign: "center",
   },
   subtitle: {
-    marginTop: 16,
+    marginTop: 14,
     fontSize: 16,
     lineHeight: 24,
     color: "#536B78",
     textAlign: "center",
   },
+  statsGrid: {
+    flexDirection: "row",
+    gap: 12,
+    marginBottom: 18,
+  },
+  statCard: {
+    flex: 1,
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 16,
+    alignItems: "center",
+  },
+  statLabel: {
+    fontSize: 13,
+    fontWeight: "800",
+    color: "#536B78",
+    marginBottom: 6,
+  },
+  statNumber: {
+    fontSize: 30,
+    fontWeight: "900",
+    color: "#1E8A6A",
+  },
+  statSmall: {
+    fontSize: 12,
+    fontWeight: "700",
+    color: "#536B78",
+  },
+  nextActionCard: {
+    backgroundColor: "#EAF7F1",
+    borderRadius: 24,
+    padding: 22,
+    marginBottom: 28,
+  },
+  nextActionLabel: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#1E8A6A",
+    textTransform: "uppercase",
+    marginBottom: 8,
+  },
+  nextActionTitle: {
+    fontSize: 23,
+    fontWeight: "900",
+    color: "#183642",
+    marginBottom: 8,
+  },
+  nextActionText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#536B78",
+    marginBottom: 16,
+  },
   primaryButton: {
-    marginTop: 26,
     backgroundColor: "#1E8A6A",
     paddingVertical: 16,
     borderRadius: 16,
@@ -176,58 +332,43 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "700",
-  },
-  secondaryButton: {
-    marginTop: 12,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  section: {
-    marginTop: 34,
+    fontWeight: "800",
   },
   sectionTitle: {
     fontSize: 22,
-    fontWeight: "800",
+    fontWeight: "900",
     color: "#183642",
-    marginBottom: 16,
-  },
-  featureCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 18,
     marginBottom: 14,
+  },
+  quickGrid: {
     flexDirection: "row",
-    alignItems: "flex-start",
+    flexWrap: "wrap",
+    gap: 12,
+    marginBottom: 24,
   },
-  featureIcon: {
+  quickCard: {
+    width: "48%",
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 18,
+  },
+  quickIcon: {
     fontSize: 28,
-    marginRight: 14,
+    marginBottom: 10,
   },
-  featureTextContainer: {
-    flex: 1,
-  },
-  featureTitle: {
-    fontSize: 17,
-    fontWeight: "800",
+  quickTitle: {
+    fontSize: 16,
+    fontWeight: "900",
     color: "#183642",
-    marginBottom: 6,
+    marginBottom: 4,
   },
-  featureText: {
-    fontSize: 15,
-    lineHeight: 22,
+  quickText: {
+    fontSize: 13,
+    lineHeight: 18,
     color: "#536B78",
   },
   warningBox: {
-    marginTop: 24,
+    marginTop: 4,
     backgroundColor: "#FFF7E6",
     borderRadius: 18,
     padding: 16,
