@@ -90,7 +90,7 @@ export default function ProfileScreen() {
           <Text style={styles.label}>Prénom</Text>
           <TextInput
             style={styles.input}
-            placeholder="Ex. Cyril"
+            placeholder="Ex. Antonia"
             value={firstName}
             onChangeText={setFirstName}
           />
