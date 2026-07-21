@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { Link } from "expo-router";
 import {
+  AppStats,
   getAppStats,
   saveUserProfile,
   resetAppStats,
@@ -27,52 +28,65 @@ const goals = [
 ];
 
 export default function ProfileScreen() {
-  const stats = getAppStats();
-  const savedProfile = stats.profile;
+  const initialStats = getAppStats();
+  const savedProfile = initialStats.profile;
 
+  const [stats, setStats] = useState<AppStats>(initialStats);
   const [firstName, setFirstName] = useState(savedProfile?.firstName ?? "");
   const [status, setStatus] = useState(savedProfile?.status ?? "Étudiant");
   const [profession, setProfession] = useState(savedProfile?.profession ?? "");
   const [mainGoal, setMainGoal] = useState(
     savedProfile?.mainGoal ?? "Prévenir les douleurs"
   );
+
   const [savedMessage, setSavedMessage] = useState("");
+  const [showData, setShowData] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const questionnaireScore = stats.questionnaireResult?.score;
   const workstationScore = stats.workstationAuditResult?.score;
 
+  const exportedData = JSON.stringify(stats, null, 2);
+
   function handleSaveProfile() {
-    saveUserProfile({
+    const updatedStats = saveUserProfile({
       firstName,
       status,
       profession,
       mainGoal,
     });
 
+    setStats(updatedStats);
     setSavedMessage("Profil sauvegardé ✓");
+    setShowResetConfirm(false);
   }
 
   function handleResetData() {
-    resetAppStats();
+    const resetStats = resetAppStats();
 
+    setStats(resetStats);
     setFirstName("");
     setStatus("Étudiant");
     setProfession("");
     setMainGoal("Prévenir les douleurs");
     setSavedMessage("Données réinitialisées ✓");
+    setShowData(false);
+    setShowResetConfirm(false);
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Profil</Text>
+        <Text style={styles.pageTitle}>Profil et paramètres</Text>
 
         <Text style={styles.subtitle}>
-          Personnalisez votre profil pour adapter progressivement les
-          recommandations à votre situation.
+          Personnalisez votre profil, consultez vos données locales et gérez vos
+          paramètres de confidentialité.
         </Text>
 
         <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Informations personnelles</Text>
+
           <Text style={styles.label}>Prénom</Text>
           <TextInput
             style={styles.input}
@@ -162,15 +176,34 @@ export default function ProfileScreen() {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Score TMS</Text>
             <Text style={styles.summaryValue}>
-              {questionnaireScore ? `${questionnaireScore}/100` : "--/100"}
+              {questionnaireScore !== undefined
+                ? `${questionnaireScore}/100`
+                : "--/100"}
             </Text>
           </View>
 
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Score du poste</Text>
             <Text style={styles.summaryValue}>
-              {workstationScore ? `${workstationScore}/100` : "--/100"}
+              {workstationScore !== undefined
+                ? `${workstationScore}/100`
+                : "--/100"}
             </Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Pauses</Text>
+            <Text style={styles.summaryValue}>{stats.completedBreaks}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Exercices</Text>
+            <Text style={styles.summaryValue}>{stats.completedExercises}</Text>
+          </View>
+
+          <View style={styles.summaryRow}>
+            <Text style={styles.summaryLabel}>Capsules lues</Text>
+            <Text style={styles.summaryValue}>{stats.completedCapsules}</Text>
           </View>
 
           <View style={styles.summaryRow}>
@@ -184,6 +217,44 @@ export default function ProfileScreen() {
           </View>
         </View>
 
+        <View style={styles.healthBox}>
+          <Text style={styles.healthTitle}>Avertissement santé</Text>
+          <Text style={styles.healthText}>
+            ErgoPrevent est un outil d’éducation et de prévention. L’application
+            ne pose pas de diagnostic, ne remplace pas un ergonome, un
+            physiothérapeute, un médecin ou un autre professionnel de la santé.
+            Si vous ressentez une douleur importante, persistante, inhabituelle
+            ou accompagnée de symptômes inquiétants, consultez un professionnel.
+          </Text>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Données locales</Text>
+
+          <Text style={styles.dataText}>
+            Pour l’instant, vos données sont sauvegardées uniquement dans ce
+            navigateur, sur cet appareil. Elles ne sont pas envoyées vers une
+            base de données externe.
+          </Text>
+
+          <Pressable
+            style={styles.secondaryButton}
+            onPress={() => setShowData(!showData)}
+          >
+            <Text style={styles.secondaryButtonText}>
+              {showData ? "Masquer mes données" : "Afficher mes données"}
+            </Text>
+          </Pressable>
+
+          {showData && (
+            <View style={styles.dataBox}>
+              <Text selectable style={styles.dataCode}>
+                {exportedData}
+              </Text>
+            </View>
+          )}
+        </View>
+
         <View style={styles.warningBox}>
           <Text style={styles.warningText}>
             La réinitialisation supprime le profil, les scores, les pauses, les
@@ -191,13 +262,43 @@ export default function ProfileScreen() {
           </Text>
         </View>
 
-        <Pressable style={styles.dangerButton} onPress={handleResetData}>
-          <Text style={styles.dangerButtonText}>Réinitialiser mes données</Text>
-        </Pressable>
+        {!showResetConfirm ? (
+          <Pressable
+            style={styles.dangerButton}
+            onPress={() => setShowResetConfirm(true)}
+          >
+            <Text style={styles.dangerButtonText}>
+              Réinitialiser mes données
+            </Text>
+          </Pressable>
+        ) : (
+          <View style={styles.confirmBox}>
+            <Text style={styles.confirmTitle}>Confirmer la réinitialisation</Text>
+            <Text style={styles.confirmText}>
+              Cette action supprimera toutes les données locales de
+              l’application sur cet appareil.
+            </Text>
+
+            <Pressable style={styles.dangerButton} onPress={handleResetData}>
+              <Text style={styles.dangerButtonText}>
+                Oui, tout réinitialiser
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.secondaryButton}
+              onPress={() => setShowResetConfirm(false)}
+            >
+              <Text style={styles.secondaryButtonText}>Annuler</Text>
+            </Pressable>
+          </View>
+        )}
 
         <Link href="/dashboard" asChild>
           <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Voir mon tableau de bord</Text>
+            <Text style={styles.secondaryButtonText}>
+              Voir mon tableau de bord
+            </Text>
           </Pressable>
         </Link>
 
@@ -218,7 +319,7 @@ const styles = StyleSheet.create({
   },
   pageTitle: {
     fontSize: 32,
-    fontWeight: "800",
+    fontWeight: "900",
     color: "#183642",
     marginBottom: 10,
   },
@@ -233,6 +334,12 @@ const styles = StyleSheet.create({
     borderRadius: 24,
     padding: 20,
     marginBottom: 20,
+  },
+  sectionTitle: {
+    fontSize: 22,
+    fontWeight: "900",
+    color: "#183642",
+    marginBottom: 14,
   },
   label: {
     fontSize: 15,
@@ -301,12 +408,6 @@ const styles = StyleSheet.create({
     padding: 20,
     marginBottom: 20,
   },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 14,
-  },
   summaryRow: {
     borderTopWidth: 1,
     borderTopColor: "#C7D7DF",
@@ -330,6 +431,42 @@ const styles = StyleSheet.create({
     textAlign: "right",
     fontSize: 15,
     fontWeight: "800",
+    color: "#183642",
+  },
+  healthBox: {
+    backgroundColor: "#EAF7F1",
+    borderRadius: 20,
+    padding: 18,
+    marginBottom: 20,
+  },
+  healthTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#183642",
+    marginBottom: 8,
+  },
+  healthText: {
+    fontSize: 14,
+    lineHeight: 21,
+    color: "#536B78",
+  },
+  dataText: {
+    fontSize: 15,
+    lineHeight: 22,
+    color: "#536B78",
+    marginBottom: 14,
+  },
+  dataBox: {
+    backgroundColor: "#F4F8FB",
+    borderRadius: 16,
+    padding: 14,
+    marginTop: 12,
+    borderWidth: 1,
+    borderColor: "#DCE9EF",
+  },
+  dataCode: {
+    fontSize: 12,
+    lineHeight: 18,
     color: "#183642",
   },
   warningBox: {
@@ -357,6 +494,26 @@ const styles = StyleSheet.create({
     fontSize: 15,
     fontWeight: "800",
   },
+  confirmBox: {
+    backgroundColor: "#FFFFFF",
+    borderRadius: 22,
+    padding: 18,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#F3D28B",
+  },
+  confirmTitle: {
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#183642",
+    marginBottom: 8,
+  },
+  confirmText: {
+    fontSize: 14,
+    lineHeight: 20,
+    color: "#536B78",
+    marginBottom: 14,
+  },
   secondaryButton: {
     paddingVertical: 14,
     borderRadius: 16,
@@ -364,6 +521,7 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: "#C7D7DF",
     backgroundColor: "#FFFFFF",
+    marginBottom: 12,
   },
   secondaryButtonText: {
     color: "#1E5B7A",
