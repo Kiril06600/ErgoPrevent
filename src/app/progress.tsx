@@ -68,6 +68,14 @@ function getSavedCheckins(): DailyCheckin[] {
   }
 }
 
+function saveCheckins(checkins: DailyCheckin[]) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.setItem(CHECKIN_STORAGE_KEY, JSON.stringify(checkins));
+}
+
 function getAveragePain(checkins: DailyCheckin[]) {
   if (checkins.length === 0) {
     return 0;
@@ -184,6 +192,7 @@ function getCheckinsToday(checkins: DailyCheckin[]) {
 export default function ProgressScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
   const [checkins, setCheckins] = useState<DailyCheckin[]>([]);
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   useEffect(() => {
     const savedStats = getAppStats();
@@ -209,6 +218,14 @@ export default function ProgressScreen() {
   const latestPainPercent = latestCheckin
     ? Math.round((latestCheckin.painLevel / 10) * 100)
     : 0;
+
+    function handleDeleteCheckin(checkinId: string) {
+  const updatedCheckins = checkins.filter((checkin) => checkin.id !== checkinId);
+
+  setCheckins(updatedCheckins);
+  saveCheckins(updatedCheckins);
+  setDeleteConfirmId(null);
+}
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -350,41 +367,68 @@ export default function ProgressScreen() {
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Derniers check-ins</Text>
 
-              {lastTenCheckins.map((checkin) => {
-                const painPercent = Math.round((checkin.painLevel / 10) * 100);
+{lastTenCheckins.map((checkin) => {
+  const painPercent = Math.round((checkin.painLevel / 10) * 100);
+  const isConfirmingDelete = deleteConfirmId === checkin.id;
 
-                return (
-                  <View key={checkin.id} style={styles.historyCard}>
-                    <View style={styles.historyHeader}>
-                      <Text style={styles.historyDate}>
-                        {checkin.date} à {checkin.time}
-                      </Text>
+  return (
+    <View key={checkin.id} style={styles.historyCard}>
+      <View style={styles.historyHeader}>
+        <Text style={styles.historyDate}>
+          {checkin.date} à {checkin.time}
+        </Text>
 
-                      <Text style={styles.historyPain}>
-                        {checkin.painLevel}/10
-                      </Text>
-                    </View>
+        <Text style={styles.historyPain}>{checkin.painLevel}/10</Text>
+      </View>
 
-                    <View style={styles.miniBarBackground}>
-                      <View
-                        style={[
-                          styles.miniBarFill,
-                          { width: `${painPercent}%` },
-                        ]}
-                      />
-                    </View>
+      <View style={styles.miniBarBackground}>
+        <View
+          style={[
+            styles.miniBarFill,
+            { width: `${painPercent}%` },
+          ]}
+        />
+      </View>
 
-                    <Text style={styles.historyText}>
-                      Fatigue : {checkin.fatigueLevel} · Zone :{" "}
-                      {checkin.mainZone}
-                    </Text>
+      <Text style={styles.historyText}>
+        Fatigue : {checkin.fatigueLevel} · Zone : {checkin.mainZone}
+      </Text>
 
-                    {checkin.note.length > 0 && (
-                      <Text style={styles.historyNote}>{checkin.note}</Text>
-                    )}
-                  </View>
-                );
-              })}
+      {checkin.note.length > 0 && (
+        <Text style={styles.historyNote}>{checkin.note}</Text>
+      )}
+
+      {!isConfirmingDelete ? (
+        <Pressable
+          style={styles.deleteButton}
+          onPress={() => setDeleteConfirmId(checkin.id)}
+        >
+          <Text style={styles.deleteButtonText}>Supprimer ce check-in</Text>
+        </Pressable>
+      ) : (
+        <View style={styles.deleteConfirmBox}>
+          <Text style={styles.deleteConfirmText}>
+            Confirmer la suppression ?
+          </Text>
+
+          <Pressable
+            style={styles.confirmDeleteButton}
+            onPress={() => handleDeleteCheckin(checkin.id)}
+          >
+            <Text style={styles.confirmDeleteButtonText}>Oui, supprimer</Text>
+          </Pressable>
+
+          <Pressable
+            style={styles.cancelDeleteButton}
+            onPress={() => setDeleteConfirmId(null)}
+          >
+            <Text style={styles.cancelDeleteButtonText}>Annuler</Text>
+          </Pressable>
+        </View>
+      )}
+    </View>
+  );
+})}
             </View>
 
             <View style={styles.tipBox}>
@@ -672,6 +716,60 @@ const styles = StyleSheet.create({
     lineHeight: 19,
     color: "#536B78",
   },
+  deleteButton: {
+  marginTop: 12,
+  paddingVertical: 11,
+  borderRadius: 14,
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: "#E0B4B4",
+  backgroundColor: "#FFF5F5",
+},
+deleteButtonText: {
+  color: "#B94A48",
+  fontSize: 14,
+  fontWeight: "900",
+},
+deleteConfirmBox: {
+  marginTop: 12,
+  backgroundColor: "#FFF5F5",
+  borderRadius: 16,
+  padding: 14,
+  borderWidth: 1,
+  borderColor: "#E0B4B4",
+},
+deleteConfirmText: {
+  fontSize: 14,
+  fontWeight: "900",
+  color: "#183642",
+  marginBottom: 10,
+  textAlign: "center",
+},
+confirmDeleteButton: {
+  backgroundColor: "#B94A48",
+  paddingVertical: 12,
+  borderRadius: 14,
+  alignItems: "center",
+  marginBottom: 8,
+},
+confirmDeleteButtonText: {
+  color: "#FFFFFF",
+  fontSize: 14,
+  fontWeight: "900",
+},
+cancelDeleteButton: {
+  backgroundColor: "#FFFFFF",
+  paddingVertical: 12,
+  borderRadius: 14,
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: "#C7D7DF",
+},
+cancelDeleteButtonText: {
+  color: "#1E5B7A",
+  fontSize: 14,
+  fontWeight: "900",
+},
   tipBox: {
     backgroundColor: "#EAF7F1",
     borderRadius: 18,
