@@ -12,7 +12,10 @@ import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 
 type DailyCheckin = {
+  id: string;
+  createdAt: string;
   date: string;
+  time: string;
   painLevel: number;
   fatigueLevel: string;
   mainZone: string;
@@ -21,21 +24,47 @@ type DailyCheckin = {
 
 const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
 
-function getSavedCheckins(): Record<string, DailyCheckin> {
+function normalizeCheckin(checkin: any, index: number): DailyCheckin {
+  const date = checkin.date ?? "Date inconnue";
+  const time = checkin.time ?? "00:00";
+
+  return {
+    id: checkin.id ?? `${date}-${time}-${index}`,
+    createdAt: checkin.createdAt ?? `${date}T${time}:00`,
+    date,
+    time,
+    painLevel: checkin.painLevel ?? 0,
+    fatigueLevel: checkin.fatigueLevel ?? "Moyenne",
+    mainZone: checkin.mainZone ?? "Aucune zone",
+    note: checkin.note ?? "",
+  };
+}
+
+function getSavedCheckins(): DailyCheckin[] {
   if (typeof window === "undefined") {
-    return {};
+    return [];
   }
 
   const savedData = window.localStorage.getItem(CHECKIN_STORAGE_KEY);
 
   if (!savedData) {
-    return {};
+    return [];
   }
 
   try {
-    return JSON.parse(savedData);
+    const parsedData = JSON.parse(savedData);
+
+    if (Array.isArray(parsedData)) {
+      return parsedData
+        .map((checkin, index) => normalizeCheckin(checkin, index))
+        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    }
+
+    return Object.values(parsedData)
+      .map((checkin, index) => normalizeCheckin(checkin, index))
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   } catch {
-    return {};
+    return [];
   }
 }
 
@@ -69,21 +98,50 @@ function getMostFrequentZone(checkins: DailyCheckin[]) {
   return sortedZones[0][0];
 }
 
+function getAverageFatigue(checkins: DailyCheckin[]) {
+  if (checkins.length === 0) {
+    return "Non disponible";
+  }
+
+  const fatigueScores: Record<string, number> = {
+    Faible: 1,
+    Moyenne: 2,
+    Élevée: 3,
+  };
+
+  const total = checkins.reduce((sum, checkin) => {
+    return sum + (fatigueScores[checkin.fatigueLevel] ?? 2);
+  }, 0);
+
+  const average = total / checkins.length;
+
+  if (average < 1.5) {
+    return "Faible";
+  }
+
+  if (average < 2.5) {
+    return "Moyenne";
+  }
+
+  return "Élevée";
+}
+
 function getTrendMessage(checkins: DailyCheckin[]) {
   if (checkins.length < 3) {
     return {
       title: "Pas encore assez de données",
-      text: "Continuez les check-ins quelques jours pour voir une tendance plus fiable.",
+      text: "Ajoutez quelques check-ins pour voir une tendance plus fiable.",
       icon: "🌱",
     };
   }
 
   const sortedCheckins = [...checkins].sort((a, b) =>
-    a.date.localeCompare(b.date)
+    a.createdAt.localeCompare(b.createdAt)
   );
 
-  const olderCheckins = sortedCheckins.slice(0, Math.ceil(sortedCheckins.length / 2));
-  const recentCheckins = sortedCheckins.slice(Math.ceil(sortedCheckins.length / 2));
+  const middleIndex = Math.ceil(sortedCheckins.length / 2);
+  const olderCheckins = sortedCheckins.slice(0, middleIndex);
+  const recentCheckins = sortedCheckins.slice(middleIndex);
 
   const olderAverage = getAveragePain(olderCheckins);
   const recentAverage = getAveragePain(recentCheckins);
@@ -111,6 +169,18 @@ function getTrendMessage(checkins: DailyCheckin[]) {
   };
 }
 
+function getCheckinsToday(checkins: DailyCheckin[]) {
+  const today = new Date();
+
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
+
+  const todayKey = `${year}-${month}-${day}`;
+
+  return checkins.filter((checkin) => checkin.date === todayKey);
+}
+
 export default function ProgressScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
   const [checkins, setCheckins] = useState<DailyCheckin[]>([]);
@@ -119,23 +189,23 @@ export default function ProgressScreen() {
     const savedStats = getAppStats();
     const savedCheckins = getSavedCheckins();
 
-    const checkinList = Object.values(savedCheckins).sort((a, b) =>
-      b.date.localeCompare(a.date)
-    );
-
     setStats(savedStats);
-    setCheckins(checkinList);
+    setCheckins(savedCheckins);
   }, []);
 
   const profile = stats?.profile ?? null;
 
   const hasCheckins = checkins.length > 0;
   const latestCheckin = checkins[0] ?? null;
+
   const averagePain = getAveragePain(checkins);
+  const averageFatigue = getAverageFatigue(checkins);
   const mostFrequentZone = getMostFrequentZone(checkins);
   const trend = getTrendMessage(checkins);
+  const todayCheckins = getCheckinsToday(checkins);
 
-  const lastSevenCheckins = checkins.slice(0, 7);
+  const lastTenCheckins = checkins.slice(0, 10);
+
   const latestPainPercent = latestCheckin
     ? Math.round((latestCheckin.painLevel / 10) * 100)
     : 0;
@@ -146,8 +216,8 @@ export default function ProgressScreen() {
         <Text style={styles.pageTitle}>Évolution</Text>
 
         <Text style={styles.subtitle}>
-          Suivez vos check-ins quotidiens pour mieux comprendre l’évolution de
-          votre douleur, de votre fatigue et des zones sensibles.
+          Suivez vos check-ins pour comprendre l’évolution de votre douleur, de
+          votre fatigue et des zones sensibles.
         </Text>
 
         {!hasCheckins && (
@@ -155,8 +225,8 @@ export default function ProgressScreen() {
             <Text style={styles.emptyIcon}>📝</Text>
             <Text style={styles.emptyTitle}>Aucun check-in pour l’instant</Text>
             <Text style={styles.emptyText}>
-              Faites votre premier check-in quotidien pour commencer à suivre
-              votre évolution.
+              Faites votre premier check-in pour commencer à suivre votre
+              évolution.
             </Text>
 
             <Link href="/daily-checkin" asChild>
@@ -178,7 +248,9 @@ export default function ProgressScreen() {
                   : "Votre suivi"}
               </Text>
 
-              <Text style={styles.heroTitle}>{trend.icon} {trend.title}</Text>
+              <Text style={styles.heroTitle}>
+                {trend.icon} {trend.title}
+              </Text>
 
               <Text style={styles.heroText}>{trend.text}</Text>
             </View>
@@ -191,16 +263,14 @@ export default function ProgressScreen() {
               </View>
 
               <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Douleur moy.</Text>
-                <Text style={styles.statNumber}>{averagePain}</Text>
-                <Text style={styles.statSmall}>/10</Text>
+                <Text style={styles.statLabel}>Aujourd’hui</Text>
+                <Text style={styles.statNumber}>{todayCheckins.length}</Text>
+                <Text style={styles.statSmall}>check-ins</Text>
               </View>
 
               <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Dernière douleur</Text>
-                <Text style={styles.statNumber}>
-                  {latestCheckin?.painLevel ?? 0}
-                </Text>
+                <Text style={styles.statLabel}>Douleur moy.</Text>
+                <Text style={styles.statNumber}>{averagePain}</Text>
                 <Text style={styles.statSmall}>/10</Text>
               </View>
             </View>
@@ -208,7 +278,9 @@ export default function ProgressScreen() {
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Dernier check-in</Text>
 
-              <Text style={styles.dateText}>{latestCheckin?.date}</Text>
+              <Text style={styles.dateText}>
+                {latestCheckin?.date} à {latestCheckin?.time}
+              </Text>
 
               <View style={styles.painHeader}>
                 <Text style={styles.painLabel}>Douleur</Text>
@@ -250,6 +322,21 @@ export default function ProgressScreen() {
               <Text style={styles.sectionTitle}>Résumé global</Text>
 
               <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Nombre total de check-ins</Text>
+                <Text style={styles.detailValue}>{checkins.length}</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Douleur moyenne</Text>
+                <Text style={styles.detailValue}>{averagePain}/10</Text>
+              </View>
+
+              <View style={styles.detailRow}>
+                <Text style={styles.detailLabel}>Fatigue moyenne</Text>
+                <Text style={styles.detailValue}>{averageFatigue}</Text>
+              </View>
+
+              <View style={styles.detailRow}>
                 <Text style={styles.detailLabel}>Zone la plus fréquente</Text>
                 <Text style={styles.detailValue}>{mostFrequentZone}</Text>
               </View>
@@ -258,25 +345,21 @@ export default function ProgressScreen() {
                 <Text style={styles.detailLabel}>Tendance</Text>
                 <Text style={styles.detailValue}>{trend.title}</Text>
               </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Dernier niveau de fatigue</Text>
-                <Text style={styles.detailValue}>
-                  {latestCheckin?.fatigueLevel}
-                </Text>
-              </View>
             </View>
 
             <View style={styles.card}>
-              <Text style={styles.sectionTitle}>Derniers jours</Text>
+              <Text style={styles.sectionTitle}>Derniers check-ins</Text>
 
-              {lastSevenCheckins.map((checkin) => {
+              {lastTenCheckins.map((checkin) => {
                 const painPercent = Math.round((checkin.painLevel / 10) * 100);
 
                 return (
-                  <View key={checkin.date} style={styles.historyCard}>
+                  <View key={checkin.id} style={styles.historyCard}>
                     <View style={styles.historyHeader}>
-                      <Text style={styles.historyDate}>{checkin.date}</Text>
+                      <Text style={styles.historyDate}>
+                        {checkin.date} à {checkin.time}
+                      </Text>
+
                       <Text style={styles.historyPain}>
                         {checkin.painLevel}/10
                       </Text>
@@ -306,10 +389,12 @@ export default function ProgressScreen() {
 
             <View style={styles.tipBox}>
               <Text style={styles.tipTitle}>Interprétation</Text>
+
               <Text style={styles.tipText}>
-                Une journée isolée ne veut pas toujours dire grand-chose. Ce qui
-                est plus utile, c’est de regarder les tendances sur plusieurs
-                jours : douleur moyenne, fatigue et zones qui reviennent souvent.
+                Comme vous pouvez ajouter plusieurs check-ins par jour, regardez
+                surtout les tendances générales : douleur moyenne, fatigue et
+                zones qui reviennent souvent. Une seule mesure isolée ne suffit
+                pas toujours à conclure.
               </Text>
             </View>
 
@@ -550,11 +635,13 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     justifyContent: "space-between",
     marginBottom: 8,
+    gap: 12,
   },
   historyDate: {
     fontSize: 14,
     fontWeight: "900",
     color: "#183642",
+    flex: 1,
   },
   historyPain: {
     fontSize: 14,
