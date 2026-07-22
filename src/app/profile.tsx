@@ -255,6 +255,14 @@ export default function ProfileScreen() {
           )}
         </View>
 
+<Link href="/export-data" asChild>
+  <Pressable style={styles.primaryButton}>
+    <Text style={styles.primaryButtonText}>
+      Exporter mes données
+    </Text>
+  </Pressable>
+</Link>
+
         <View style={styles.warningBox}>
           <Text style={styles.warningText}>
             La réinitialisation supprime le profil, les scores, les pauses, les
