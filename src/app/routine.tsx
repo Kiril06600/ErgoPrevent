@@ -257,6 +257,12 @@ export default function RoutineScreen() {
           </Text>
         </View>
 
+<Link href="/progress" asChild>
+  <Pressable style={styles.secondaryButton}>
+    <Text style={styles.secondaryButtonText}>Voir mon évolution</Text>
+  </Pressable>
+</Link>
+
         <Link href="/dashboard" asChild>
           <Pressable style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>

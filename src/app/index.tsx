@@ -172,6 +172,14 @@ export default function HomeScreen() {
   </Pressable>
 </Link>
 
+<Link href="/progress" asChild>
+  <Pressable style={styles.quickCard}>
+    <Text style={styles.quickIcon}>📈</Text>
+    <Text style={styles.quickTitle}>Évolution</Text>
+    <Text style={styles.quickText}>Suivre les tendances</Text>
+  </Pressable>
+</Link>
+
   <Link href="/questionnaire" asChild>
     <Pressable style={styles.quickCard}>
       <Text style={styles.quickIcon}>🧠</Text>

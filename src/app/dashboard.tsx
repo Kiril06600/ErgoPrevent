@@ -198,6 +198,12 @@ export default function DashboardScreen() {
   </Pressable>
 </Link>
 
+<Link href="/progress" asChild>
+  <Pressable style={styles.secondaryButton}>
+    <Text style={styles.secondaryButtonText}>Voir mon évolution</Text>
+  </Pressable>
+</Link>
+
         <Link href="/questionnaire" asChild>
           <Pressable style={styles.primaryButton}>
             <Text style={styles.primaryButtonText}>Refaire le questionnaire</Text>
