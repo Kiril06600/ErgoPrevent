@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -8,171 +8,214 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { saveQuestionnaireResult } from "../lib/storage";
+import {
+  AppStats,
+  getAppStats,
+  saveQuestionnaireResult,
+} from "../lib/storage";
+import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
 
-const questions = [
+type Priority = "Cou" | "Dos" | "Épaules" | "Poignets" | "Jambes" | "Habitudes";
+
+type Question = {
+  id: string;
+  category: Priority;
+  title: string;
+  text: string;
+};
+
+const questions: Question[] = [
   {
-    id: 1,
+    id: "neck-pain",
     category: "Cou",
-    text: "Ressentez-vous des tensions au cou après une journée de travail ou d’étude ?",
+    title: "Cou",
+    text: "Je ressens des tensions ou douleurs au cou après une période de travail.",
   },
   {
-    id: 2,
+    id: "neck-position",
     category: "Cou",
-    text: "Travaillez-vous souvent avec un ordinateur portable sans support ?",
+    title: "Position de la tête",
+    text: "J’ai tendance à avancer la tête vers l’écran ou à regarder vers le bas longtemps.",
   },
   {
-    id: 3,
+    id: "back-pain",
     category: "Dos",
-    text: "Restez-vous assis plus de 6 heures par jour ?",
+    title: "Dos",
+    text: "Je ressens des douleurs ou raideurs au dos pendant ou après ma journée.",
   },
   {
-    id: 4,
+    id: "sitting-long",
     category: "Dos",
-    text: "Changez-vous rarement de position pendant la journée ?",
+    title: "Position assise",
+    text: "Je reste assis longtemps sans changer de position.",
   },
   {
-    id: 5,
+    id: "shoulder-tension",
     category: "Épaules",
-    text: "Gardez-vous les épaules contractées lorsque vous travaillez ?",
+    title: "Épaules",
+    text: "Je ressens souvent des tensions dans les épaules ou les trapèzes.",
   },
   {
-    id: 6,
+    id: "mouse-far",
+    category: "Épaules",
+    title: "Souris et bras",
+    text: "Ma souris ou mes objets de travail sont parfois placés trop loin de moi.",
+  },
+  {
+    id: "wrist-pain",
     category: "Poignets",
-    text: "Utilisez-vous un clavier ou une souris plus de 4 heures par jour ?",
+    title: "Poignets",
+    text: "Je ressens des tensions aux poignets, aux mains ou aux avant-bras.",
   },
   {
-    id: 7,
+    id: "keyboard-mouse",
+    category: "Poignets",
+    title: "Clavier et souris",
+    text: "J’utilise beaucoup le clavier ou la souris sans pauses régulières.",
+  },
+  {
+    id: "legs-discomfort",
     category: "Jambes",
-    text: "Restez-vous assis longtemps sans vous lever ?",
+    title: "Jambes",
+    text: "Je ressens de l’inconfort, de la lourdeur ou de la fatigue dans les jambes.",
   },
   {
-    id: 8,
+    id: "movement-low",
     category: "Habitudes",
-    text: "Faites-vous une pause au moins toutes les 30 à 60 minutes ?",
+    title: "Mouvement",
+    text: "Je bouge peu pendant ma journée de travail ou d’étude.",
   },
 ];
 
-const options = [
-  { label: "Jamais", value: 0 },
-  { label: "Rarement", value: 1 },
-  { label: "Parfois", value: 2 },
-  { label: "Souvent", value: 3 },
-  { label: "Très souvent", value: 4 },
+const answerOptions = [
+  {
+    label: "Jamais",
+    value: 0,
+  },
+  {
+    label: "Parfois",
+    value: 1,
+  },
+  {
+    label: "Souvent",
+    value: 2,
+  },
+  {
+    label: "Très souvent",
+    value: 3,
+  },
 ];
+
+function calculateScore(answers: Record<string, number>) {
+  const total = questions.reduce((sum, question) => {
+    return sum + (answers[question.id] ?? 0);
+  }, 0);
+
+  const maxScore = questions.length * 3;
+
+  return Math.round((total / maxScore) * 100);
+}
+
+function getRiskLevel(score: number) {
+  if (score < 30) {
+    return "Risque faible";
+  }
+
+  if (score < 60) {
+    return "Risque modéré";
+  }
+
+  return "Risque élevé";
+}
+
+function getRiskMessage(score: number) {
+  if (score < 30) {
+    return "Votre risque semble plutôt faible. Continuez à maintenir de bonnes habitudes et à varier vos positions.";
+  }
+
+  if (score < 60) {
+    return "Votre risque semble modéré. Des ajustements simples, des pauses et des exercices réguliers peuvent être utiles.";
+  }
+
+  return "Votre risque semble élevé. Il serait pertinent de prioriser les pauses, les ajustements du poste et de consulter un professionnel si les douleurs persistent.";
+}
+
+function getPriorities(answers: Record<string, number>) {
+  const categoryScores: Record<Priority, number> = {
+    Cou: 0,
+    Dos: 0,
+    Épaules: 0,
+    Poignets: 0,
+    Jambes: 0,
+    Habitudes: 0,
+  };
+
+  questions.forEach((question) => {
+    categoryScores[question.category] += answers[question.id] ?? 0;
+  });
+
+  return Object.entries(categoryScores)
+    .filter(([, score]) => score >= 2)
+    .sort((a, b) => b[1] - a[1])
+    .map(([category]) => category);
+}
 
 export default function QuestionnaireScreen() {
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [showResults, setShowResults] = useState(false);
+  const [stats, setStats] = useState<AppStats | null>(null);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [showResult, setShowResult] = useState(false);
+  const [savedMessage, setSavedMessage] = useState("");
 
-  const answeredCount = Object.keys(answers).length;
-  const progress = Math.round((answeredCount / questions.length) * 100);
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
 
-  function selectAnswer(questionId: number, value: number) {
-    setAnswers({
-      ...answers,
-      [questionId]: value,
-    });
-  }
+  useEffect(() => {
+    const savedStats = getAppStats();
+    setStats(savedStats);
+  }, []);
 
-  function calculateScore() {
-    const totalRisk = Object.values(answers).reduce((total, value) => {
-      return total + value;
-    }, 0);
+  const completedQuestions = Object.keys(answers).length;
+  const totalQuestions = questions.length;
+  const allQuestionsCompleted = completedQuestions === totalQuestions;
 
-    const maxRisk = questions.length * 4;
-    const riskPercentage = totalRisk / maxRisk;
-    return Math.round(100 - riskPercentage * 100);
-  }
-
-  function getRiskLevel(score: number) {
-    if (score >= 80) return "Risque faible";
-    if (score >= 50) return "Risque modéré";
-    return "Risque élevé";
-  }
-
-  function getResultMessage(score: number) {
-    if (score >= 80) {
-      return "Votre profil montre peu de facteurs de risque. Continuez à bouger régulièrement et à varier vos positions.";
-    }
-
-    if (score >= 50) {
-      return "Votre profil montre certains facteurs de risque. Quelques habitudes simples peuvent déjà faire une grande différence.";
-    }
-
-    return "Votre profil montre plusieurs facteurs de risque. Il serait utile de prioriser les pauses, le mouvement et l’ajustement de votre poste.";
-  }
-
-  function getPriorities() {
-    const categoryRisk: Record<string, number> = {};
-
-    questions.forEach((question) => {
-      const answer = answers[question.id] ?? 0;
-      categoryRisk[question.category] =
-        (categoryRisk[question.category] || 0) + answer;
-    });
-
-    return Object.entries(categoryRisk)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 3)
-      .map(([category]) => category);
-  }
-
-  const score = calculateScore();
+  const score = calculateScore(answers);
   const level = getRiskLevel(score);
-  const message = getResultMessage(score);
-  const priorities = getPriorities();
+  const priorities = getPriorities(answers);
 
-  if (showResults) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.pageTitle}>Vos résultats</Text>
+  const previousResult = stats?.questionnaireResult ?? null;
 
-          <View style={styles.resultCard}>
-            <Text style={styles.score}>{score}/100</Text>
-            <Text style={styles.level}>{level}</Text>
-            <Text style={styles.resultMessage}>{message}</Text>
-          </View>
+  function handleAnswer(questionId: string, value: number) {
+    setAnswers((currentAnswers) => ({
+      ...currentAnswers,
+      [questionId]: value,
+    }));
 
-          <Text style={styles.sectionTitle}>Vos priorités</Text>
+    setSavedMessage("");
+  }
 
-          {priorities.map((priority, index) => (
-            <View key={priority} style={styles.priorityCard}>
-              <Text style={styles.priorityNumber}>{index + 1}</Text>
-              <Text style={styles.priorityText}>{priority}</Text>
-            </View>
-          ))}
+  function handleSubmit() {
+    const result = {
+      score,
+      level,
+      priorities,
+      completedAt: new Date().toISOString(),
+    };
 
-          <View style={styles.warningBox}>
-            <Text style={styles.warningText}>
-              Ce score est un outil de prévention et d’éducation. Il ne constitue
-              pas un diagnostic médical.
-            </Text>
-          </View>
-<Link href="/timer" asChild>
-  <Pressable style={styles.primaryButton}>
-    <Text style={styles.primaryButtonText}>Démarrer ma première pause active</Text>
-  </Pressable>
-</Link>
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => {
-              setAnswers({});
-              setShowResults(false);
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Recommencer</Text>
-          </Pressable>
+    saveQuestionnaireResult(result);
 
-          <Link href="/" asChild>
-            <Pressable style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>Retour à l’accueil</Text>
-            </Pressable>
-          </Link>
-        </ScrollView>
-      </SafeAreaView>
-    );
+    const updatedStats = getAppStats();
+
+    setStats(updatedStats);
+    setShowResult(true);
+    setSavedMessage("Questionnaire sauvegardé ✓");
+  }
+
+  function handleResetQuestionnaire() {
+    setAnswers({});
+    setShowResult(false);
+    setSavedMessage("");
   }
 
   return (
@@ -181,250 +224,566 @@ export default function QuestionnaireScreen() {
         <Text style={styles.pageTitle}>Questionnaire TMS</Text>
 
         <Text style={styles.subtitle}>
-          Répondez aux questions pour obtenir un premier score de prévention
-          musculo-squelettique.
+          Évaluez rapidement vos symptômes et habitudes pour repérer les zones à
+          prioriser.
         </Text>
 
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: `${progress}%` }]} />
+        <View style={styles.heroCard}>
+          <View>
+            <Text style={styles.heroLabel}>Évaluation</Text>
+            <Text style={styles.heroTitle}>Repérer les signaux importants.</Text>
+            <Text style={styles.heroText}>
+              Ce questionnaire ne pose pas de diagnostic. Il sert à orienter vos
+              prochaines actions de prévention.
+            </Text>
+          </View>
+
+          <View style={styles.progressCircle}>
+            <Text style={styles.progressNumber}>{completedQuestions}</Text>
+            <Text style={styles.progressLabel}>/{totalQuestions}</Text>
+          </View>
         </View>
 
-        <Text style={styles.progressText}>{progress}% complété</Text>
+        {previousResult && !showResult && (
+          <View style={styles.previousCard}>
+            <Text style={styles.sectionTitle}>Dernier résultat</Text>
 
-        {questions.map((question) => (
-          <View key={question.id} style={styles.questionCard}>
-            <Text style={styles.category}>{question.category}</Text>
-            <Text style={styles.questionText}>{question.text}</Text>
+            <View style={styles.previousScoreRow}>
+              <Text style={styles.previousScore}>
+                {previousResult.score}/100
+              </Text>
+              <Text style={styles.previousLevel}>{previousResult.level}</Text>
+            </View>
 
-            {options.map((option) => {
-              const selected = answers[question.id] === option.value;
-
-              return (
-                <Pressable
-                  key={option.label}
-                  style={[
-                    styles.optionButton,
-                    selected && styles.optionButtonSelected,
-                  ]}
-                  onPress={() => selectAnswer(question.id, option.value)}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      selected && styles.optionTextSelected,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+            {previousResult.priorities.length > 0 ? (
+              <Text style={styles.previousText}>
+                Priorités : {previousResult.priorities.join(", ")}
+              </Text>
+            ) : (
+              <Text style={styles.previousText}>
+                Aucune priorité majeure détectée.
+              </Text>
+            )}
           </View>
-        ))}
+        )}
 
-<Pressable
-  style={[
-    styles.primaryButton,
-    answeredCount < questions.length && styles.disabledButton,
-  ]}
-  disabled={answeredCount < questions.length}
-  onPress={() => {
-    saveQuestionnaireResult({
-      score,
-      level,
-      priorities,
-      completedAt: new Date().toISOString(),
-    });
+        <View style={styles.progressCard}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressTitle}>Progression</Text>
+            <Text style={styles.progressValue}>
+              {completedQuestions}/{totalQuestions}
+            </Text>
+          </View>
 
-    setShowResults(true);
-  }}
->
-  <Text style={styles.primaryButtonText}>Voir mes résultats</Text>
-</Pressable>
+          <View style={styles.progressBarBackground}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.round(
+                    (completedQuestions / totalQuestions) * 100
+                  )}%`,
+                },
+              ]}
+            />
+          </View>
+        </View>
 
-        <Link href="/" asChild>
+        {questions.map((question, index) => {
+          const selectedAnswer = answers[question.id];
+
+          return (
+            <View key={question.id} style={styles.questionCard}>
+              <View style={styles.questionHeader}>
+                <View style={styles.questionNumber}>
+                  <Text style={styles.questionNumberText}>{index + 1}</Text>
+                </View>
+
+                <View style={styles.questionTitleContainer}>
+                  <Text style={styles.questionCategory}>
+                    {question.category}
+                  </Text>
+                  <Text style={styles.questionTitle}>{question.title}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.questionText}>{question.text}</Text>
+
+              <View style={styles.optionsContainer}>
+                {answerOptions.map((option) => {
+                  const selected = selectedAnswer === option.value;
+
+                  return (
+                    <Pressable
+                      key={`${question.id}-${option.value}`}
+                      style={[
+                        styles.optionButton,
+                        selected && styles.optionButtonSelected,
+                      ]}
+                      onPress={() => handleAnswer(question.id, option.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.optionText,
+                          selected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })}
+
+        {!allQuestionsCompleted && (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              Répondez à toutes les questions pour calculer votre score.
+            </Text>
+          </View>
+        )}
+
+        <Pressable
+          style={[
+            styles.primaryButton,
+            !allQuestionsCompleted && styles.disabledButton,
+          ]}
+          onPress={handleSubmit}
+          disabled={!allQuestionsCompleted}
+        >
+          <Text style={styles.primaryButtonText}>Calculer mon résultat</Text>
+        </Pressable>
+
+        {showResult && (
+          <View style={styles.resultCard}>
+            <Text style={styles.resultLabel}>Résultat</Text>
+
+            <Text style={styles.resultScore}>{score}/100</Text>
+
+            <Text style={styles.resultLevel}>{level}</Text>
+
+            <Text style={styles.resultText}>{getRiskMessage(score)}</Text>
+
+            {priorities.length > 0 ? (
+              <>
+                <Text style={styles.sectionTitle}>Priorités détectées</Text>
+
+                {priorities.map((priority, index) => (
+                  <View key={priority} style={styles.priorityRow}>
+                    <View style={styles.priorityNumber}>
+                      <Text style={styles.priorityNumberText}>{index + 1}</Text>
+                    </View>
+
+                    <Text style={styles.priorityText}>{priority}</Text>
+                  </View>
+                ))}
+              </>
+            ) : (
+              <Text style={styles.resultText}>
+                Aucune priorité majeure détectée pour le moment.
+              </Text>
+            )}
+
+            {savedMessage.length > 0 && (
+              <Text style={styles.savedMessage}>{savedMessage}</Text>
+            )}
+
+            <Link href="/personal-plan" asChild>
+              <Pressable style={styles.primaryButton}>
+                <Text style={styles.primaryButtonText}>
+                  Voir mon plan personnalisé
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
+        )}
+
+        <Pressable style={styles.secondaryButton} onPress={handleResetQuestionnaire}>
+          <Text style={styles.secondaryButtonText}>Recommencer le questionnaire</Text>
+        </Pressable>
+
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>
+            Ce questionnaire est un outil éducatif. Il ne remplace pas une
+            consultation médicale ou une évaluation ergonomique personnalisée.
+          </Text>
+        </View>
+
+        <Link href="/workstation-audit" asChild>
           <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Retour à l’accueil</Text>
+            <Text style={styles.secondaryButtonText}>Faire l’audit du poste</Text>
           </Pressable>
         </Link>
+
+        <Link href="/dashboard" asChild>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>
+              Voir mon tableau de bord
+            </Text>
+          </Pressable>
+        </Link>
+
+        <BottomNav />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F4F8FB",
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  progressContainer: {
-    height: 12,
-    backgroundColor: "#DCE9EF",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#1E8A6A",
-  },
-  progressText: {
-    fontSize: 14,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  questionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 18,
-  },
-  category: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#1E8A6A",
-    marginBottom: 8,
-    textTransform: "uppercase",
-  },
-  questionText: {
-    fontSize: 17,
-    lineHeight: 24,
-    fontWeight: "700",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  optionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 8,
-  },
-  optionButtonSelected: {
-    backgroundColor: "#1E8A6A",
-    borderColor: "#1E8A6A",
-  },
-  optionText: {
-    color: "#183642",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  optionTextSelected: {
-    color: "#FFFFFF",
-  },
-  primaryButton: {
-    marginTop: 18,
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  disabledButton: {
-    backgroundColor: "#A9BBC4",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  secondaryButton: {
-    marginTop: 12,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  resultCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 28,
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 28,
-  },
-  score: {
-    fontSize: 56,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  level: {
-    marginTop: 8,
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#183642",
-  },
-  resultMessage: {
-    marginTop: 14,
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    textAlign: "center",
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  priorityCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  priorityNumber: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#DFF4EC",
-    color: "#1E8A6A",
-    textAlign: "center",
-    lineHeight: 34,
-    fontWeight: "900",
-    marginRight: 12,
-  },
-  priorityText: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#183642",
-  },
-  warningBox: {
-    marginTop: 24,
-    backgroundColor: "#FFF7E6",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#F3D28B",
-  },
-  warningText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#725A20",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 24,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 18,
+    },
+    heroLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 6,
+    },
+    heroTitle: {
+      fontSize: 27,
+      lineHeight: 34,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    heroText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      maxWidth: 520,
+    },
+    progressCircle: {
+      width: 78,
+      height: 78,
+      borderRadius: 39,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    progressNumber: {
+      fontSize: 24,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    progressLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    previousCard: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 22,
+      padding: 18,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    previousScoreRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 8,
+    },
+    previousScore: {
+      fontSize: 30,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    previousLevel: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    previousText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+    },
+    progressCard: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    progressHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 10,
+    },
+    progressTitle: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    progressValue: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    progressBarBackground: {
+      height: 12,
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    progressBarFill: {
+      height: "100%",
+      backgroundColor: colors.primary,
+      borderRadius: 20,
+    },
+    questionCard: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    questionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 14,
+      gap: 12,
+    },
+    questionNumber: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    questionNumberText: {
+      color: colors.black,
+      fontSize: 15,
+      fontWeight: "900",
+    },
+    questionTitleContainer: {
+      flex: 1,
+    },
+    questionCategory: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginBottom: 3,
+    },
+    questionTitle: {
+      fontSize: 20,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    questionText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      marginBottom: 16,
+    },
+    optionsContainer: {
+      gap: 8,
+    },
+    optionButton: {
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderRadius: 15,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+    },
+    optionButtonSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primaryDark,
+    },
+    optionText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    optionTextSelected: {
+      color: colors.black,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    disabledButton: {
+      opacity: 0.45,
+    },
+    secondaryButton: {
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 12,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    infoBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    infoText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+      textAlign: "center",
+      fontWeight: "800",
+    },
+    resultCard: {
+      backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+    },
+    resultLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 8,
+    },
+    resultScore: {
+      fontSize: 54,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    resultLevel: {
+      fontSize: 22,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    resultText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      textAlign: "center",
+      marginBottom: 18,
+    },
+    sectionTitle: {
+      fontSize: 21,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 14,
+      alignSelf: "stretch",
+    },
+    priorityRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.cardWarm,
+      borderRadius: 16,
+      padding: 12,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignSelf: "stretch",
+    },
+    priorityNumber: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    priorityNumberText: {
+      color: colors.black,
+      fontWeight: "900",
+      fontSize: 14,
+    },
+    priorityText: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    savedMessage: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "900",
+      textAlign: "center",
+      marginBottom: 14,
+    },
+    warningBox: {
+      backgroundColor: colors.warning,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 14,
+    },
+    warningText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
+    },
+  });
+}
