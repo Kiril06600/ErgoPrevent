@@ -10,10 +10,35 @@ import {
 import { Link } from "expo-router";
 import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
-import { colors } from "../theme/colors";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
+
+type AppRoute =
+  | "/"
+  | "/profile"
+  | "/questionnaire"
+  | "/workstation-audit"
+  | "/timer"
+  | "/exercises"
+  | "/education"
+  | "/routine"
+  | "/daily-checkin"
+  | "/progress"
+  | "/personal-plan"
+  | "/dashboard";
+
+type NextAction = {
+  eyebrow: string;
+  title: string;
+  text: string;
+  href: AppRoute;
+  button: string;
+};
 
 export default function HomeScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
+  const { colors, mode, toggleTheme } = useAppTheme();
+  const styles = createStyles(colors);
 
   useEffect(() => {
     const savedStats = getAppStats();
@@ -30,7 +55,7 @@ export default function HomeScreen() {
   const completedExercises = stats?.completedExercises ?? 0;
   const completedCapsules = stats?.completedCapsules ?? 0;
 
-  function getNextAction() {
+  function getNextAction(): NextAction {
     if (!profile) {
       return {
         eyebrow: "Commencer",
@@ -111,15 +136,26 @@ export default function HomeScreen() {
             <Text style={styles.tagline}>Prévention et confort au quotidien</Text>
           </View>
 
-          <View style={styles.pointsBadge}>
-            <Text style={styles.pointsNumber}>{points}</Text>
-            <Text style={styles.pointsLabel}>pts</Text>
-          </View>
+          <Pressable style={styles.themeButton} onPress={toggleTheme}>
+            <Text style={styles.themeIcon}>
+              {mode === "dark" ? "☀️" : "🌙"}
+            </Text>
+            <Text style={styles.themeText}>
+              {mode === "dark" ? "Clair" : "Sombre"}
+            </Text>
+          </Pressable>
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroDecoration}>
-            <Text style={styles.heroIcon}>🌿</Text>
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroDecoration}>
+              <Text style={styles.heroIcon}>🌿</Text>
+            </View>
+
+            <View style={styles.pointsBadge}>
+              <Text style={styles.pointsNumber}>{points}</Text>
+              <Text style={styles.pointsLabel}>points</Text>
+            </View>
           </View>
 
           <Text style={styles.greeting}>
@@ -157,12 +193,6 @@ export default function HomeScreen() {
               {workstationAuditResult ? workstationAuditResult.score : "--"}
             </Text>
             <Text style={styles.statSmall}>/100</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Check-ins</Text>
-            <Text style={styles.statNumber}>📝</Text>
-            <Text style={styles.statSmall}>suivi</Text>
           </View>
         </View>
 
@@ -281,235 +311,261 @@ export default function HomeScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: colors.background,
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  topHeader: {
-    marginTop: 18,
-    marginBottom: 22,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  logo: {
-    fontSize: 31,
-    fontWeight: "900",
-    color: colors.primaryDark,
-  },
-  tagline: {
-    marginTop: 4,
-    fontSize: 14,
-    color: colors.textSoft,
-  },
-  pointsBadge: {
-    backgroundColor: colors.cardWarm,
-    borderRadius: 20,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  pointsNumber: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: colors.primaryDark,
-  },
-  pointsLabel: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: colors.textMuted,
-  },
-  heroCard: {
-    backgroundColor: colors.card,
-    borderRadius: 32,
-    padding: 26,
-    marginBottom: 18,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  heroDecoration: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
-    backgroundColor: colors.turquoiseSoft,
-    alignItems: "center",
-    justifyContent: "center",
-    marginBottom: 18,
-  },
-  heroIcon: {
-    fontSize: 34,
-  },
-  greeting: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: colors.turquoise,
-    marginBottom: 10,
-  },
-  title: {
-    fontSize: 31,
-    lineHeight: 39,
-    fontWeight: "900",
-    color: colors.text,
-    marginBottom: 14,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: colors.textSoft,
-    marginBottom: 20,
-  },
-heroButton: {
-  backgroundColor: colors.turquoiseLight,
-  paddingVertical: 16,
-  borderRadius: 18,
-  alignItems: "center",
-  borderWidth: 1,
-  borderColor: colors.turquoise,
-},
-heroButtonText: {
-  color: colors.text,
-  fontSize: 16,
-  fontWeight: "900",
-},
-  statsGrid: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 18,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: colors.cardWarm,
-    borderRadius: 22,
-    padding: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: colors.textMuted,
-    marginBottom: 6,
-    textAlign: "center",
-  },
-  statNumber: {
-    fontSize: 30,
-    fontWeight: "900",
-    color: colors.turquoise,
-  },
-  statSmall: {
-    fontSize: 12,
-    fontWeight: "800",
-    color: colors.textSoft,
-  },
-  nextActionCard: {
-    backgroundColor: colors.accentSoft,
-    borderRadius: 26,
-    padding: 22,
-    marginBottom: 28,
-    borderWidth: 1,
-    borderColor: colors.primaryLight,
-  },
-  nextActionLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: colors.primaryDark,
-    textTransform: "uppercase",
-    letterSpacing: 0.8,
-    marginBottom: 8,
-  },
-  nextActionTitle: {
-    fontSize: 24,
-    lineHeight: 30,
-    fontWeight: "900",
-    color: colors.text,
-    marginBottom: 8,
-  },
-  nextActionText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: colors.textSoft,
-    marginBottom: 16,
-  },
-  primaryButton: {
-  backgroundColor: colors.accentSoft,
-  paddingVertical: 15,
-  borderRadius: 17,
-  alignItems: "center",
-  borderWidth: 1,
-  borderColor: colors.primaryLight,
-},
-primaryButtonText: {
-  color: colors.text,
-  fontSize: 15,
-  fontWeight: "900",
-},
-  sectionHeader: {
-    marginBottom: 14,
-  },
-  sectionTitle: {
-    fontSize: 23,
-    fontWeight: "900",
-    color: colors.text,
-    marginBottom: 4,
-  },
-  sectionSubtitle: {
-    fontSize: 14,
-    color: colors.textSoft,
-  },
-  quickGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 24,
-  },
-  quickCard: {
-    width: "48%",
-    backgroundColor: colors.card,
-    borderRadius: 24,
-    padding: 18,
-    minHeight: 132,
-    borderWidth: 1,
-    borderColor: colors.border,
-  },
-  quickIcon: {
-    fontSize: 30,
-    marginBottom: 12,
-  },
-  quickTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: colors.text,
-    marginBottom: 5,
-  },
-  quickText: {
-    fontSize: 13,
-    lineHeight: 18,
-    color: colors.textSoft,
-  },
-  infoBox: {
-    backgroundColor: colors.warning,
-    borderRadius: 20,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: colors.warningBorder,
-  },
-  infoTitle: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: colors.warningText,
-    marginBottom: 5,
-  },
-  infoText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: colors.warningText,
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    topHeader: {
+      marginTop: 18,
+      marginBottom: 22,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 12,
+    },
+    logo: {
+      fontSize: 31,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    tagline: {
+      marginTop: 4,
+      fontSize: 14,
+      color: colors.textSoft,
+    },
+    themeButton: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 18,
+      paddingVertical: 10,
+      paddingHorizontal: 13,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      minWidth: 76,
+    },
+    themeIcon: {
+      fontSize: 18,
+      marginBottom: 2,
+    },
+    themeText: {
+      color: colors.textSoft,
+      fontSize: 12,
+      fontWeight: "900",
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 32,
+      padding: 26,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    heroTopRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 18,
+    },
+    heroDecoration: {
+      width: 68,
+      height: 68,
+      borderRadius: 34,
+      backgroundColor: colors.secondaryLight,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    heroIcon: {
+      fontSize: 34,
+    },
+    pointsBadge: {
+      backgroundColor: colors.primary,
+      borderRadius: 34,
+      width: 68,
+      height: 68,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pointsNumber: {
+      fontSize: 20,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    pointsLabel: {
+      fontSize: 11,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    greeting: {
+      fontSize: 17,
+      fontWeight: "900",
+      color: colors.primary,
+      marginBottom: 10,
+    },
+    title: {
+      fontSize: 31,
+      lineHeight: 39,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 14,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 20,
+    },
+    heroButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 18,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    heroButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    statsGrid: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 18,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 22,
+      padding: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statLabel: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.textMuted,
+      marginBottom: 6,
+      textAlign: "center",
+    },
+    statNumber: {
+      fontSize: 30,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    statSmall: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.textSoft,
+    },
+    nextActionCard: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 26,
+      padding: 22,
+      marginBottom: 28,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    nextActionLabel: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 8,
+    },
+    nextActionTitle: {
+      fontSize: 24,
+      lineHeight: 30,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    nextActionText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      marginBottom: 16,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 15,
+      borderRadius: 17,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 15,
+      fontWeight: "900",
+    },
+    sectionHeader: {
+      marginBottom: 14,
+    },
+    sectionTitle: {
+      fontSize: 23,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    sectionSubtitle: {
+      fontSize: 14,
+      color: colors.textSoft,
+    },
+    quickGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 12,
+      marginBottom: 24,
+    },
+    quickCard: {
+      width: "48%",
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 18,
+      minHeight: 132,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    quickIcon: {
+      fontSize: 30,
+      marginBottom: 12,
+    },
+    quickTitle: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 5,
+    },
+    quickText: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSoft,
+    },
+    infoBox: {
+      backgroundColor: colors.warning,
+      borderRadius: 20,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+    },
+    infoTitle: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.warningText,
+      marginBottom: 5,
+    },
+    infoText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
+    },
+  });
+}

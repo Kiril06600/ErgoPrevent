@@ -1,6 +1,8 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
 import { Link, usePathname } from "expo-router";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
 
 const navItems = [
   {
@@ -42,6 +44,8 @@ const navItems = [
 
 export default function BottomNav() {
   const pathname = usePathname();
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
 
   return (
     <View style={styles.navContainer}>
@@ -71,37 +75,41 @@ export default function BottomNav() {
   );
 }
 
-const styles = StyleSheet.create({
-  navContainer: {
-    marginTop: 28,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 10,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    borderWidth: 1,
-    borderColor: "#DCE9EF",
-  },
-  navItem: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 10,
-    borderRadius: 18,
-  },
-  navItemActive: {
-    backgroundColor: "#EAF7F1",
-  },
-  navIcon: {
-    fontSize: 20,
-    marginBottom: 4,
-  },
-  navLabel: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#536B78",
-    textAlign: "center",
-  },
-  navLabelActive: {
-    color: "#1E8A6A",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    navContainer: {
+      marginTop: 28,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 28,
+      padding: 10,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    navItem: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 10,
+      borderRadius: 20,
+    },
+    navItemActive: {
+      backgroundColor: colors.secondaryLight,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    navIcon: {
+      fontSize: 19,
+      marginBottom: 4,
+    },
+    navLabel: {
+      fontSize: 10,
+      fontWeight: "800",
+      color: colors.textMuted,
+      textAlign: "center",
+    },
+    navLabelActive: {
+      color: colors.primary,
+    },
+  });
+}
