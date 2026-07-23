@@ -10,6 +10,7 @@ import {
 import { Link } from "expo-router";
 import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
+import { colors } from "../theme/colors";
 
 export default function HomeScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
@@ -32,8 +33,9 @@ export default function HomeScreen() {
   function getNextAction() {
     if (!profile) {
       return {
+        eyebrow: "Commencer",
         title: "Créer votre profil",
-        text: "Commencez par personnaliser votre profil pour adapter l’application à votre situation.",
+        text: "Personnalisez l’application selon votre situation, votre domaine et votre objectif principal.",
         href: "/profile",
         button: "Créer mon profil",
       };
@@ -41,6 +43,7 @@ export default function HomeScreen() {
 
     if (!questionnaireResult) {
       return {
+        eyebrow: "Évaluation",
         title: "Évaluer votre risque TMS",
         text: "Complétez le questionnaire pour obtenir votre premier score musculo-squelettique.",
         href: "/questionnaire",
@@ -50,8 +53,9 @@ export default function HomeScreen() {
 
     if (!workstationAuditResult) {
       return {
+        eyebrow: "Ergonomie",
         title: "Analyser votre poste",
-        text: "Faites l’audit de votre poste de travail pour identifier vos priorités ergonomiques.",
+        text: "Identifiez les ajustements prioritaires de votre environnement de travail.",
         href: "/workstation-audit",
         button: "Faire l’audit du poste",
       };
@@ -59,8 +63,9 @@ export default function HomeScreen() {
 
     if (completedBreaks === 0) {
       return {
+        eyebrow: "Routine",
         title: "Commencer une pause active",
-        text: "Lancez la minuterie 25/2 pour intégrer le mouvement dans votre journée.",
+        text: "Lancez une courte pause pour intégrer plus de mouvement dans votre journée.",
         href: "/timer",
         button: "Démarrer la minuterie",
       };
@@ -68,6 +73,7 @@ export default function HomeScreen() {
 
     if (completedExercises === 0) {
       return {
+        eyebrow: "Mouvement",
         title: "Faire un premier exercice",
         text: "Essayez un exercice simple pour le cou, le dos, les épaules ou les poignets.",
         href: "/exercises",
@@ -77,18 +83,20 @@ export default function HomeScreen() {
 
     if (completedCapsules === 0) {
       return {
+        eyebrow: "Comprendre",
         title: "Lire une capsule éducative",
-        text: "Apprenez une notion simple d’ergonomie en moins de 2 minutes.",
+        text: "Découvrez une notion courte pour mieux comprendre la prévention des TMS.",
         href: "/education",
         button: "Lire une capsule",
       };
     }
 
     return {
-      title: "Continuer votre progression",
-      text: "Continuez vos pauses, exercices et capsules pour renforcer vos habitudes.",
-      href: "/dashboard",
-      button: "Voir mon tableau de bord",
+      eyebrow: "Progression",
+      title: "Continuer votre suivi",
+      text: "Gardez vos habitudes actives avec votre routine, vos check-ins et votre plan personnalisé.",
+      href: "/routine",
+      button: "Voir ma routine",
     };
   }
 
@@ -97,24 +105,41 @@ export default function HomeScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.logoContainer}>
-          <Text style={styles.logo}>ErgoPrevent</Text>
-          <Text style={styles.tagline}>Prévention musculo-squelettique</Text>
+        <View style={styles.topHeader}>
+          <View>
+            <Text style={styles.logo}>ErgoPrevent</Text>
+            <Text style={styles.tagline}>Prévention et confort au quotidien</Text>
+          </View>
+
+          <View style={styles.pointsBadge}>
+            <Text style={styles.pointsNumber}>{points}</Text>
+            <Text style={styles.pointsLabel}>pts</Text>
+          </View>
         </View>
 
         <View style={styles.heroCard}>
+          <View style={styles.heroDecoration}>
+            <Text style={styles.heroIcon}>🌿</Text>
+          </View>
+
           <Text style={styles.greeting}>
             {firstName ? `Bonjour ${firstName}` : "Bienvenue"}
           </Text>
 
           <Text style={styles.title}>
-            Prévenez vos douleurs avant qu’elles n’apparaissent.
+            Prenez soin de votre posture, de vos pauses et de votre confort.
           </Text>
 
           <Text style={styles.subtitle}>
-            Suivez vos scores, bougez régulièrement et adoptez de meilleures
-            habitudes au quotidien.
+            Une application simple pour suivre vos habitudes, vos douleurs et vos
+            priorités ergonomiques.
           </Text>
+
+          <Link href="/routine" asChild>
+            <Pressable style={styles.heroButton}>
+              <Text style={styles.heroButtonText}>Commencer ma routine</Text>
+            </Pressable>
+          </Link>
         </View>
 
         <View style={styles.statsGrid}>
@@ -135,14 +160,14 @@ export default function HomeScreen() {
           </View>
 
           <View style={styles.statCard}>
-            <Text style={styles.statLabel}>Points</Text>
-            <Text style={styles.statNumber}>{points}</Text>
-            <Text style={styles.statSmall}>total</Text>
+            <Text style={styles.statLabel}>Check-ins</Text>
+            <Text style={styles.statNumber}>📝</Text>
+            <Text style={styles.statSmall}>suivi</Text>
           </View>
         </View>
 
         <View style={styles.nextActionCard}>
-          <Text style={styles.nextActionLabel}>Prochaine étape</Text>
+          <Text style={styles.nextActionLabel}>{nextAction.eyebrow}</Text>
           <Text style={styles.nextActionTitle}>{nextAction.title}</Text>
           <Text style={styles.nextActionText}>{nextAction.text}</Text>
 
@@ -153,95 +178,100 @@ export default function HomeScreen() {
           </Link>
         </View>
 
-        <Text style={styles.sectionTitle}>Accès rapide</Text>
-
-<View style={styles.quickGrid}>
-  <Link href="/routine" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>✅</Text>
-      <Text style={styles.quickTitle}>Routine</Text>
-      <Text style={styles.quickText}>Actions du jour</Text>
-    </Pressable>
-  </Link>
-
-<Link href="/daily-checkin" asChild>
-  <Pressable style={styles.quickCard}>
-    <Text style={styles.quickIcon}>📝</Text>
-    <Text style={styles.quickTitle}>Check-in</Text>
-    <Text style={styles.quickText}>Suivi du jour</Text>
-  </Pressable>
-</Link>
-
-<Link href="/progress" asChild>
-  <Pressable style={styles.quickCard}>
-    <Text style={styles.quickIcon}>📈</Text>
-    <Text style={styles.quickTitle}>Évolution</Text>
-    <Text style={styles.quickText}>Suivre les tendances</Text>
-  </Pressable>
-</Link>
-
-  <Link href="/questionnaire" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>🧠</Text>
-      <Text style={styles.quickTitle}>Questionnaire</Text>
-      <Text style={styles.quickText}>Évaluer le risque TMS</Text>
-    </Pressable>
-  </Link>
-
-  <Link href="/workstation-audit" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>🖥️</Text>
-      <Text style={styles.quickTitle}>Audit du poste</Text>
-      <Text style={styles.quickText}>Analyser l’environnement</Text>
-    </Pressable>
-  </Link>
-
-  <Link href="/personal-plan" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>🧭</Text>
-      <Text style={styles.quickTitle}>Plan</Text>
-      <Text style={styles.quickText}>Actions personnalisées</Text>
-    </Pressable>
-  </Link>
-
-  <Link href="/timer" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>⏱️</Text>
-      <Text style={styles.quickTitle}>Minuterie</Text>
-      <Text style={styles.quickText}>Pause active 25/2</Text>
-    </Pressable>
-  </Link>
-
-  <Link href="/exercises" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>💪</Text>
-      <Text style={styles.quickTitle}>Exercices</Text>
-      <Text style={styles.quickText}>Bouger simplement</Text>
-    </Pressable>
-  </Link>
-
-  <Link href="/education" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>🎓</Text>
-      <Text style={styles.quickTitle}>Formation</Text>
-      <Text style={styles.quickText}>Capsules courtes</Text>
-    </Pressable>
-  </Link>
-
-  <Link href="/dashboard" asChild>
-    <Pressable style={styles.quickCard}>
-      <Text style={styles.quickIcon}>📊</Text>
-      <Text style={styles.quickTitle}>Dashboard</Text>
-      <Text style={styles.quickText}>Voir la progression</Text>
-    </Pressable>
-  </Link>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Accès rapide</Text>
+          <Text style={styles.sectionSubtitle}>
+            Les fonctions principales de votre espace.
+          </Text>
         </View>
 
-        <View style={styles.warningBox}>
-          <Text style={styles.warningText}>
+        <View style={styles.quickGrid}>
+          <Link href="/routine" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>✅</Text>
+              <Text style={styles.quickTitle}>Routine</Text>
+              <Text style={styles.quickText}>Actions du jour</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/daily-checkin" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>📝</Text>
+              <Text style={styles.quickTitle}>Check-in</Text>
+              <Text style={styles.quickText}>Suivi du moment</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/progress" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>📈</Text>
+              <Text style={styles.quickTitle}>Évolution</Text>
+              <Text style={styles.quickText}>Voir les tendances</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/personal-plan" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>🧭</Text>
+              <Text style={styles.quickTitle}>Plan</Text>
+              <Text style={styles.quickText}>Actions adaptées</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/questionnaire" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>🧠</Text>
+              <Text style={styles.quickTitle}>Questionnaire</Text>
+              <Text style={styles.quickText}>Évaluer les TMS</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/workstation-audit" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>🖥️</Text>
+              <Text style={styles.quickTitle}>Audit</Text>
+              <Text style={styles.quickText}>Analyser le poste</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/timer" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>⏱️</Text>
+              <Text style={styles.quickTitle}>Minuterie</Text>
+              <Text style={styles.quickText}>Pause active 25/2</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/exercises" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>💪</Text>
+              <Text style={styles.quickTitle}>Exercices</Text>
+              <Text style={styles.quickText}>Bouger simplement</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/education" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>🎓</Text>
+              <Text style={styles.quickTitle}>Formation</Text>
+              <Text style={styles.quickText}>Capsules courtes</Text>
+            </Pressable>
+          </Link>
+
+          <Link href="/dashboard" asChild>
+            <Pressable style={styles.quickCard}>
+              <Text style={styles.quickIcon}>📊</Text>
+              <Text style={styles.quickTitle}>Dashboard</Text>
+              <Text style={styles.quickText}>Progression</Text>
+            </Pressable>
+          </Link>
+        </View>
+
+        <View style={styles.infoBox}>
+          <Text style={styles.infoTitle}>À retenir</Text>
+          <Text style={styles.infoText}>
             ErgoPrevent est un outil d’éducation et de prévention. Il ne remplace
-            pas une consultation avec un professionnel de la santé, un ergonome,
-            un physiothérapeute ou un médecin.
+            pas une consultation avec un professionnel de la santé.
           </Text>
         </View>
 
@@ -254,54 +284,100 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: "#F4F8FB",
+    backgroundColor: colors.background,
   },
   container: {
     padding: 24,
     paddingBottom: 48,
   },
-  logoContainer: {
-    marginTop: 20,
-    marginBottom: 24,
+  topHeader: {
+    marginTop: 18,
+    marginBottom: 22,
+    flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
   },
   logo: {
-    fontSize: 34,
+    fontSize: 31,
     fontWeight: "900",
-    color: "#1E5B7A",
+    color: colors.primaryDark,
   },
   tagline: {
-    marginTop: 6,
-    fontSize: 15,
-    color: "#5D7684",
+    marginTop: 4,
+    fontSize: 14,
+    color: colors.textSoft,
+  },
+  pointsBadge: {
+    backgroundColor: colors.cardWarm,
+    borderRadius: 20,
+    paddingVertical: 10,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pointsNumber: {
+    fontSize: 20,
+    fontWeight: "900",
+    color: colors.primaryDark,
+  },
+  pointsLabel: {
+    fontSize: 11,
+    fontWeight: "800",
+    color: colors.textMuted,
   },
   heroCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
+    backgroundColor: colors.card,
+    borderRadius: 32,
     padding: 26,
     marginBottom: 18,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  heroDecoration: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: colors.turquoiseSoft,
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 18,
+  },
+  heroIcon: {
+    fontSize: 34,
   },
   greeting: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1E8A6A",
-    textAlign: "center",
+    fontSize: 17,
+    fontWeight: "900",
+    color: colors.turquoise,
     marginBottom: 10,
   },
   title: {
-    fontSize: 28,
-    lineHeight: 36,
+    fontSize: 31,
+    lineHeight: 39,
     fontWeight: "900",
-    color: "#183642",
-    textAlign: "center",
+    color: colors.text,
+    marginBottom: 14,
   },
   subtitle: {
-    marginTop: 14,
     fontSize: 16,
     lineHeight: 24,
-    color: "#536B78",
-    textAlign: "center",
+    color: colors.textSoft,
+    marginBottom: 20,
   },
+heroButton: {
+  backgroundColor: colors.turquoiseLight,
+  paddingVertical: 16,
+  borderRadius: 18,
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: colors.turquoise,
+},
+heroButtonText: {
+  color: colors.text,
+  fontSize: 16,
+  fontWeight: "900",
+},
   statsGrid: {
     flexDirection: "row",
     gap: 12,
@@ -309,68 +385,84 @@ const styles = StyleSheet.create({
   },
   statCard: {
     flex: 1,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: colors.cardWarm,
     borderRadius: 22,
     padding: 16,
     alignItems: "center",
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   statLabel: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#536B78",
+    fontSize: 12,
+    fontWeight: "900",
+    color: colors.textMuted,
     marginBottom: 6,
+    textAlign: "center",
   },
   statNumber: {
     fontSize: 30,
     fontWeight: "900",
-    color: "#1E8A6A",
+    color: colors.turquoise,
   },
   statSmall: {
     fontSize: 12,
-    fontWeight: "700",
-    color: "#536B78",
+    fontWeight: "800",
+    color: colors.textSoft,
   },
   nextActionCard: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 24,
+    backgroundColor: colors.accentSoft,
+    borderRadius: 26,
     padding: 22,
     marginBottom: 28,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
   },
   nextActionLabel: {
-    fontSize: 13,
+    fontSize: 12,
     fontWeight: "900",
-    color: "#1E8A6A",
+    color: colors.primaryDark,
     textTransform: "uppercase",
+    letterSpacing: 0.8,
     marginBottom: 8,
   },
   nextActionTitle: {
-    fontSize: 23,
+    fontSize: 24,
+    lineHeight: 30,
     fontWeight: "900",
-    color: "#183642",
+    color: colors.text,
     marginBottom: 8,
   },
   nextActionText: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#536B78",
+    color: colors.textSoft,
     marginBottom: 16,
   },
   primaryButton: {
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
+  backgroundColor: colors.accentSoft,
+  paddingVertical: 15,
+  borderRadius: 17,
+  alignItems: "center",
+  borderWidth: 1,
+  borderColor: colors.primaryLight,
+},
+primaryButtonText: {
+  color: colors.text,
+  fontSize: 15,
+  fontWeight: "900",
+},
+  sectionHeader: {
+    marginBottom: 14,
   },
   sectionTitle: {
-    fontSize: 22,
+    fontSize: 23,
     fontWeight: "900",
-    color: "#183642",
-    marginBottom: 14,
+    color: colors.text,
+    marginBottom: 4,
+  },
+  sectionSubtitle: {
+    fontSize: 14,
+    color: colors.textSoft,
   },
   quickGrid: {
     flexDirection: "row",
@@ -380,36 +472,44 @@ const styles = StyleSheet.create({
   },
   quickCard: {
     width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
+    backgroundColor: colors.card,
+    borderRadius: 24,
     padding: 18,
+    minHeight: 132,
+    borderWidth: 1,
+    borderColor: colors.border,
   },
   quickIcon: {
-    fontSize: 28,
-    marginBottom: 10,
+    fontSize: 30,
+    marginBottom: 12,
   },
   quickTitle: {
     fontSize: 16,
     fontWeight: "900",
-    color: "#183642",
-    marginBottom: 4,
+    color: colors.text,
+    marginBottom: 5,
   },
   quickText: {
     fontSize: 13,
     lineHeight: 18,
-    color: "#536B78",
+    color: colors.textSoft,
   },
-  warningBox: {
-    marginTop: 4,
-    backgroundColor: "#FFF7E6",
-    borderRadius: 18,
+  infoBox: {
+    backgroundColor: colors.warning,
+    borderRadius: 20,
     padding: 16,
     borderWidth: 1,
-    borderColor: "#F3D28B",
+    borderColor: colors.warningBorder,
   },
-  warningText: {
+  infoTitle: {
+    fontSize: 15,
+    fontWeight: "900",
+    color: colors.warningText,
+    marginBottom: 5,
+  },
+  infoText: {
     fontSize: 13,
     lineHeight: 20,
-    color: "#725A20",
+    color: colors.warningText,
   },
 });

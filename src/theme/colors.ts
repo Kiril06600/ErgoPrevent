@@ -1,36 +1,40 @@
 export const colors = {
-  background: "#F7F1E8",
-  backgroundSoft: "#FBF7F0",
+  background: "#FFFBF6",
+  backgroundSoft: "#FFFDF9",
 
   card: "#FFFFFF",
-  cardWarm: "#FFFCF7",
+  cardWarm: "#FFFDF9",
 
-  primary: "#A77C55",
-  primaryDark: "#6F4E37",
-  primaryLight: "#E8D5C0",
+  primary: "#D3B89E",
+  primaryDark: "#B89B82",
+  primaryLight: "#F1E3D6",
 
-  secondary: "#C9A27E",
-  secondaryLight: "#F0E1D2",
+  secondary: "#E2CDBB",
+  secondaryLight: "#FAF1E8",
 
-  accent: "#D8BFA6",
-  accentSoft: "#F5E9DD",
+  accent: "#EAD8C6",
+  accentSoft: "#FBF2EA",
 
-  text: "#3B2F2A",
-  textSoft: "#6F625A",
-  textMuted: "#8A7A70",
+  turquoise: "#8FCAC2",
+  turquoiseSoft: "#F0FAF8",
+  turquoiseLight: "#D8F0EC",
 
-  border: "#E3D3C3",
+  text: "#5A514A",
+  textSoft: "#85786E",
+  textMuted: "#A99B91",
 
-  success: "#8C9A6B",
-  successSoft: "#EEF2E7",
+  border: "#F0E5DA",
 
-  warning: "#FFF4DF",
-  warningText: "#7A5A28",
-  warningBorder: "#E7C98A",
+  success: "#8FCAC2",
+  successSoft: "#F0FAF8",
 
-  danger: "#B76E5A",
-  dangerSoft: "#FFF1ED",
-  dangerBorder: "#E2B7A9",
+  warning: "#FFF8EC",
+  warningText: "#9A7A50",
+  warningBorder: "#F1DDB4",
+
+  danger: "#C99787",
+  dangerSoft: "#FFF6F2",
+  dangerBorder: "#ECCEC4",
 
   white: "#FFFFFF",
 };

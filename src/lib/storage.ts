@@ -56,10 +56,26 @@ export function getAppStats(): AppStats {
     return defaultStats;
   }
 
-  return {
-    ...defaultStats,
-    ...JSON.parse(savedData),
-  };
+  try {
+    const parsedData = JSON.parse(savedData);
+
+    return {
+      ...defaultStats,
+      ...parsedData,
+      completedExerciseIds: parsedData.completedExerciseIds ?? [],
+      completedCapsuleIds: parsedData.completedCapsuleIds ?? [],
+      profile: parsedData.profile ?? null,
+      questionnaireResult: parsedData.questionnaireResult ?? null,
+      workstationAuditResult: parsedData.workstationAuditResult ?? null,
+      completedBreaks: parsedData.completedBreaks ?? 0,
+      completedExercises: parsedData.completedExercises ?? 0,
+      completedCapsules: parsedData.completedCapsules ?? 0,
+      points: parsedData.points ?? 0,
+    };
+  } catch {
+    window.localStorage.removeItem(STORAGE_KEY);
+    return defaultStats;
+  }
 }
 
 export function saveAppStats(stats: AppStats) {
