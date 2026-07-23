@@ -10,6 +10,8 @@ import {
 import { Link } from "expo-router";
 import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
 
 type DailyCheckin = {
   id: string;
@@ -21,6 +23,8 @@ type DailyCheckin = {
   mainZone: string;
   note: string;
 };
+
+type AppRoute = "/daily-checkin" | "/routine" | "/dashboard";
 
 const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
 
@@ -194,6 +198,9 @@ export default function ProgressScreen() {
   const [checkins, setCheckins] = useState<DailyCheckin[]>([]);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
+
   useEffect(() => {
     const savedStats = getAppStats();
     const savedCheckins = getSavedCheckins();
@@ -219,13 +226,13 @@ export default function ProgressScreen() {
     ? Math.round((latestCheckin.painLevel / 10) * 100)
     : 0;
 
-    function handleDeleteCheckin(checkinId: string) {
-  const updatedCheckins = checkins.filter((checkin) => checkin.id !== checkinId);
+  function handleDeleteCheckin(checkinId: string) {
+    const updatedCheckins = checkins.filter((checkin) => checkin.id !== checkinId);
 
-  setCheckins(updatedCheckins);
-  saveCheckins(updatedCheckins);
-  setDeleteConfirmId(null);
-}
+    setCheckins(updatedCheckins);
+    saveCheckins(updatedCheckins);
+    setDeleteConfirmId(null);
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -286,7 +293,7 @@ export default function ProgressScreen() {
               </View>
 
               <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Douleur moy.</Text>
+                <Text style={styles.statLabel}>Douleur moyenne</Text>
                 <Text style={styles.statNumber}>{averagePain}</Text>
                 <Text style={styles.statSmall}>/10</Text>
               </View>
@@ -367,68 +374,77 @@ export default function ProgressScreen() {
             <View style={styles.card}>
               <Text style={styles.sectionTitle}>Derniers check-ins</Text>
 
-{lastTenCheckins.map((checkin) => {
-  const painPercent = Math.round((checkin.painLevel / 10) * 100);
-  const isConfirmingDelete = deleteConfirmId === checkin.id;
+              {lastTenCheckins.map((checkin) => {
+                const painPercent = Math.round((checkin.painLevel / 10) * 100);
+                const isConfirmingDelete = deleteConfirmId === checkin.id;
 
-  return (
-    <View key={checkin.id} style={styles.historyCard}>
-      <View style={styles.historyHeader}>
-        <Text style={styles.historyDate}>
-          {checkin.date} à {checkin.time}
-        </Text>
+                return (
+                  <View key={checkin.id} style={styles.historyCard}>
+                    <View style={styles.historyHeader}>
+                      <Text style={styles.historyDate}>
+                        {checkin.date} à {checkin.time}
+                      </Text>
 
-        <Text style={styles.historyPain}>{checkin.painLevel}/10</Text>
-      </View>
+                      <Text style={styles.historyPain}>
+                        {checkin.painLevel}/10
+                      </Text>
+                    </View>
 
-      <View style={styles.miniBarBackground}>
-        <View
-          style={[
-            styles.miniBarFill,
-            { width: `${painPercent}%` },
-          ]}
-        />
-      </View>
+                    <View style={styles.miniBarBackground}>
+                      <View
+                        style={[
+                          styles.miniBarFill,
+                          { width: `${painPercent}%` },
+                        ]}
+                      />
+                    </View>
 
-      <Text style={styles.historyText}>
-        Fatigue : {checkin.fatigueLevel} · Zone : {checkin.mainZone}
-      </Text>
+                    <Text style={styles.historyText}>
+                      Fatigue : {checkin.fatigueLevel} · Zone :{" "}
+                      {checkin.mainZone}
+                    </Text>
 
-      {checkin.note.length > 0 && (
-        <Text style={styles.historyNote}>{checkin.note}</Text>
-      )}
+                    {checkin.note.length > 0 && (
+                      <Text style={styles.historyNote}>{checkin.note}</Text>
+                    )}
 
-      {!isConfirmingDelete ? (
-        <Pressable
-          style={styles.deleteButton}
-          onPress={() => setDeleteConfirmId(checkin.id)}
-        >
-          <Text style={styles.deleteButtonText}>Supprimer ce check-in</Text>
-        </Pressable>
-      ) : (
-        <View style={styles.deleteConfirmBox}>
-          <Text style={styles.deleteConfirmText}>
-            Confirmer la suppression ?
-          </Text>
+                    {!isConfirmingDelete ? (
+                      <Pressable
+                        style={styles.deleteButton}
+                        onPress={() => setDeleteConfirmId(checkin.id)}
+                      >
+                        <Text style={styles.deleteButtonText}>
+                          Supprimer ce check-in
+                        </Text>
+                      </Pressable>
+                    ) : (
+                      <View style={styles.deleteConfirmBox}>
+                        <Text style={styles.deleteConfirmText}>
+                          Confirmer la suppression ?
+                        </Text>
 
-          <Pressable
-            style={styles.confirmDeleteButton}
-            onPress={() => handleDeleteCheckin(checkin.id)}
-          >
-            <Text style={styles.confirmDeleteButtonText}>Oui, supprimer</Text>
-          </Pressable>
+                        <Pressable
+                          style={styles.confirmDeleteButton}
+                          onPress={() => handleDeleteCheckin(checkin.id)}
+                        >
+                          <Text style={styles.confirmDeleteButtonText}>
+                            Oui, supprimer
+                          </Text>
+                        </Pressable>
 
-          <Pressable
-            style={styles.cancelDeleteButton}
-            onPress={() => setDeleteConfirmId(null)}
-          >
-            <Text style={styles.cancelDeleteButtonText}>Annuler</Text>
-          </Pressable>
-        </View>
-      )}
-    </View>
-  );
-})}
+                        <Pressable
+                          style={styles.cancelDeleteButton}
+                          onPress={() => setDeleteConfirmId(null)}
+                        >
+                          <Text style={styles.cancelDeleteButtonText}>
+                            Annuler
+                          </Text>
+                        </Pressable>
+                      </View>
+                    )}
+                  </View>
+                );
+              })}
             </View>
 
             <View style={styles.tipBox}>
@@ -481,349 +497,373 @@ export default function ProgressScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F4F8FB",
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  emptyCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 24,
-    marginBottom: 24,
-    alignItems: "center",
-  },
-  emptyIcon: {
-    fontSize: 44,
-    marginBottom: 12,
-  },
-  emptyTitle: {
-    fontSize: 23,
-    fontWeight: "900",
-    color: "#183642",
-    textAlign: "center",
-    marginBottom: 10,
-  },
-  emptyText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-    textAlign: "center",
-    marginBottom: 18,
-  },
-  heroCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 24,
-    marginBottom: 18,
-  },
-  heroGreeting: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: "#1E8A6A",
-    marginBottom: 8,
-  },
-  heroTitle: {
-    fontSize: 25,
-    lineHeight: 32,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  heroText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-  },
-  statsGrid: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 18,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    padding: 15,
-    alignItems: "center",
-  },
-  statLabel: {
-    fontSize: 12,
-    fontWeight: "900",
-    color: "#536B78",
-    marginBottom: 6,
-    textAlign: "center",
-  },
-  statNumber: {
-    fontSize: 29,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  statSmall: {
-    fontSize: 12,
-    fontWeight: "700",
-    color: "#536B78",
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 18,
-  },
-  summaryCard: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 18,
-  },
-  sectionTitle: {
-    fontSize: 21,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  dateText: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#1E8A6A",
-    marginBottom: 14,
-  },
-  painHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 10,
-  },
-  painLabel: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#183642",
-  },
-  painValue: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  progressBarBackground: {
-    height: 14,
-    backgroundColor: "#D4EADF",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 18,
-  },
-  progressBarFill: {
-    height: "100%",
-    backgroundColor: "#1E8A6A",
-    borderRadius: 20,
-  },
-  detailRow: {
-    borderTopWidth: 1,
-    borderTopColor: "#DCE9EF",
-    paddingVertical: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 14,
-  },
-  detailLabel: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#536B78",
-    flex: 1,
-  },
-  detailValue: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#183642",
-    textAlign: "right",
-    flex: 1,
-  },
-  noteBox: {
-    backgroundColor: "#F4F8FB",
-    borderRadius: 16,
-    padding: 14,
-    marginTop: 10,
-  },
-  noteTitle: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 6,
-  },
-  noteText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#536B78",
-  },
-  historyCard: {
-    backgroundColor: "#F4F8FB",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-  },
-  historyHeader: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginBottom: 8,
-    gap: 12,
-  },
-  historyDate: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#183642",
-    flex: 1,
-  },
-  historyPain: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  miniBarBackground: {
-    height: 8,
-    backgroundColor: "#D4EADF",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  miniBarFill: {
-    height: "100%",
-    backgroundColor: "#1E8A6A",
-    borderRadius: 20,
-  },
-  historyText: {
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#183642",
-    fontWeight: "700",
-  },
-  historyNote: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#536B78",
-  },
-  deleteButton: {
-  marginTop: 12,
-  paddingVertical: 11,
-  borderRadius: 14,
-  alignItems: "center",
-  borderWidth: 1,
-  borderColor: "#E0B4B4",
-  backgroundColor: "#FFF5F5",
-},
-deleteButtonText: {
-  color: "#B94A48",
-  fontSize: 14,
-  fontWeight: "900",
-},
-deleteConfirmBox: {
-  marginTop: 12,
-  backgroundColor: "#FFF5F5",
-  borderRadius: 16,
-  padding: 14,
-  borderWidth: 1,
-  borderColor: "#E0B4B4",
-},
-deleteConfirmText: {
-  fontSize: 14,
-  fontWeight: "900",
-  color: "#183642",
-  marginBottom: 10,
-  textAlign: "center",
-},
-confirmDeleteButton: {
-  backgroundColor: "#B94A48",
-  paddingVertical: 12,
-  borderRadius: 14,
-  alignItems: "center",
-  marginBottom: 8,
-},
-confirmDeleteButtonText: {
-  color: "#FFFFFF",
-  fontSize: 14,
-  fontWeight: "900",
-},
-cancelDeleteButton: {
-  backgroundColor: "#FFFFFF",
-  paddingVertical: 12,
-  borderRadius: 14,
-  alignItems: "center",
-  borderWidth: 1,
-  borderColor: "#C7D7DF",
-},
-cancelDeleteButtonText: {
-  color: "#1E5B7A",
-  fontSize: 14,
-  fontWeight: "900",
-},
-  tipBox: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 14,
-  },
-  tipTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 6,
-  },
-  tipText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#536B78",
-  },
-  warningBox: {
-    backgroundColor: "#FFF7E6",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#F3D28B",
-    marginBottom: 14,
-  },
-  warningText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#725A20",
-  },
-  primaryButton: {
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  secondaryButton: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 12,
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 24,
+    },
+    emptyCard: {
+      backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 24,
+      marginBottom: 24,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    emptyIcon: {
+      fontSize: 44,
+      marginBottom: 12,
+    },
+    emptyTitle: {
+      fontSize: 23,
+      fontWeight: "900",
+      color: colors.text,
+      textAlign: "center",
+      marginBottom: 10,
+    },
+    emptyText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      textAlign: "center",
+      marginBottom: 18,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    heroGreeting: {
+      fontSize: 17,
+      fontWeight: "900",
+      color: colors.primary,
+      marginBottom: 8,
+    },
+    heroTitle: {
+      fontSize: 27,
+      lineHeight: 34,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    heroText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+    },
+    statsGrid: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 18,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      padding: 15,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statLabel: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.textMuted,
+      marginBottom: 6,
+      textAlign: "center",
+    },
+    statNumber: {
+      fontSize: 29,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    statSmall: {
+      fontSize: 12,
+      fontWeight: "800",
+      color: colors.textSoft,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    summaryCard: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 22,
+      padding: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 21,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 14,
+    },
+    dateText: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.primary,
+      marginBottom: 14,
+    },
+    painHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 10,
+    },
+    painLabel: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    painValue: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    progressBarBackground: {
+      height: 14,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      overflow: "hidden",
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    progressBarFill: {
+      height: "100%",
+      backgroundColor: colors.primary,
+      borderRadius: 20,
+    },
+    detailRow: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingVertical: 12,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 14,
+    },
+    detailLabel: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.textSoft,
+      flex: 1,
+    },
+    detailValue: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.text,
+      textAlign: "right",
+      flex: 1,
+    },
+    noteBox: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 16,
+      padding: 14,
+      marginTop: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    noteTitle: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    noteText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+    },
+    historyCard: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    historyHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 8,
+      gap: 12,
+    },
+    historyDate: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.text,
+      flex: 1,
+    },
+    historyPain: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    miniBarBackground: {
+      height: 8,
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      overflow: "hidden",
+      marginBottom: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    miniBarFill: {
+      height: "100%",
+      backgroundColor: colors.primary,
+      borderRadius: 20,
+    },
+    historyText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.text,
+      fontWeight: "700",
+    },
+    historyNote: {
+      marginTop: 6,
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSoft,
+    },
+    deleteButton: {
+      marginTop: 12,
+      paddingVertical: 11,
+      borderRadius: 14,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+      backgroundColor: colors.dangerSoft,
+    },
+    deleteButtonText: {
+      color: colors.danger,
+      fontSize: 14,
+      fontWeight: "900",
+    },
+    deleteConfirmBox: {
+      marginTop: 12,
+      backgroundColor: colors.dangerSoft,
+      borderRadius: 16,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+    },
+    deleteConfirmText: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+      textAlign: "center",
+    },
+    confirmDeleteButton: {
+      backgroundColor: colors.danger,
+      paddingVertical: 12,
+      borderRadius: 14,
+      alignItems: "center",
+      marginBottom: 8,
+    },
+    confirmDeleteButtonText: {
+      color: colors.white,
+      fontSize: 14,
+      fontWeight: "900",
+    },
+    cancelDeleteButton: {
+      backgroundColor: colors.card,
+      paddingVertical: 12,
+      borderRadius: 14,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cancelDeleteButtonText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "900",
+    },
+    tipBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 18,
+      padding: 16,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    tipTitle: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    tipText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.textSoft,
+    },
+    warningBox: {
+      backgroundColor: colors.warning,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 14,
+    },
+    warningText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    secondaryButton: {
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 12,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+  });
+}
