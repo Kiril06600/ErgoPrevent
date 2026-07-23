@@ -10,9 +10,14 @@ import {
 import { Link } from "expo-router";
 import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
 
 export default function DashboardScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
+
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
 
   useEffect(() => {
     const savedStats = getAppStats();
@@ -44,60 +49,82 @@ export default function DashboardScreen() {
         </Text>
 
         <Text style={styles.subtitle}>
-          Suivez votre progression et gardez vos habitudes de prévention actives.
+          Suivez votre progression, vos scores et vos habitudes de prévention.
         </Text>
 
-        <View style={styles.scoreCard}>
-          <Text style={styles.scoreLabel}>Score musculo-squelettique</Text>
+        <View style={styles.heroCard}>
+          <View>
+            <Text style={styles.heroLabel}>Niveau actuel</Text>
+            <Text style={styles.heroTitle}>{userLevel}</Text>
+            <Text style={styles.heroText}>
+              Continuez vos pauses, exercices, capsules et check-ins pour
+              progresser.
+            </Text>
+          </View>
 
-          <Text style={styles.score}>
-            {questionnaireResult ? `${score}/100` : "--/100"}
-          </Text>
+          <View style={styles.pointsCircle}>
+            <Text style={styles.pointsNumber}>{points}</Text>
+            <Text style={styles.pointsLabel}>points</Text>
+          </View>
+        </View>
 
-          <Text style={styles.scoreMessage}>
-            {questionnaireResult
-              ? `Votre niveau actuel est : ${level}.`
-              : "Complétez le questionnaire pour obtenir votre premier score."}
-          </Text>
+        <View style={styles.scoreGrid}>
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreLabel}>Score TMS</Text>
+            <Text style={styles.score}>
+              {questionnaireResult ? `${score}` : "--"}
+            </Text>
+            <Text style={styles.scoreSmall}>/100</Text>
+            <Text style={styles.scoreMessage}>
+              {questionnaireResult ? level : "Questionnaire à compléter"}
+            </Text>
+          </View>
+
+          <View style={styles.scoreCard}>
+            <Text style={styles.scoreLabel}>Score poste</Text>
+            <Text style={styles.score}>
+              {workstationAuditResult
+                ? `${workstationAuditResult.score}`
+                : "--"}
+            </Text>
+            <Text style={styles.scoreSmall}>/100</Text>
+            <Text style={styles.scoreMessage}>
+              {workstationAuditResult
+                ? workstationAuditResult.level
+                : "Audit à compléter"}
+            </Text>
+          </View>
         </View>
 
         {priorities.length > 0 && (
-          <View style={styles.levelCard}>
-            <Text style={styles.levelTitle}>Vos priorités actuelles</Text>
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>Priorités TMS</Text>
 
             {priorities.map((priority, index) => (
-              <Text key={priority} style={styles.levelDescription}>
-                {index + 1}. {priority}
-              </Text>
+              <View key={priority} style={styles.priorityRow}>
+                <View style={styles.priorityNumber}>
+                  <Text style={styles.priorityNumberText}>{index + 1}</Text>
+                </View>
+
+                <Text style={styles.priorityText}>{priority}</Text>
+              </View>
             ))}
           </View>
         )}
 
-        <View style={styles.scoreCard}>
-          <Text style={styles.scoreLabel}>Score du poste de travail</Text>
-
-          <Text style={styles.score}>
-            {workstationAuditResult
-              ? `${workstationAuditResult.score}/100`
-              : "--/100"}
-          </Text>
-
-          <Text style={styles.scoreMessage}>
-            {workstationAuditResult
-              ? workstationAuditResult.level
-              : "Faites l’audit du poste pour obtenir votre score ergonomique."}
-          </Text>
-        </View>
-
         {workstationAuditResult &&
           workstationAuditResult.priorities.length > 0 && (
-            <View style={styles.levelCard}>
-              <Text style={styles.levelTitle}>Priorités du poste</Text>
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>Priorités du poste</Text>
 
               {workstationAuditResult.priorities.map((priority, index) => (
-                <Text key={priority} style={styles.levelDescription}>
-                  {index + 1}. {priority}
-                </Text>
+                <View key={priority} style={styles.priorityRow}>
+                  <View style={styles.priorityNumber}>
+                    <Text style={styles.priorityNumberText}>{index + 1}</Text>
+                  </View>
+
+                  <Text style={styles.priorityText}>{priority}</Text>
+                </View>
               ))}
             </View>
           )}
@@ -105,17 +132,17 @@ export default function DashboardScreen() {
         <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{completedBreaks}</Text>
-            <Text style={styles.statLabel}>pauses complétées</Text>
+            <Text style={styles.statLabel}>pauses</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{completedExercises}</Text>
-            <Text style={styles.statLabel}>exercices complétés</Text>
+            <Text style={styles.statLabel}>exercices</Text>
           </View>
 
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{completedCapsules}</Text>
-            <Text style={styles.statLabel}>capsules lues</Text>
+            <Text style={styles.statLabel}>capsules</Text>
           </View>
 
           <View style={styles.statCard}>
@@ -124,15 +151,7 @@ export default function DashboardScreen() {
           </View>
         </View>
 
-        <View style={styles.levelCard}>
-          <Text style={styles.levelTitle}>Niveau actuel</Text>
-          <Text style={styles.levelText}>{userLevel}</Text>
-          <Text style={styles.levelDescription}>
-            Continuez vos pauses, exercices, capsules et audits pour progresser.
-          </Text>
-        </View>
-
-        <View style={styles.badgesSection}>
+        <View style={styles.card}>
           <Text style={styles.sectionTitle}>Badges obtenus</Text>
 
           {completedBreaks > 0 && (
@@ -186,35 +205,45 @@ export default function DashboardScreen() {
 
         <Text style={styles.sectionTitle}>Actions rapides</Text>
 
-<Link href="/routine" asChild>
-  <Pressable style={styles.primaryButton}>
-    <Text style={styles.primaryButtonText}>Voir ma routine du jour</Text>
-  </Pressable>
-</Link>
-
-<Link href="/daily-checkin" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Faire mon check-in quotidien</Text>
-  </Pressable>
-</Link>
-
-<Link href="/progress" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Voir mon évolution</Text>
-  </Pressable>
-</Link>
-
-        <Link href="/questionnaire" asChild>
+        <Link href="/routine" asChild>
           <Pressable style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>Refaire le questionnaire</Text>
+            <Text style={styles.primaryButtonText}>Voir ma routine du jour</Text>
+          </Pressable>
+        </Link>
+
+        <Link href="/daily-checkin" asChild>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>
+              Faire mon check-in quotidien
+            </Text>
+          </Pressable>
+        </Link>
+
+        <Link href="/progress" asChild>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Voir mon évolution</Text>
           </Pressable>
         </Link>
 
         <Link href="/personal-plan" asChild>
-  <Pressable style={styles.secondaryButton}>
-    <Text style={styles.secondaryButtonText}>Voir mon plan personnalisé</Text>
-  </Pressable>
-</Link>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>
+              Voir mon plan personnalisé
+            </Text>
+          </Pressable>
+        </Link>
+
+        <Link href="/questionnaire" asChild>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Refaire le questionnaire</Text>
+          </Pressable>
+        </Link>
+
+        <Link href="/workstation-audit" asChild>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>Faire l’audit du poste</Text>
+          </Pressable>
+        </Link>
 
         <Link href="/timer" asChild>
           <Pressable style={styles.secondaryButton}>
@@ -234,21 +263,9 @@ export default function DashboardScreen() {
           </Pressable>
         </Link>
 
-        <Link href="/workstation-audit" asChild>
-          <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Faire l’audit du poste</Text>
-          </Pressable>
-        </Link>
-
         <Link href="/profile" asChild>
           <Pressable style={styles.secondaryButton}>
             <Text style={styles.secondaryButtonText}>Modifier mon profil</Text>
-          </Pressable>
-        </Link>
-
-        <Link href="/" asChild>
-          <Pressable style={styles.backButton}>
-            <Text style={styles.backButtonText}>Retour à l’accueil</Text>
           </Pressable>
         </Link>
 
@@ -258,163 +275,236 @@ export default function DashboardScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F4F8FB",
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  scoreCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 28,
-    alignItems: "center",
-    marginBottom: 22,
-  },
-  scoreLabel: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#1E5B7A",
-    marginBottom: 10,
-  },
-  score: {
-    fontSize: 58,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  scoreMessage: {
-    marginTop: 12,
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-    textAlign: "center",
-  },
-  statsGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 12,
-    marginBottom: 22,
-  },
-  statCard: {
-    width: "48%",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 34,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  statLabel: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#536B78",
-    textAlign: "center",
-  },
-  levelCard: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 24,
-  },
-  levelTitle: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#1E8A6A",
-    marginBottom: 6,
-  },
-  levelText: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 8,
-  },
-  levelDescription: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-  },
-  badgesSection: {
-    marginBottom: 24,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  badgeCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 10,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  badgeIcon: {
-    fontSize: 26,
-    marginRight: 12,
-  },
-  badgeText: {
-    flex: 1,
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#183642",
-  },
-  primaryButton: {
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  secondaryButton: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 12,
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  backButton: {
-    marginTop: 4,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-  },
-  backButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 24,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 18,
+    },
+    heroLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 6,
+    },
+    heroTitle: {
+      fontSize: 25,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    heroText: {
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.textSoft,
+      maxWidth: 420,
+    },
+    pointsCircle: {
+      width: 78,
+      height: 78,
+      borderRadius: 39,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    pointsNumber: {
+      fontSize: 22,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    pointsLabel: {
+      fontSize: 11,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    scoreGrid: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 18,
+    },
+    scoreCard: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 24,
+      padding: 18,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    scoreLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.textMuted,
+      marginBottom: 8,
+      textAlign: "center",
+    },
+    score: {
+      fontSize: 42,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    scoreSmall: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.textSoft,
+      marginBottom: 8,
+    },
+    scoreMessage: {
+      fontSize: 13,
+      lineHeight: 18,
+      color: colors.textSoft,
+      textAlign: "center",
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 22,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 14,
+    },
+    priorityRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 10,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 16,
+      padding: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    priorityNumber: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    priorityNumberText: {
+      color: colors.black,
+      fontWeight: "900",
+      fontSize: 14,
+    },
+    priorityText: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    statsGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 12,
+      marginBottom: 22,
+    },
+    statCard: {
+      width: "48%",
+      backgroundColor: colors.cardWarm,
+      borderRadius: 22,
+      padding: 18,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statNumber: {
+      fontSize: 34,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    statLabel: {
+      marginTop: 6,
+      fontSize: 14,
+      color: colors.textSoft,
+      fontWeight: "800",
+      textAlign: "center",
+    },
+    badgeCard: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 18,
+      padding: 16,
+      marginBottom: 10,
+      flexDirection: "row",
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    badgeIcon: {
+      fontSize: 26,
+      marginRight: 12,
+    },
+    badgeText: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    secondaryButton: {
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 12,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+  });
+}
