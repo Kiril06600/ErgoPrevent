@@ -21,24 +21,9 @@ const navItems = [
     href: "/personal-plan",
   },
   {
-    label: "Minuterie",
-    icon: "⏱️",
-    href: "/timer",
-  },
-  {
-    label: "Exercices",
-    icon: "💪",
-    href: "/exercises",
-  },
-  {
     label: "Formation",
     icon: "🎓",
     href: "/education",
-  },
-  {
-    label: "Dashboard",
-    icon: "📊",
-    href: "/dashboard",
   },
   {
     label: "Profil",
@@ -91,32 +76,33 @@ function createStyles(colors: ThemeColors) {
       justifyContent: "space-between",
       borderWidth: 1,
       borderColor: colors.border,
-      gap: 4,
+      gap: 6,
+      boxShadow: "0px 10px 24px rgba(0,0,0,0.12)",
     },
     navItem: {
       flex: 1,
       alignItems: "center",
-      paddingVertical: 9,
-      paddingHorizontal: 3,
+      paddingVertical: 11,
+      paddingHorizontal: 4,
       borderRadius: 18,
     },
     navItemActive: {
       backgroundColor: colors.secondaryLight,
       borderWidth: 1,
-      borderColor: colors.primary,
+      borderColor: colors.border,
     },
     navIcon: {
       fontSize: 18,
       marginBottom: 4,
     },
     navLabel: {
-      fontSize: 9,
+      fontSize: 10,
       fontWeight: "800",
       color: colors.textMuted,
       textAlign: "center",
     },
     navLabelActive: {
-      color: colors.primary,
+      color: colors.text,
     },
   });
 }

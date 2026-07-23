@@ -2,41 +2,41 @@ export const lightColors = {
   mode: "light",
 
   background: "#F8F5EF",
-  backgroundSoft: "#FFFFFF",
+  backgroundSoft: "rgba(255, 255, 255, 0.35)",
 
-  card: "#FFFFFF",
-  cardWarm: "#FBF7F0",
+  card: "rgba(255, 255, 255, 0.58)",
+  cardWarm: "rgba(255, 255, 255, 0.42)",
 
   primary: "#D8C4B6",
   primaryDark: "#C8AA98",
-  primaryLight: "#EFE3DA",
+  primaryLight: "rgba(216, 196, 182, 0.35)",
 
   secondary: "#163028",
-  secondaryLight: "#EEF4F1",
+  secondaryLight: "rgba(22, 48, 40, 0.07)",
 
   accent: "#D8C4B6",
-  accentSoft: "#F4EAE2",
+  accentSoft: "rgba(216, 196, 182, 0.24)",
 
   turquoise: "#5F9F95",
-  turquoiseSoft: "#EDF8F6",
-  turquoiseLight: "#D7EFEB",
+  turquoiseSoft: "rgba(95, 159, 149, 0.12)",
+  turquoiseLight: "rgba(95, 159, 149, 0.18)",
 
   text: "#03110D",
   textSoft: "#4D5A53",
   textMuted: "#7A807A",
 
-  border: "#E6DED3",
+  border: "rgba(163, 133, 96, 0.22)",
 
   success: "#5F9F95",
-  successSoft: "#EDF8F6",
+  successSoft: "rgba(95, 159, 149, 0.12)",
 
-  warning: "#FFF6E8",
+  warning: "rgba(255, 246, 232, 0.64)",
   warningText: "#7D6548",
-  warningBorder: "#E8D0A8",
+  warningBorder: "rgba(232, 208, 168, 0.55)",
 
   danger: "#B98272",
-  dangerSoft: "#FFF2EF",
-  dangerBorder: "#E8C4B8",
+  dangerSoft: "rgba(255, 242, 239, 0.58)",
+  dangerBorder: "rgba(232, 196, 184, 0.55)",
 
   white: "#FFFFFF",
   black: "#03110D",
@@ -46,41 +46,41 @@ export const darkColors = {
   mode: "dark",
 
   background: "#03110D",
-  backgroundSoft: "#071812",
+  backgroundSoft: "rgba(224, 224, 224, 0.03)",
 
-  card: "#0A1814",
-  cardWarm: "#101C17",
+  card: "rgba(224, 224, 224, 0.055)",
+  cardWarm: "rgba(224, 224, 224, 0.035)",
 
   primary: "#F5EEDF",
-  primaryDark: "#F5EEDF",
-  primaryLight: "#3B3124",
+  primaryDark: "#E2D8C8",
+  primaryLight: "rgba(245, 238, 223, 0.12)",
 
   secondary: "#163028",
-  secondaryLight: "#1D3A31",
+  secondaryLight: "rgba(224, 224, 224, 0.06)",
 
   accent: "#F5EEDF",
-  accentSoft: "#211C15",
+  accentSoft: "rgba(245, 238, 223, 0.10)",
 
   turquoise: "#5F9F95",
-  turquoiseSoft: "#10231D",
-  turquoiseLight: "#163028",
+  turquoiseSoft: "rgba(95, 159, 149, 0.12)",
+  turquoiseLight: "rgba(95, 159, 149, 0.18)",
 
   text: "#E0E0E0",
   textSoft: "#C6C2BA",
   textMuted: "#9E968A",
 
-  border: "#263A33",
+  border: "rgba(224, 224, 224, 0.12)",
 
   success: "#5F9F95",
-  successSoft: "#10231D",
+  successSoft: "rgba(95, 159, 149, 0.12)",
 
-  warning: "#211C15",
+  warning: "rgba(232, 208, 168, 0.08)",
   warningText: "#D6C2A8",
-  warningBorder: "#3A3023",
+  warningBorder: "rgba(232, 208, 168, 0.18)",
 
   danger: "#B98272",
-  dangerSoft: "#271814",
-  dangerBorder: "#5A352C",
+  dangerSoft: "rgba(185, 130, 114, 0.12)",
+  dangerBorder: "rgba(185, 130, 114, 0.24)",
 
   white: "#E0E0E0",
   black: "#03110D",
