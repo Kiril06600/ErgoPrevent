@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   SafeAreaView,
   ScrollView,
@@ -8,197 +8,221 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { saveWorkstationAuditResult } from "../lib/storage";
+import {
+  AppStats,
+  getAppStats,
+  saveWorkstationAuditResult,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
 
-const questions = [
+type Priority =
+  | "Écran"
+  | "Chaise"
+  | "Souris"
+  | "Clavier"
+  | "Ordinateur portable"
+  | "Mouvement";
+
+type AuditQuestion = {
+  id: string;
+  category: Priority;
+  title: string;
+  text: string;
+};
+
+const questions: AuditQuestion[] = [
   {
-    id: 1,
+    id: "screen-height",
     category: "Écran",
-    text: "Votre écran est-il environ à la hauteur des yeux ?",
+    title: "Hauteur de l’écran",
+    text: "Le haut de mon écran est proche de la hauteur de mes yeux.",
   },
   {
-    id: 2,
+    id: "screen-position",
     category: "Écran",
-    text: "Votre écran est-il placé directement devant vous ?",
+    title: "Position de l’écran",
+    text: "Mon écran est placé devant moi, sans rotation prolongée du cou.",
   },
   {
-    id: 3,
+    id: "chair-feet",
     category: "Chaise",
-    text: "Vos pieds touchent-ils bien le sol ou un repose-pieds ?",
+    title: "Appui des pieds",
+    text: "Mes pieds touchent le sol ou un repose-pieds de façon confortable.",
   },
   {
-    id: 4,
+    id: "chair-back",
     category: "Chaise",
-    text: "Votre dos est-il soutenu lorsque vous travaillez ?",
+    title: "Support du dos",
+    text: "Mon dos est soutenu de façon confortable lorsque je travaille assis.",
   },
   {
-    id: 5,
+    id: "mouse-close",
     category: "Souris",
-    text: "Votre souris est-elle proche de votre corps ?",
+    title: "Souris proche",
+    text: "Ma souris est proche de mon corps et facile à atteindre.",
   },
   {
-    id: 6,
+    id: "mouse-shoulder",
+    category: "Souris",
+    title: "Épaule détendue",
+    text: "Je peux utiliser ma souris sans garder l’épaule élevée ou le bras tendu.",
+  },
+  {
+    id: "keyboard-close",
     category: "Clavier",
-    text: "Votre clavier est-il proche de vous et facile à atteindre ?",
+    title: "Clavier proche",
+    text: "Mon clavier est placé assez près pour éviter de tendre les bras.",
   },
   {
-    id: 7,
+    id: "keyboard-wrists",
+    category: "Clavier",
+    title: "Poignets neutres",
+    text: "Mes poignets restent relativement droits lorsque j’utilise le clavier.",
+  },
+  {
+    id: "laptop-setup",
     category: "Ordinateur portable",
-    text: "Si vous utilisez un ordinateur portable longtemps, est-il surélevé avec un support ?",
+    title: "Portable bien installé",
+    text: "Si j’utilise un ordinateur portable longtemps, j’utilise un support, un clavier externe ou une souris externe.",
   },
   {
-    id: 8,
+    id: "movement-breaks",
     category: "Mouvement",
-    text: "Changez-vous régulièrement de position pendant votre journée ?",
-  },
-  {
-    id: 9,
-    category: "Mouvement",
-    text: "Vous levez-vous au moins toutes les 25 à 60 minutes ?",
+    title: "Pauses régulières",
+    text: "Je prends de courtes pauses pour changer de position ou bouger.",
   },
 ];
 
-const options = [
-  { label: "Oui", value: 0 },
-  { label: "Partiellement", value: 2 },
-  { label: "Non", value: 4 },
+const answerOptions = [
+  {
+    label: "Non",
+    value: 0,
+  },
+  {
+    label: "Partiellement",
+    value: 1,
+  },
+  {
+    label: "Oui",
+    value: 2,
+  },
 ];
+
+function calculateScore(answers: Record<string, number>) {
+  const total = questions.reduce((sum, question) => {
+    return sum + (answers[question.id] ?? 0);
+  }, 0);
+
+  const maxScore = questions.length * 2;
+
+  return Math.round((total / maxScore) * 100);
+}
+
+function getLevel(score: number) {
+  if (score >= 80) {
+    return "Poste bien ajusté";
+  }
+
+  if (score >= 60) {
+    return "Ajustements légers recommandés";
+  }
+
+  return "Ajustements prioritaires recommandés";
+}
+
+function getMessage(score: number) {
+  if (score >= 80) {
+    return "Votre poste semble globalement bien ajusté. Continuez à varier vos positions et à prendre des pauses.";
+  }
+
+  if (score >= 60) {
+    return "Votre poste semble acceptable, mais certains ajustements pourraient améliorer votre confort.";
+  }
+
+  return "Plusieurs éléments du poste pourraient être améliorés. Priorisez les ajustements simples : écran, appuis, souris, clavier et pauses.";
+}
+
+function getPriorities(answers: Record<string, number>) {
+  const categoryTotals: Record<Priority, { score: number; count: number }> = {
+    Écran: { score: 0, count: 0 },
+    Chaise: { score: 0, count: 0 },
+    Souris: { score: 0, count: 0 },
+    Clavier: { score: 0, count: 0 },
+    "Ordinateur portable": { score: 0, count: 0 },
+    Mouvement: { score: 0, count: 0 },
+  };
+
+  questions.forEach((question) => {
+    categoryTotals[question.category].score += answers[question.id] ?? 0;
+    categoryTotals[question.category].count += 1;
+  });
+
+  return Object.entries(categoryTotals)
+    .map(([category, result]) => {
+      return {
+        category,
+        average: result.score / result.count,
+      };
+    })
+    .filter((item) => item.average < 1.5)
+    .sort((a, b) => a.average - b.average)
+    .map((item) => item.category);
+}
 
 export default function WorkstationAuditScreen() {
-  const [answers, setAnswers] = useState<Record<number, number>>({});
-  const [showResults, setShowResults] = useState(false);
+  const [stats, setStats] = useState<AppStats | null>(null);
+  const [answers, setAnswers] = useState<Record<string, number>>({});
+  const [showResult, setShowResult] = useState(false);
+  const [savedMessage, setSavedMessage] = useState("");
 
-  const answeredCount = Object.keys(answers).length;
-  const progress = Math.round((answeredCount / questions.length) * 100);
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
 
-  function selectAnswer(questionId: number, value: number) {
-    setAnswers({
-      ...answers,
-      [questionId]: value,
-    });
-  }
+  useEffect(() => {
+    const savedStats = getAppStats();
+    setStats(savedStats);
+  }, []);
 
-  function calculateScore() {
-    const totalRisk = Object.values(answers).reduce((total, value) => {
-      return total + value;
-    }, 0);
+  const completedQuestions = Object.keys(answers).length;
+  const totalQuestions = questions.length;
+  const allQuestionsCompleted = completedQuestions === totalQuestions;
 
-    const maxRisk = questions.length * 4;
-    const riskPercentage = totalRisk / maxRisk;
-
-    return Math.round(100 - riskPercentage * 100);
-  }
-
-  function getLevel(score: number) {
-    if (score >= 80) return "Poste bien ajusté";
-    if (score >= 50) return "Poste à améliorer";
-    return "Poste à risque élevé";
-  }
-
-  function getMessage(score: number) {
-    if (score >= 80) {
-      return "Votre poste semble globalement bien organisé. Continuez à varier vos positions et à faire des pauses.";
-    }
-
-    if (score >= 50) {
-      return "Votre poste présente quelques éléments à améliorer. De petits ajustements peuvent déjà réduire certaines contraintes.";
-    }
-
-    return "Votre poste présente plusieurs facteurs de risque. Priorisez les ajustements simples : écran, souris, clavier, chaise et pauses.";
-  }
-
-  function getPriorities() {
-    const categoryRisk: Record<string, number> = {};
-
-    questions.forEach((question) => {
-      const answer = answers[question.id] ?? 0;
-
-      categoryRisk[question.category] =
-        (categoryRisk[question.category] || 0) + answer;
-    });
-
-    return Object.entries(categoryRisk)
-      .sort((a, b) => b[1] - a[1])
-      .filter(([, value]) => value > 0)
-      .slice(0, 3)
-      .map(([category]) => category);
-  }
-
-  const score = calculateScore();
+  const score = calculateScore(answers);
   const level = getLevel(score);
-  const message = getMessage(score);
-  const priorities = getPriorities();
+  const priorities = getPriorities(answers);
 
-  if (showResults) {
-    return (
-      <SafeAreaView style={styles.safeArea}>
-        <ScrollView contentContainerStyle={styles.container}>
-          <Text style={styles.pageTitle}>Résultat de l’audit</Text>
+  const previousResult = stats?.workstationAuditResult ?? null;
 
-          <View style={styles.resultCard}>
-            <Text style={styles.score}>{score}/100</Text>
-            <Text style={styles.level}>{level}</Text>
-            <Text style={styles.resultMessage}>{message}</Text>
-          </View>
+  function handleAnswer(questionId: string, value: number) {
+    setAnswers((currentAnswers) => ({
+      ...currentAnswers,
+      [questionId]: value,
+    }));
 
-          <Text style={styles.sectionTitle}>Priorités du poste</Text>
+    setSavedMessage("");
+  }
 
-          {priorities.length > 0 ? (
-            priorities.map((priority, index) => (
-              <View key={priority} style={styles.priorityCard}>
-                <Text style={styles.priorityNumber}>{index + 1}</Text>
-                <Text style={styles.priorityText}>{priority}</Text>
-              </View>
-            ))
-          ) : (
-            <View style={styles.priorityCard}>
-              <Text style={styles.priorityText}>
-                Aucune priorité majeure détectée.
-              </Text>
-            </View>
-          )}
+  function handleSubmit() {
+    const result = {
+      score,
+      level,
+      priorities,
+      completedAt: new Date().toISOString(),
+    };
 
-          <View style={styles.recommendationBox}>
-            <Text style={styles.recommendationTitle}>
-              Recommandation simple
-            </Text>
-            <Text style={styles.recommendationText}>
-              Commencez par modifier un seul élément aujourd’hui. Par exemple :
-              surélever l’écran, rapprocher la souris ou planifier une pause
-              active.
-            </Text>
-          </View>
+    const updatedStats = saveWorkstationAuditResult(result);
 
-          <View style={styles.warningBox}>
-            <Text style={styles.warningText}>
-              Cet audit est un outil d’éducation et de prévention. Il ne remplace
-              pas une évaluation ergonomique complète.
-            </Text>
-          </View>
+    setStats(updatedStats);
+    setShowResult(true);
+    setSavedMessage("Audit sauvegardé ✓");
+  }
 
-          <Pressable
-            style={styles.primaryButton}
-            onPress={() => {
-              setAnswers({});
-              setShowResults(false);
-            }}
-          >
-            <Text style={styles.primaryButtonText}>Refaire l’audit</Text>
-          </Pressable>
-
-          <Link href="/dashboard" asChild>
-            <Pressable style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>
-                Voir mon tableau de bord
-              </Text>
-            </Pressable>
-          </Link>
-
-          <BottomNav />
-        </ScrollView>
-      </SafeAreaView>
-    );
+  function handleResetAudit() {
+    setAnswers({});
+    setShowResult(false);
+    setSavedMessage("");
   }
 
   return (
@@ -207,70 +231,205 @@ export default function WorkstationAuditScreen() {
         <Text style={styles.pageTitle}>Audit du poste</Text>
 
         <Text style={styles.subtitle}>
-          Répondez à quelques questions pour obtenir un premier score ergonomique
-          de votre poste de travail.
+          Analysez rapidement votre environnement de travail pour repérer les
+          ajustements ergonomiques prioritaires.
         </Text>
 
-        <View style={styles.progressContainer}>
-          <View style={[styles.progressBar, { width: `${progress}%` }]} />
+        <View style={styles.heroCard}>
+          <View>
+            <Text style={styles.heroLabel}>Ergonomie</Text>
+            <Text style={styles.heroTitle}>Observer votre poste simplement.</Text>
+            <Text style={styles.heroText}>
+              Cet audit aide à identifier les éléments qui peuvent influencer le
+              confort : écran, chaise, clavier, souris et mouvement.
+            </Text>
+          </View>
+
+          <View style={styles.progressCircle}>
+            <Text style={styles.progressNumber}>{completedQuestions}</Text>
+            <Text style={styles.progressLabel}>/{totalQuestions}</Text>
+          </View>
         </View>
 
-        <Text style={styles.progressText}>{progress}% complété</Text>
+        {previousResult && !showResult && (
+          <View style={styles.previousCard}>
+            <Text style={styles.sectionTitle}>Dernier audit</Text>
 
-        {questions.map((question) => (
-          <View key={question.id} style={styles.questionCard}>
-            <Text style={styles.category}>{question.category}</Text>
-            <Text style={styles.questionText}>{question.text}</Text>
+            <View style={styles.previousScoreRow}>
+              <Text style={styles.previousScore}>
+                {previousResult.score}/100
+              </Text>
+              <Text style={styles.previousLevel}>{previousResult.level}</Text>
+            </View>
 
-            {options.map((option) => {
-              const selected = answers[question.id] === option.value;
-
-              return (
-                <Pressable
-                  key={option.label}
-                  style={[
-                    styles.optionButton,
-                    selected && styles.optionButtonSelected,
-                  ]}
-                  onPress={() => selectAnswer(question.id, option.value)}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      selected && styles.optionTextSelected,
-                    ]}
-                  >
-                    {option.label}
-                  </Text>
-                </Pressable>
-              );
-            })}
+            {previousResult.priorities.length > 0 ? (
+              <Text style={styles.previousText}>
+                Priorités : {previousResult.priorities.join(", ")}
+              </Text>
+            ) : (
+              <Text style={styles.previousText}>
+                Aucune priorité majeure détectée.
+              </Text>
+            )}
           </View>
-        ))}
+        )}
+
+        <View style={styles.progressCard}>
+          <View style={styles.progressHeader}>
+            <Text style={styles.progressTitle}>Progression</Text>
+            <Text style={styles.progressValue}>
+              {completedQuestions}/{totalQuestions}
+            </Text>
+          </View>
+
+          <View style={styles.progressBarBackground}>
+            <View
+              style={[
+                styles.progressBarFill,
+                {
+                  width: `${Math.round(
+                    (completedQuestions / totalQuestions) * 100
+                  )}%`,
+                },
+              ]}
+            />
+          </View>
+        </View>
+
+        {questions.map((question, index) => {
+          const selectedAnswer = answers[question.id];
+
+          return (
+            <View key={question.id} style={styles.questionCard}>
+              <View style={styles.questionHeader}>
+                <View style={styles.questionNumber}>
+                  <Text style={styles.questionNumberText}>{index + 1}</Text>
+                </View>
+
+                <View style={styles.questionTitleContainer}>
+                  <Text style={styles.questionCategory}>
+                    {question.category}
+                  </Text>
+                  <Text style={styles.questionTitle}>{question.title}</Text>
+                </View>
+              </View>
+
+              <Text style={styles.questionText}>{question.text}</Text>
+
+              <View style={styles.optionsContainer}>
+                {answerOptions.map((option) => {
+                  const selected = selectedAnswer === option.value;
+
+                  return (
+                    <Pressable
+                      key={`${question.id}-${option.value}`}
+                      style={[
+                        styles.optionButton,
+                        selected && styles.optionButtonSelected,
+                      ]}
+                      onPress={() => handleAnswer(question.id, option.value)}
+                    >
+                      <Text
+                        style={[
+                          styles.optionText,
+                          selected && styles.optionTextSelected,
+                        ]}
+                      >
+                        {option.label}
+                      </Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          );
+        })}
+
+        {!allQuestionsCompleted && (
+          <View style={styles.infoBox}>
+            <Text style={styles.infoText}>
+              Répondez à toutes les questions pour calculer votre score de poste.
+            </Text>
+          </View>
+        )}
 
         <Pressable
           style={[
             styles.primaryButton,
-            answeredCount < questions.length && styles.disabledButton,
+            !allQuestionsCompleted && styles.disabledButton,
           ]}
-          disabled={answeredCount < questions.length}
-          onPress={() => {
-            saveWorkstationAuditResult({
-              score,
-              level,
-              priorities,
-              completedAt: new Date().toISOString(),
-            });
-
-            setShowResults(true);
-          }}
+          onPress={handleSubmit}
+          disabled={!allQuestionsCompleted}
         >
-          <Text style={styles.primaryButtonText}>Voir mon score du poste</Text>
+          <Text style={styles.primaryButtonText}>Calculer mon audit</Text>
         </Pressable>
 
-        <Link href="/" asChild>
+        {showResult && (
+          <View style={styles.resultCard}>
+            <Text style={styles.resultLabel}>Résultat</Text>
+
+            <Text style={styles.resultScore}>{score}/100</Text>
+
+            <Text style={styles.resultLevel}>{level}</Text>
+
+            <Text style={styles.resultText}>{getMessage(score)}</Text>
+
+            {priorities.length > 0 ? (
+              <>
+                <Text style={styles.sectionTitle}>Priorités détectées</Text>
+
+                {priorities.map((priority, index) => (
+                  <View key={priority} style={styles.priorityRow}>
+                    <View style={styles.priorityNumber}>
+                      <Text style={styles.priorityNumberText}>{index + 1}</Text>
+                    </View>
+
+                    <Text style={styles.priorityText}>{priority}</Text>
+                  </View>
+                ))}
+              </>
+            ) : (
+              <Text style={styles.resultText}>
+                Aucun ajustement majeur détecté pour le moment.
+              </Text>
+            )}
+
+            {savedMessage.length > 0 && (
+              <Text style={styles.savedMessage}>{savedMessage}</Text>
+            )}
+
+            <Link href="/personal-plan" asChild>
+              <Pressable style={styles.primaryButton}>
+                <Text style={styles.primaryButtonText}>
+                  Voir mon plan personnalisé
+                </Text>
+              </Pressable>
+            </Link>
+          </View>
+        )}
+
+        <Pressable style={styles.secondaryButton} onPress={handleResetAudit}>
+          <Text style={styles.secondaryButtonText}>Recommencer l’audit</Text>
+        </Pressable>
+
+        <View style={styles.warningBox}>
+          <Text style={styles.warningText}>
+            Cet audit est un outil éducatif. Il ne remplace pas une évaluation
+            ergonomique complète par un professionnel.
+          </Text>
+        </View>
+
+        <Link href="/questionnaire" asChild>
           <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Retour à l’accueil</Text>
+            <Text style={styles.secondaryButtonText}>Faire le questionnaire TMS</Text>
+          </Pressable>
+        </Link>
+
+        <Link href="/dashboard" asChild>
+          <Pressable style={styles.secondaryButton}>
+            <Text style={styles.secondaryButtonText}>
+              Voir mon tableau de bord
+            </Text>
           </Pressable>
         </Link>
 
@@ -280,199 +439,358 @@ export default function WorkstationAuditScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F4F8FB",
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  progressContainer: {
-    height: 12,
-    backgroundColor: "#DCE9EF",
-    borderRadius: 20,
-    overflow: "hidden",
-    marginBottom: 8,
-  },
-  progressBar: {
-    height: "100%",
-    backgroundColor: "#1E8A6A",
-  },
-  progressText: {
-    fontSize: 14,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  questionCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 18,
-  },
-  category: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#1E8A6A",
-    marginBottom: 8,
-    textTransform: "uppercase",
-  },
-  questionText: {
-    fontSize: 17,
-    lineHeight: 24,
-    fontWeight: "700",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  optionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 8,
-  },
-  optionButtonSelected: {
-    backgroundColor: "#1E8A6A",
-    borderColor: "#1E8A6A",
-  },
-  optionText: {
-    color: "#183642",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  optionTextSelected: {
-    color: "#FFFFFF",
-  },
-  primaryButton: {
-    marginTop: 18,
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  disabledButton: {
-    backgroundColor: "#A9BBC4",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  secondaryButton: {
-    marginTop: 12,
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  resultCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 28,
-    alignItems: "center",
-    marginTop: 20,
-    marginBottom: 28,
-  },
-  score: {
-    fontSize: 56,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  level: {
-    marginTop: 8,
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#183642",
-    textAlign: "center",
-  },
-  resultMessage: {
-    marginTop: 14,
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    textAlign: "center",
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  priorityCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    padding: 16,
-    marginBottom: 12,
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  priorityNumber: {
-    width: 34,
-    height: 34,
-    borderRadius: 17,
-    backgroundColor: "#DFF4EC",
-    color: "#1E8A6A",
-    textAlign: "center",
-    lineHeight: 34,
-    fontWeight: "900",
-    marginRight: 12,
-  },
-  priorityText: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#183642",
-  },
-  recommendationBox: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 20,
-    padding: 18,
-    marginTop: 10,
-    marginBottom: 16,
-  },
-  recommendationTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 8,
-  },
-  recommendationText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-  },
-  warningBox: {
-    marginTop: 8,
-    backgroundColor: "#FFF7E6",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#F3D28B",
-  },
-  warningText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#725A20",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 24,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 18,
+    },
+    heroLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 6,
+    },
+    heroTitle: {
+      fontSize: 27,
+      lineHeight: 34,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    heroText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      maxWidth: 520,
+    },
+    progressCircle: {
+      width: 78,
+      height: 78,
+      borderRadius: 39,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    progressNumber: {
+      fontSize: 24,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    progressLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    previousCard: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 22,
+      padding: 18,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    previousScoreRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+      marginBottom: 8,
+    },
+    previousScore: {
+      fontSize: 30,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    previousLevel: {
+      flex: 1,
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    previousText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+    },
+    progressCard: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      padding: 16,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    progressHeader: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginBottom: 10,
+    },
+    progressTitle: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    progressValue: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    progressBarBackground: {
+      height: 12,
+      backgroundColor: colors.card,
+      borderRadius: 20,
+      overflow: "hidden",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    progressBarFill: {
+      height: "100%",
+      backgroundColor: colors.primary,
+      borderRadius: 20,
+    },
+    questionCard: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    questionHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginBottom: 14,
+      gap: 12,
+    },
+    questionNumber: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    questionNumberText: {
+      color: colors.black,
+      fontSize: 15,
+      fontWeight: "900",
+    },
+    questionTitleContainer: {
+      flex: 1,
+    },
+    questionCategory: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginBottom: 3,
+    },
+    questionTitle: {
+      fontSize: 20,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    questionText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      marginBottom: 16,
+    },
+    optionsContainer: {
+      gap: 8,
+    },
+    optionButton: {
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderRadius: 15,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+    },
+    optionButtonSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primaryDark,
+    },
+    optionText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    optionTextSelected: {
+      color: colors.black,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    disabledButton: {
+      opacity: 0.45,
+    },
+    secondaryButton: {
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 12,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    infoBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    infoText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+      textAlign: "center",
+      fontWeight: "800",
+    },
+    resultCard: {
+      backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+    },
+    resultLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 8,
+    },
+    resultScore: {
+      fontSize: 54,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    resultLevel: {
+      fontSize: 22,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 12,
+      textAlign: "center",
+    },
+    resultText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      textAlign: "center",
+      marginBottom: 18,
+    },
+    sectionTitle: {
+      fontSize: 21,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 14,
+      alignSelf: "stretch",
+    },
+    priorityRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      backgroundColor: colors.cardWarm,
+      borderRadius: 16,
+      padding: 12,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignSelf: "stretch",
+    },
+    priorityNumber: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    priorityNumberText: {
+      color: colors.black,
+      fontWeight: "900",
+      fontSize: 14,
+    },
+    priorityText: {
+      flex: 1,
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    savedMessage: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "900",
+      textAlign: "center",
+      marginBottom: 14,
+    },
+    warningBox: {
+      backgroundColor: colors.warning,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 14,
+    },
+    warningText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
+    },
+  });
+}
