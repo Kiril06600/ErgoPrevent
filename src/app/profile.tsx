@@ -16,6 +16,8 @@ import {
   resetAppStats,
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { ThemeMode, useAppTheme } from "../theme/ThemeContext";
 
 const statuses = ["Étudiant", "Travailleur", "Télétravailleur", "Autre"];
 
@@ -26,6 +28,36 @@ const goals = [
   "Faire plus de pauses",
   "Bouger davantage",
 ];
+
+const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
+const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
+
+function readLocalStorageValue(key: string) {
+  if (typeof window === "undefined") {
+    return null;
+  }
+
+  const value = window.localStorage.getItem(key);
+
+  if (!value) {
+    return null;
+  }
+
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function removeExtraLocalData() {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.localStorage.removeItem(CHECKIN_STORAGE_KEY);
+  window.localStorage.removeItem(ROUTINE_STORAGE_KEY);
+}
 
 export default function ProfileScreen() {
   const initialStats = getAppStats();
@@ -43,10 +75,22 @@ export default function ProfileScreen() {
   const [showData, setShowData] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
+  const { colors, mode, setThemeMode } = useAppTheme();
+  const styles = createStyles(colors);
+
   const questionnaireScore = stats.questionnaireResult?.score;
   const workstationScore = stats.workstationAuditResult?.score;
 
-  const exportedData = JSON.stringify(stats, null, 2);
+  const exportedData = JSON.stringify(
+    {
+      appStats: stats,
+      checkins: readLocalStorageValue(CHECKIN_STORAGE_KEY),
+      routine: readLocalStorageValue(ROUTINE_STORAGE_KEY),
+      themeMode: mode,
+    },
+    null,
+    2
+  );
 
   function handleSaveProfile() {
     const updatedStats = saveUserProfile({
@@ -64,6 +108,8 @@ export default function ProfileScreen() {
   function handleResetData() {
     const resetStats = resetAppStats();
 
+    removeExtraLocalData();
+
     setStats(resetStats);
     setFirstName("");
     setStatus("Étudiant");
@@ -74,15 +120,88 @@ export default function ProfileScreen() {
     setShowResetConfirm(false);
   }
 
+  function handleThemeChange(nextMode: ThemeMode) {
+    setThemeMode(nextMode);
+    setSavedMessage(
+      nextMode === "dark" ? "Mode sombre activé ✓" : "Mode clair activé ✓"
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <Text style={styles.pageTitle}>Profil et paramètres</Text>
 
         <Text style={styles.subtitle}>
-          Personnalisez votre profil, consultez vos données locales et gérez vos
-          paramètres de confidentialité.
+          Personnalisez votre profil, gérez l’apparence de l’application et
+          contrôlez vos données locales.
         </Text>
+
+        <View style={styles.heroCard}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarText}>
+              {firstName.length > 0 ? firstName[0].toUpperCase() : "E"}
+            </Text>
+          </View>
+
+          <View style={styles.heroTextContainer}>
+            <Text style={styles.heroTitle}>
+              {firstName ? firstName : "Votre espace"}
+            </Text>
+            <Text style={styles.heroText}>
+              {profession
+                ? profession
+                : "Configurez votre profil pour personnaliser votre expérience."}
+            </Text>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Apparence</Text>
+
+          <Text style={styles.dataText}>
+            Choisissez le mode visuel de l’application. Le choix est conservé
+            dans ce navigateur.
+          </Text>
+
+          <View style={styles.themeOptions}>
+            <Pressable
+              style={[
+                styles.themeChoice,
+                mode === "light" && styles.themeChoiceSelected,
+              ]}
+              onPress={() => handleThemeChange("light")}
+            >
+              <Text style={styles.themeChoiceIcon}>☀️</Text>
+              <Text
+                style={[
+                  styles.themeChoiceText,
+                  mode === "light" && styles.themeChoiceTextSelected,
+                ]}
+              >
+                Mode clair
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.themeChoice,
+                mode === "dark" && styles.themeChoiceSelected,
+              ]}
+              onPress={() => handleThemeChange("dark")}
+            >
+              <Text style={styles.themeChoiceIcon}>🌙</Text>
+              <Text
+                style={[
+                  styles.themeChoiceText,
+                  mode === "dark" && styles.themeChoiceTextSelected,
+                ]}
+              >
+                Mode sombre
+              </Text>
+            </Pressable>
+          </View>
+        </View>
 
         <View style={styles.card}>
           <Text style={styles.sectionTitle}>Informations personnelles</Text>
@@ -91,6 +210,7 @@ export default function ProfileScreen() {
           <TextInput
             style={styles.input}
             placeholder="Ex. Cyril"
+            placeholderTextColor={colors.textMuted}
             value={firstName}
             onChangeText={setFirstName}
           />
@@ -127,6 +247,7 @@ export default function ProfileScreen() {
           <TextInput
             style={styles.input}
             placeholder="Ex. médecine, ergonomie, bureau, informatique..."
+            placeholderTextColor={colors.textMuted}
             value={profession}
             onChangeText={setProfession}
           />
@@ -232,9 +353,8 @@ export default function ProfileScreen() {
           <Text style={styles.sectionTitle}>Données locales</Text>
 
           <Text style={styles.dataText}>
-            Pour l’instant, vos données sont sauvegardées uniquement dans ce
-            navigateur, sur cet appareil. Elles ne sont pas envoyées vers une
-            base de données externe.
+            Vos données sont sauvegardées uniquement dans ce navigateur, sur cet
+            appareil. Elles ne sont pas envoyées vers une base de données externe.
           </Text>
 
           <Pressable
@@ -255,18 +375,17 @@ export default function ProfileScreen() {
           )}
         </View>
 
-<Link href="/export-data" asChild>
-  <Pressable style={styles.primaryButton}>
-    <Text style={styles.primaryButtonText}>
-      Exporter mes données
-    </Text>
-  </Pressable>
-</Link>
+        <Link href="/export-data" asChild>
+          <Pressable style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Exporter mes données</Text>
+          </Pressable>
+        </Link>
 
         <View style={styles.warningBox}>
           <Text style={styles.warningText}>
             La réinitialisation supprime le profil, les scores, les pauses, les
-            exercices, les capsules et les points sauvegardés sur cet appareil.
+            exercices, les capsules, les points, les routines et les check-ins
+            sauvegardés sur cet appareil.
           </Text>
         </View>
 
@@ -316,224 +435,307 @@ export default function ProfileScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F4F8FB",
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 20,
-  },
-  sectionTitle: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 8,
-    marginTop: 12,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    fontSize: 16,
-    color: "#183642",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 10,
-  },
-  optionsContainer: {
-    gap: 8,
-    marginBottom: 10,
-  },
-  optionButton: {
-    paddingVertical: 12,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-  },
-  optionButtonSelected: {
-    backgroundColor: "#1E8A6A",
-    borderColor: "#1E8A6A",
-  },
-  optionText: {
-    color: "#183642",
-    fontSize: 15,
-    fontWeight: "600",
-  },
-  optionTextSelected: {
-    color: "#FFFFFF",
-  },
-  primaryButton: {
-    marginTop: 18,
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  savedMessage: {
-    marginTop: 12,
-    color: "#1E8A6A",
-    fontSize: 15,
-    fontWeight: "800",
-    textAlign: "center",
-  },
-  summaryCard: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 20,
-  },
-  summaryRow: {
-    borderTopWidth: 1,
-    borderTopColor: "#C7D7DF",
-    paddingVertical: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 14,
-  },
-  summaryLabel: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#536B78",
-  },
-  summaryValue: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#183642",
-  },
-  summaryValueSmall: {
-    flex: 1,
-    textAlign: "right",
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#183642",
-  },
-  healthBox: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 20,
-  },
-  healthTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 8,
-  },
-  healthText: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: "#536B78",
-  },
-  dataText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-    marginBottom: 14,
-  },
-  dataBox: {
-    backgroundColor: "#F4F8FB",
-    borderRadius: 16,
-    padding: 14,
-    marginTop: 12,
-    borderWidth: 1,
-    borderColor: "#DCE9EF",
-  },
-  dataCode: {
-    fontSize: 12,
-    lineHeight: 18,
-    color: "#183642",
-  },
-  warningBox: {
-    backgroundColor: "#FFF7E6",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#F3D28B",
-    marginBottom: 12,
-  },
-  warningText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#725A20",
-  },
-  dangerButton: {
-    backgroundColor: "#B94A48",
-    paddingVertical: 15,
-    borderRadius: 16,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  dangerButtonText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-  confirmBox: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-    marginBottom: 14,
-    borderWidth: 1,
-    borderColor: "#F3D28B",
-  },
-  confirmTitle: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 8,
-  },
-  confirmText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#536B78",
-    marginBottom: 14,
-  },
-  secondaryButton: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 12,
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 24,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 22,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 16,
+    },
+    avatarCircle: {
+      width: 62,
+      height: 62,
+      borderRadius: 31,
+      backgroundColor: colors.secondaryLight,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    avatarText: {
+      fontSize: 28,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    heroTextContainer: {
+      flex: 1,
+    },
+    heroTitle: {
+      fontSize: 23,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 4,
+    },
+    heroText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 22,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 14,
+    },
+    label: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 8,
+      marginTop: 12,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 10,
+    },
+    optionsContainer: {
+      gap: 8,
+      marginBottom: 10,
+    },
+    optionButton: {
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+    },
+    optionButtonSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primaryDark,
+    },
+    optionText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    optionTextSelected: {
+      color: colors.black,
+    },
+    themeOptions: {
+      flexDirection: "row",
+      gap: 12,
+      marginTop: 10,
+    },
+    themeChoice: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 18,
+      padding: 16,
+      alignItems: "center",
+    },
+    themeChoiceSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primaryDark,
+    },
+    themeChoiceIcon: {
+      fontSize: 24,
+      marginBottom: 8,
+    },
+    themeChoiceText: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    themeChoiceTextSelected: {
+      color: colors.black,
+    },
+    primaryButton: {
+      marginTop: 8,
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    savedMessage: {
+      marginTop: 4,
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+    summaryCard: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 22,
+      padding: 20,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    summaryRow: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingVertical: 12,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 14,
+    },
+    summaryLabel: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.textSoft,
+    },
+    summaryValue: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    summaryValueSmall: {
+      flex: 1,
+      textAlign: "right",
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+    },
+    healthBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 20,
+      padding: 18,
+      marginBottom: 20,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    healthTitle: {
+      fontSize: 18,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    healthText: {
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.textSoft,
+    },
+    dataText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      marginBottom: 14,
+    },
+    dataBox: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 16,
+      padding: 14,
+      marginTop: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    dataCode: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.text,
+    },
+    warningBox: {
+      backgroundColor: colors.warning,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 12,
+    },
+    warningText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
+    },
+    dangerButton: {
+      backgroundColor: colors.danger,
+      paddingVertical: 15,
+      borderRadius: 16,
+      alignItems: "center",
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+    },
+    dangerButtonText: {
+      color: colors.white,
+      fontSize: 15,
+      fontWeight: "900",
+    },
+    confirmBox: {
+      backgroundColor: colors.card,
+      borderRadius: 22,
+      padding: 18,
+      marginBottom: 14,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+    },
+    confirmTitle: {
+      fontSize: 18,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    confirmText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+      marginBottom: 14,
+    },
+    secondaryButton: {
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 12,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+  });
+}
