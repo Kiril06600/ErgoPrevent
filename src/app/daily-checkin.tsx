@@ -11,6 +11,8 @@ import {
 import { Link } from "expo-router";
 import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
 
 type DailyCheckin = {
   id: string;
@@ -100,7 +102,6 @@ function saveNewCheckin(checkin: DailyCheckin) {
   }
 
   const savedCheckins = getSavedCheckins();
-
   const updatedCheckins = [checkin, ...savedCheckins];
 
   window.localStorage.setItem(
@@ -121,6 +122,9 @@ export default function DailyCheckinScreen() {
   const [time, setTime] = useState(currentDateAndTime.time);
   const [savedMessage, setSavedMessage] = useState("");
   const [previousCheckins, setPreviousCheckins] = useState<DailyCheckin[]>([]);
+
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
 
   useEffect(() => {
     const savedStats = getAppStats();
@@ -215,6 +219,7 @@ export default function DailyCheckinScreen() {
             value={date}
             onChangeText={setDate}
             placeholder="YYYY-MM-DD"
+            placeholderTextColor={colors.textMuted}
           />
 
           <Text style={styles.label}>Heure</Text>
@@ -223,6 +228,7 @@ export default function DailyCheckinScreen() {
             value={time}
             onChangeText={setTime}
             placeholder="HH:MM"
+            placeholderTextColor={colors.textMuted}
           />
 
           <Pressable style={styles.secondaryButton} onPress={handleUseCurrentTime}>
@@ -332,6 +338,7 @@ export default function DailyCheckinScreen() {
           <TextInput
             style={styles.textArea}
             placeholder="Ex. Douleur au cou après 2 heures sur ordinateur, fatigue élevée en fin de journée..."
+            placeholderTextColor={colors.textMuted}
             value={note}
             onChangeText={setNote}
             multiline
@@ -435,251 +442,263 @@ export default function DailyCheckinScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F4F8FB",
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    marginBottom: 24,
-  },
-  heroCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 24,
-    marginBottom: 18,
-  },
-  heroGreeting: {
-    fontSize: 17,
-    fontWeight: "900",
-    color: "#1E8A6A",
-    marginBottom: 8,
-  },
-  heroTitle: {
-    fontSize: 25,
-    lineHeight: 32,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  heroText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-  },
-  card: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 24,
-    padding: 20,
-    marginBottom: 18,
-  },
-  sectionTitle: {
-    fontSize: 21,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  label: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 8,
-    marginTop: 8,
-  },
-  input: {
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    fontSize: 16,
-    color: "#183642",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 10,
-  },
-  painNumber: {
-    fontSize: 48,
-    fontWeight: "900",
-    color: "#1E8A6A",
-    textAlign: "center",
-    marginBottom: 14,
-  },
-  painGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    gap: 8,
-    justifyContent: "center",
-    marginBottom: 14,
-  },
-  painButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  painButtonSelected: {
-    backgroundColor: "#1E8A6A",
-    borderColor: "#1E8A6A",
-  },
-  painButtonText: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#183642",
-  },
-  painButtonTextSelected: {
-    color: "#FFFFFF",
-  },
-  infoText: {
-    fontSize: 14,
-    lineHeight: 21,
-    color: "#536B78",
-    textAlign: "center",
-  },
-  optionsContainer: {
-    gap: 8,
-  },
-  optionButton: {
-    paddingVertical: 13,
-    paddingHorizontal: 14,
-    borderRadius: 14,
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-  },
-  optionButtonSelected: {
-    backgroundColor: "#1E8A6A",
-    borderColor: "#1E8A6A",
-  },
-  optionText: {
-    color: "#183642",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  optionTextSelected: {
-    color: "#FFFFFF",
-  },
-  textArea: {
-    minHeight: 120,
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    borderRadius: 16,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    fontSize: 15,
-    lineHeight: 21,
-    color: "#183642",
-    backgroundColor: "#FFFFFF",
-  },
-  primaryButton: {
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    marginBottom: 12,
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  savedMessage: {
-    color: "#1E8A6A",
-    fontSize: 15,
-    fontWeight: "900",
-    textAlign: "center",
-    marginBottom: 14,
-  },
-  summaryCard: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 22,
-    padding: 20,
-    marginBottom: 18,
-  },
-  summaryRow: {
-    borderTopWidth: 1,
-    borderTopColor: "#C7D7DF",
-    paddingVertical: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    gap: 14,
-  },
-  summaryLabel: {
-    fontSize: 15,
-    fontWeight: "800",
-    color: "#536B78",
-  },
-  summaryValue: {
-    fontSize: 15,
-    fontWeight: "900",
-    color: "#183642",
-    textAlign: "right",
-  },
-  historyCard: {
-    backgroundColor: "#F4F8FB",
-    borderRadius: 16,
-    padding: 14,
-    marginBottom: 10,
-  },
-  historyDate: {
-    fontSize: 14,
-    fontWeight: "900",
-    color: "#1E8A6A",
-    marginBottom: 4,
-  },
-  historyText: {
-    fontSize: 14,
-    lineHeight: 20,
-    color: "#183642",
-    fontWeight: "700",
-  },
-  historyNote: {
-    marginTop: 6,
-    fontSize: 13,
-    lineHeight: 19,
-    color: "#536B78",
-  },
-  warningBox: {
-    backgroundColor: "#FFF7E6",
-    borderRadius: 18,
-    padding: 16,
-    borderWidth: 1,
-    borderColor: "#F3D28B",
-    marginBottom: 14,
-  },
-  warningText: {
-    fontSize: 13,
-    lineHeight: 20,
-    color: "#725A20",
-  },
-  secondaryButton: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-    backgroundColor: "#FFFFFF",
-    marginBottom: 12,
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "800",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 24,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    heroGreeting: {
+      fontSize: 17,
+      fontWeight: "900",
+      color: colors.primary,
+      marginBottom: 8,
+    },
+    heroTitle: {
+      fontSize: 27,
+      lineHeight: 34,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    heroText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    sectionTitle: {
+      fontSize: 21,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 14,
+    },
+    label: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.text,
+      marginBottom: 8,
+      marginTop: 8,
+    },
+    input: {
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      fontSize: 16,
+      color: colors.text,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 10,
+    },
+    painNumber: {
+      fontSize: 48,
+      fontWeight: "900",
+      color: colors.primary,
+      textAlign: "center",
+      marginBottom: 14,
+    },
+    painGrid: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: 8,
+      justifyContent: "center",
+      marginBottom: 14,
+    },
+    painButton: {
+      width: 44,
+      height: 44,
+      borderRadius: 22,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    painButtonSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primaryDark,
+    },
+    painButtonText: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.text,
+    },
+    painButtonTextSelected: {
+      color: colors.black,
+    },
+    infoText: {
+      fontSize: 14,
+      lineHeight: 21,
+      color: colors.textSoft,
+      textAlign: "center",
+    },
+    optionsContainer: {
+      gap: 8,
+    },
+    optionButton: {
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderRadius: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+    },
+    optionButtonSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primaryDark,
+    },
+    optionText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    optionTextSelected: {
+      color: colors.black,
+    },
+    textArea: {
+      minHeight: 120,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 16,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      fontSize: 15,
+      lineHeight: 21,
+      color: colors.text,
+      backgroundColor: colors.cardWarm,
+    },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    savedMessage: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "900",
+      textAlign: "center",
+      marginBottom: 14,
+    },
+    summaryCard: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 22,
+      padding: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    summaryRow: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingVertical: 12,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      gap: 14,
+    },
+    summaryLabel: {
+      fontSize: 15,
+      fontWeight: "800",
+      color: colors.textSoft,
+    },
+    summaryValue: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.text,
+      textAlign: "right",
+    },
+    historyCard: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 16,
+      padding: 14,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    historyDate: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.primary,
+      marginBottom: 4,
+    },
+    historyText: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.text,
+      fontWeight: "700",
+    },
+    historyNote: {
+      marginTop: 6,
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSoft,
+    },
+    warningBox: {
+      backgroundColor: colors.warning,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 14,
+    },
+    warningText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
+    },
+    secondaryButton: {
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 12,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+  });
+}
