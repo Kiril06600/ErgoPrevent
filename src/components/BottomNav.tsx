@@ -31,6 +31,11 @@ const navItems = [
     href: "/exercises",
   },
   {
+    label: "Formation",
+    icon: "🎓",
+    href: "/education",
+  },
+  {
     label: "Dashboard",
     icon: "📊",
     href: "/dashboard",
@@ -81,17 +86,19 @@ function createStyles(colors: ThemeColors) {
       marginTop: 28,
       backgroundColor: colors.cardWarm,
       borderRadius: 28,
-      padding: 10,
+      padding: 8,
       flexDirection: "row",
       justifyContent: "space-between",
       borderWidth: 1,
       borderColor: colors.border,
+      gap: 4,
     },
     navItem: {
       flex: 1,
       alignItems: "center",
-      paddingVertical: 10,
-      borderRadius: 20,
+      paddingVertical: 9,
+      paddingHorizontal: 3,
+      borderRadius: 18,
     },
     navItemActive: {
       backgroundColor: colors.secondaryLight,
@@ -99,11 +106,11 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.primary,
     },
     navIcon: {
-      fontSize: 19,
+      fontSize: 18,
       marginBottom: 4,
     },
     navLabel: {
-      fontSize: 10,
+      fontSize: 9,
       fontWeight: "800",
       color: colors.textMuted,
       textAlign: "center",
