@@ -8,141 +8,235 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { addCompletedBreak, getAppStats } from "../lib/storage";
+import {
+  AppStats,
+  addCompletedBreak,
+  getAppStats,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
 
-const WORK_TIME = 25 * 60;
-const BREAK_TIME = 2 * 60;
+const WORK_DURATION = 25 * 60;
+const BREAK_DURATION = 2 * 60;
+
+function formatTime(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+
+  return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(
+    2,
+    "0"
+  )}`;
+}
 
 export default function TimerScreen() {
-  const savedStats = getAppStats();
-
-  const [secondsLeft, setSecondsLeft] = useState(WORK_TIME);
+  const [stats, setStats] = useState<AppStats | null>(null);
+  const [secondsRemaining, setSecondsRemaining] = useState(WORK_DURATION);
   const [isRunning, setIsRunning] = useState(false);
-  const [mode, setMode] = useState<"work" | "break">("work");
-  const [completedBreaks, setCompletedBreaks] = useState(
-    savedStats.completedBreaks
-  );
-  const [points, setPoints] = useState(savedStats.points);
+  const [timerMode, setTimerMode] = useState<"work" | "break">("work");
+  const [message, setMessage] = useState("");
+
+  const { colors } = useAppTheme();
+  const styles = createStyles(colors);
 
   useEffect(() => {
-    if (!isRunning) return;
+    const savedStats = getAppStats();
+    setStats(savedStats);
+  }, []);
+
+  useEffect(() => {
+    if (!isRunning) {
+      return;
+    }
 
     const interval = setInterval(() => {
-      setSecondsLeft((previousSeconds) => {
-        if (previousSeconds <= 1) {
-          if (mode === "work") {
-            setMode("break");
-            return BREAK_TIME;
-          } else {
-            setMode("work");
-            recordCompletedBreak();
-            setIsRunning(false);
-            return WORK_TIME;
-          }
+      setSecondsRemaining((currentSeconds) => {
+        if (currentSeconds > 1) {
+          return currentSeconds - 1;
         }
 
-        return previousSeconds - 1;
+        if (timerMode === "work") {
+          setTimerMode("break");
+          setMessage("Temps de pause. Prenez 2 minutes pour bouger.");
+          return BREAK_DURATION;
+        }
+
+        const updatedStats = addCompletedBreak();
+        setStats(updatedStats);
+        setTimerMode("work");
+        setIsRunning(false);
+        setMessage("Pause complétée ✓");
+        return WORK_DURATION;
       });
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [isRunning, mode]);
-  
-function recordCompletedBreak() {
-  const updatedStats = addCompletedBreak();
+  }, [isRunning, timerMode]);
 
-  setCompletedBreaks(updatedStats.completedBreaks);
-  setPoints(updatedStats.points);
-}
-  function formatTime(totalSeconds: number) {
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
+  const completedBreaks = stats?.completedBreaks ?? 0;
+  const points = stats?.points ?? 0;
 
-    return `${minutes.toString().padStart(2, "0")}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
+  const totalDuration = timerMode === "work" ? WORK_DURATION : BREAK_DURATION;
+  const progressPercent =
+    ((totalDuration - secondsRemaining) / totalDuration) * 100;
+
+  function handleStartPause() {
+    setIsRunning(!isRunning);
+    setMessage("");
   }
 
-  function startTimer() {
-    setIsRunning(true);
-  }
-
-  function pauseTimer() {
+  function handleReset() {
     setIsRunning(false);
+    setTimerMode("work");
+    setSecondsRemaining(WORK_DURATION);
+    setMessage("");
   }
 
-  function resetTimer() {
+  function handleSwitchToWork() {
     setIsRunning(false);
-    setMode("work");
-    setSecondsLeft(WORK_TIME);
+    setTimerMode("work");
+    setSecondsRemaining(WORK_DURATION);
+    setMessage("");
   }
 
-  function skipToBreak() {
-    setMode("break");
-    setSecondsLeft(BREAK_TIME);
-    setIsRunning(true);
+  function handleSwitchToBreak() {
+    setIsRunning(false);
+    setTimerMode("break");
+    setSecondsRemaining(BREAK_DURATION);
+    setMessage("");
   }
 
-  function completeBreakNow() {
-  setMode("work");
-  setSecondsLeft(WORK_TIME);
-  setIsRunning(false);
-  recordCompletedBreak();
-}
+  function handleManualBreakCompleted() {
+    const updatedStats = addCompletedBreak();
 
-  const isWorkMode = mode === "work";
+    setStats(updatedStats);
+    setIsRunning(false);
+    setTimerMode("work");
+    setSecondsRemaining(WORK_DURATION);
+    setMessage("Pause ajoutée à votre progression ✓");
+  }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Minuterie active</Text>
+        <Text style={styles.pageTitle}>Minuterie</Text>
 
         <Text style={styles.subtitle}>
-          Travaillez pendant 25 minutes, puis prenez une pause active de 2 minutes.
+          Alternez entre périodes de concentration et pauses actives pour limiter
+          l’immobilité prolongée.
         </Text>
 
+        <View style={styles.heroCard}>
+          <View>
+            <Text style={styles.heroLabel}>
+              {timerMode === "work" ? "Travail" : "Pause active"}
+            </Text>
+
+            <Text style={styles.heroTitle}>
+              {timerMode === "work"
+                ? "Session de concentration"
+                : "Temps de bouger"}
+            </Text>
+
+            <Text style={styles.heroText}>
+              {timerMode === "work"
+                ? "Travaillez pendant 25 minutes, puis prenez une courte pause."
+                : "Levez-vous, marchez, respirez ou faites un mouvement doux."}
+            </Text>
+          </View>
+
+          <View style={styles.pointsCircle}>
+            <Text style={styles.pointsNumber}>{points}</Text>
+            <Text style={styles.pointsLabel}>points</Text>
+          </View>
+        </View>
+
         <View style={styles.timerCard}>
-          <Text style={styles.modeText}>
-            {isWorkMode ? "Temps de travail" : "Pause active"}
-          </Text>
+          <View style={styles.modeSwitch}>
+            <Pressable
+              style={[
+                styles.modeButton,
+                timerMode === "work" && styles.modeButtonActive,
+              ]}
+              onPress={handleSwitchToWork}
+            >
+              <Text
+                style={[
+                  styles.modeButtonText,
+                  timerMode === "work" && styles.modeButtonTextActive,
+                ]}
+              >
+                Travail
+              </Text>
+            </Pressable>
 
-          <Text style={styles.timerText}>{formatTime(secondsLeft)}</Text>
+            <Pressable
+              style={[
+                styles.modeButton,
+                timerMode === "break" && styles.modeButtonActive,
+              ]}
+              onPress={handleSwitchToBreak}
+            >
+              <Text
+                style={[
+                  styles.modeButtonText,
+                  timerMode === "break" && styles.modeButtonTextActive,
+                ]}
+              >
+                Pause
+              </Text>
+            </Pressable>
+          </View>
 
-          <Text style={styles.instructionText}>
-            {isWorkMode
-              ? "Concentrez-vous. Une pause vous sera proposée à la fin."
-              : "Levez-vous, marchez un peu et changez de position."}
-          </Text>
+          <View style={styles.timerCircle}>
+            <Text style={styles.timerLabel}>
+              {timerMode === "work" ? "Focus" : "Pause"}
+            </Text>
 
-          <View style={styles.buttonsRow}>
-            {!isRunning ? (
-              <Pressable style={styles.primaryButton} onPress={startTimer}>
-                <Text style={styles.primaryButtonText}>Démarrer</Text>
-              </Pressable>
-            ) : (
-              <Pressable style={styles.secondaryButton} onPress={pauseTimer}>
-                <Text style={styles.secondaryButtonText}>Pause</Text>
-              </Pressable>
-            )}
+            <Text style={styles.timerText}>{formatTime(secondsRemaining)}</Text>
 
-            <Pressable style={styles.secondaryButton} onPress={resetTimer}>
+            <Text style={styles.timerSmallText}>
+              {isRunning ? "Minuterie en cours" : "Prêt à commencer"}
+            </Text>
+          </View>
+
+          <View style={styles.progressBarBackground}>
+            <View
+              style={[
+                styles.progressBarFill,
+                { width: `${progressPercent}%` },
+              ]}
+            />
+          </View>
+
+          <View style={styles.buttonRow}>
+            <Pressable style={styles.primaryButton} onPress={handleStartPause}>
+              <Text style={styles.primaryButtonText}>
+                {isRunning ? "Mettre en pause" : "Démarrer"}
+              </Text>
+            </Pressable>
+
+            <Pressable style={styles.secondaryButton} onPress={handleReset}>
               <Text style={styles.secondaryButtonText}>Réinitialiser</Text>
             </Pressable>
           </View>
 
-          {isWorkMode ? (
-            <Pressable style={styles.linkButton} onPress={skipToBreak}>
-              <Text style={styles.linkButtonText}>Passer directement à la pause</Text>
-            </Pressable>
-          ) : (
-            <Pressable style={styles.linkButton} onPress={completeBreakNow}>
-              <Text style={styles.linkButtonText}>J’ai terminé ma pause</Text>
-            </Pressable>
+          <Pressable
+            style={styles.secondaryButtonFull}
+            onPress={handleManualBreakCompleted}
+          >
+            <Text style={styles.secondaryButtonText}>
+              Marquer une pause comme complétée
+            </Text>
+          </Pressable>
+
+          {message.length > 0 && (
+            <Text style={styles.savedMessage}>{message}</Text>
           )}
         </View>
 
-        <View style={styles.statsContainer}>
+        <View style={styles.statsGrid}>
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{completedBreaks}</Text>
             <Text style={styles.statLabel}>pauses complétées</Text>
@@ -150,161 +244,283 @@ function recordCompletedBreak() {
 
           <View style={styles.statCard}>
             <Text style={styles.statNumber}>{points}</Text>
-            <Text style={styles.statLabel}>points gagnés</Text>
+            <Text style={styles.statLabel}>points cumulés</Text>
           </View>
         </View>
 
         <View style={styles.tipBox}>
-          <Text style={styles.tipTitle}>Conseil de pause</Text>
+          <Text style={styles.tipTitle}>Conseil</Text>
           <Text style={styles.tipText}>
-            Pendant votre pause, évitez seulement de rester assis sur votre téléphone.
-            L’objectif est de changer de position et de bouger doucement.
+            Vous n’avez pas besoin d’une longue pause pour créer un effet utile.
+            Deux minutes peuvent suffire pour changer de position, relâcher les
+            épaules et réactiver le mouvement.
           </Text>
         </View>
 
-        <Link href="/" asChild>
-          <Pressable style={styles.backButton}>
-            <Text style={styles.backButtonText}>Retour à l’accueil</Text>
+        <Link href="/routine" asChild>
+          <Pressable style={styles.secondaryButtonFull}>
+            <Text style={styles.secondaryButtonText}>Voir ma routine du jour</Text>
           </Pressable>
         </Link>
+
+        <Link href="/exercises" asChild>
+          <Pressable style={styles.secondaryButtonFull}>
+            <Text style={styles.secondaryButtonText}>Voir les exercices</Text>
+          </Pressable>
+        </Link>
+
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: "#F4F8FB",
-  },
-  container: {
-    padding: 24,
-    paddingBottom: 48,
-  },
-  pageTitle: {
-    fontSize: 32,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 10,
-  },
-  subtitle: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    marginBottom: 26,
-  },
-  timerCard: {
-    backgroundColor: "#FFFFFF",
-    borderRadius: 28,
-    padding: 28,
-    alignItems: "center",
-    marginBottom: 22,
-  },
-  modeText: {
-    fontSize: 18,
-    fontWeight: "800",
-    color: "#1E8A6A",
-    marginBottom: 16,
-  },
-  timerText: {
-    fontSize: 72,
-    fontWeight: "900",
-    color: "#183642",
-    marginBottom: 14,
-  },
-  instructionText: {
-    fontSize: 16,
-    lineHeight: 24,
-    color: "#536B78",
-    textAlign: "center",
-    marginBottom: 24,
-  },
-  buttonsRow: {
-    width: "100%",
-    gap: 12,
-  },
-  primaryButton: {
-    backgroundColor: "#1E8A6A",
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-  },
-  primaryButtonText: {
-    color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  secondaryButton: {
-    paddingVertical: 16,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-  },
-  secondaryButtonText: {
-    color: "#1E5B7A",
-    fontSize: 16,
-    fontWeight: "800",
-  },
-  linkButton: {
-    marginTop: 18,
-  },
-  linkButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  statsContainer: {
-    flexDirection: "row",
-    gap: 12,
-    marginBottom: 22,
-  },
-  statCard: {
-    flex: 1,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 22,
-    padding: 18,
-    alignItems: "center",
-  },
-  statNumber: {
-    fontSize: 34,
-    fontWeight: "900",
-    color: "#1E8A6A",
-  },
-  statLabel: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#536B78",
-    textAlign: "center",
-  },
-  tipBox: {
-    backgroundColor: "#EAF7F1",
-    borderRadius: 20,
-    padding: 18,
-    marginBottom: 18,
-  },
-  tipTitle: {
-    fontSize: 17,
-    fontWeight: "800",
-    color: "#183642",
-    marginBottom: 8,
-  },
-  tipText: {
-    fontSize: 15,
-    lineHeight: 22,
-    color: "#536B78",
-  },
-  backButton: {
-    paddingVertical: 14,
-    borderRadius: 16,
-    alignItems: "center",
-    borderWidth: 1,
-    borderColor: "#C7D7DF",
-  },
-  backButtonText: {
-    color: "#1E5B7A",
-    fontSize: 15,
-    fontWeight: "700",
-  },
-});
+function createStyles(colors: ThemeColors) {
+  return StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    container: {
+      padding: 24,
+      paddingBottom: 48,
+    },
+    pageTitle: {
+      fontSize: 32,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 10,
+    },
+    subtitle: {
+      fontSize: 16,
+      lineHeight: 24,
+      color: colors.textSoft,
+      marginBottom: 24,
+    },
+    heroCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 18,
+    },
+    heroLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 6,
+    },
+    heroTitle: {
+      fontSize: 27,
+      lineHeight: 34,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    heroText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      maxWidth: 520,
+    },
+    pointsCircle: {
+      width: 78,
+      height: 78,
+      borderRadius: 39,
+      backgroundColor: colors.primary,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    pointsNumber: {
+      fontSize: 22,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    pointsLabel: {
+      fontSize: 11,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    timerCard: {
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 24,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modeSwitch: {
+      flexDirection: "row",
+      backgroundColor: colors.cardWarm,
+      borderRadius: 18,
+      padding: 6,
+      marginBottom: 24,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    modeButton: {
+      flex: 1,
+      paddingVertical: 12,
+      borderRadius: 14,
+      alignItems: "center",
+    },
+    modeButtonActive: {
+      backgroundColor: colors.primary,
+    },
+    modeButtonText: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.textSoft,
+    },
+    modeButtonTextActive: {
+      color: colors.black,
+    },
+    timerCircle: {
+      width: 240,
+      height: 240,
+      borderRadius: 120,
+      borderWidth: 12,
+      borderColor: colors.primary,
+      alignSelf: "center",
+      alignItems: "center",
+      justifyContent: "center",
+      marginBottom: 24,
+      backgroundColor: colors.cardWarm,
+    },
+    timerLabel: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.textMuted,
+      marginBottom: 8,
+    },
+    timerText: {
+      fontSize: 52,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 8,
+    },
+    timerSmallText: {
+      fontSize: 13,
+      fontWeight: "800",
+      color: colors.textSoft,
+    },
+    progressBarBackground: {
+      height: 12,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      overflow: "hidden",
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    progressBarFill: {
+      height: "100%",
+      backgroundColor: colors.primary,
+      borderRadius: 20,
+    },
+    buttonRow: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 12,
+    },
+    primaryButton: {
+      flex: 1,
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 16,
+      fontWeight: "900",
+    },
+    secondaryButton: {
+      flex: 1,
+      paddingVertical: 16,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+    },
+    secondaryButtonFull: {
+      paddingVertical: 14,
+      borderRadius: 16,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+      marginBottom: 12,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "800",
+    },
+    savedMessage: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "900",
+      textAlign: "center",
+      marginTop: 6,
+    },
+    statsGrid: {
+      flexDirection: "row",
+      gap: 12,
+      marginBottom: 18,
+    },
+    statCard: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 22,
+      padding: 18,
+      alignItems: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    statNumber: {
+      fontSize: 34,
+      fontWeight: "900",
+      color: colors.primary,
+    },
+    statLabel: {
+      fontSize: 14,
+      lineHeight: 19,
+      color: colors.textSoft,
+      fontWeight: "800",
+      textAlign: "center",
+      marginTop: 6,
+    },
+    tipBox: {
+      backgroundColor: colors.warning,
+      borderRadius: 18,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 14,
+    },
+    tipTitle: {
+      fontSize: 16,
+      fontWeight: "900",
+      color: colors.warningText,
+      marginBottom: 6,
+    },
+    tipText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
+    },
+  });
+}
