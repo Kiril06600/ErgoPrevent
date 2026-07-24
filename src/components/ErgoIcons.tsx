@@ -1,6 +1,5 @@
 import React from "react";
 import { View, StyleSheet } from "react-native";
-import Svg, { Path, Circle, Rect, Line, Polyline } from "react-native-svg";
 
 type IconProps = {
   size?: number;
@@ -13,6 +12,34 @@ type BadgeProps = {
   size?: number;
   backgroundColor?: string;
   borderColor?: string;
+};
+
+type LineProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  rotate?: number;
+  radius?: number;
+};
+
+type CircleProps = {
+  x: number;
+  y: number;
+  size: number;
+  color: string;
+  strokeWidth: number;
+};
+
+type RectProps = {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  color: string;
+  strokeWidth: number;
+  radius?: number;
 };
 
 export function IconBadge({
@@ -39,28 +66,150 @@ export function IconBadge({
   );
 }
 
+function IconCanvas({
+  size,
+  children,
+}: {
+  size: number;
+  children: React.ReactNode;
+}) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <View
+        style={[
+          styles.canvas,
+          {
+            transform: [{ scale: size / 24 }],
+          },
+        ]}
+      >
+        {children}
+      </View>
+    </View>
+  );
+}
+
+function LineShape({
+  x,
+  y,
+  width,
+  height,
+  color,
+  rotate = 0,
+  radius = 999,
+}: LineProps) {
+  return (
+    <View
+      style={[
+        styles.absolute,
+        {
+          left: x,
+          top: y,
+          width,
+          height,
+          backgroundColor: color,
+          borderRadius: radius,
+          transform: [{ rotate: `${rotate}deg` }],
+        } as any,
+      ]}
+    />
+  );
+}
+
+function CircleShape({ x, y, size, color, strokeWidth }: CircleProps) {
+  return (
+    <View
+      style={[
+        styles.absolute,
+        {
+          left: x,
+          top: y,
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        } as any,
+      ]}
+    />
+  );
+}
+
+function RectShape({
+  x,
+  y,
+  width,
+  height,
+  color,
+  strokeWidth,
+  radius = 3,
+}: RectProps) {
+  return (
+    <View
+      style={[
+        styles.absolute,
+        {
+          left: x,
+          top: y,
+          width,
+          height,
+          borderRadius: radius,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        } as any,
+      ]}
+    />
+  );
+}
+
 export function HomeIcon({
   size = 20,
   color = "#E0E0E0",
   strokeWidth = 1.8,
 }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M4.5 11.2L12 5L19.5 11.2"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+    <IconCanvas size={size}>
+      <LineShape
+        x={5}
+        y={8}
+        width={8}
+        height={strokeWidth}
+        color={color}
+        rotate={-35}
       />
-      <Path
-        d="M6.5 10.5V18.5H10V14.5H14V18.5H17.5V10.5"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <LineShape
+        x={11}
+        y={8}
+        width={8}
+        height={strokeWidth}
+        color={color}
+        rotate={35}
       />
-    </Svg>
+      <RectShape
+        x={6.5}
+        y={11}
+        width={11}
+        height={8}
+        color={color}
+        strokeWidth={strokeWidth}
+        radius={2}
+      />
+      <LineShape
+        x={10.8}
+        y={15}
+        width={2.8}
+        height={4}
+        color={color}
+        radius={1}
+      />
+    </IconCanvas>
   );
 }
 
@@ -70,22 +219,31 @@ export function RoutineIcon({
   strokeWidth = 1.8,
 }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle
-        cx="12"
-        cy="12"
-        r="7.5"
-        stroke={color}
+    <IconCanvas size={size}>
+      <CircleShape
+        x={4}
+        y={4}
+        size={16}
+        color={color}
         strokeWidth={strokeWidth}
       />
-      <Path
-        d="M8.8 12.2L11 14.4L15.6 9.6"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <LineShape
+        x={8.2}
+        y={12.5}
+        width={5.5}
+        height={strokeWidth}
+        color={color}
+        rotate={42}
       />
-    </Svg>
+      <LineShape
+        x={11.1}
+        y={11.5}
+        width={7.5}
+        height={strokeWidth}
+        color={color}
+        rotate={-46}
+      />
+    </IconCanvas>
   );
 }
 
@@ -95,39 +253,43 @@ export function PlanIcon({
   strokeWidth = 1.8,
 }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M5 6.5H19"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
+    <IconCanvas size={size}>
+      <LineShape
+        x={5}
+        y={6}
+        width={14}
+        height={strokeWidth}
+        color={color}
       />
-      <Path
-        d="M5 12H15"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
+      <LineShape
+        x={5}
+        y={11}
+        width={10}
+        height={strokeWidth}
+        color={color}
       />
-      <Path
-        d="M5 17.5H11"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
+      <LineShape
+        x={5}
+        y={16}
+        width={7}
+        height={strokeWidth}
+        color={color}
       />
-      <Circle
-        cx="18"
-        cy="17"
-        r="2.2"
-        stroke={color}
+      <CircleShape
+        x={15}
+        y={14}
+        size={5}
+        color={color}
         strokeWidth={strokeWidth}
       />
-      <Path
-        d="M18 14.8V13.5"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
+      <LineShape
+        x={17.1}
+        y={11.6}
+        width={strokeWidth}
+        height={3.2}
+        color={color}
       />
-    </Svg>
+    </IconCanvas>
   );
 }
 
@@ -137,22 +299,38 @@ export function EducationIcon({
   strokeWidth = 1.8,
 }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M4.5 6.5C4.5 5.7 5.2 5 6 5H10.5C11.4 5 12.2 5.35 12.8 5.9C13.4 5.35 14.2 5 15.1 5H18C18.8 5 19.5 5.7 19.5 6.5V17.5C19.5 18.05 19.05 18.5 18.5 18.5H15.2C14.3 18.5 13.45 18.82 12.8 19.4C12.15 18.82 11.3 18.5 10.4 18.5H5.5C4.95 18.5 4.5 18.05 4.5 17.5V6.5Z"
-        stroke={color}
+    <IconCanvas size={size}>
+      <RectShape
+        x={4}
+        y={5}
+        width={16}
+        height={14}
+        color={color}
         strokeWidth={strokeWidth}
-        strokeLinejoin="round"
+        radius={3}
       />
-      <Line
-        x1="12.8"
-        y1="6"
-        x2="12.8"
-        y2="19"
-        stroke={color}
-        strokeWidth={strokeWidth}
+      <LineShape
+        x={12}
+        y={5.8}
+        width={strokeWidth}
+        height={12.8}
+        color={color}
       />
-    </Svg>
+      <LineShape
+        x={6.5}
+        y={8.5}
+        width={3.8}
+        height={strokeWidth}
+        color={color}
+      />
+      <LineShape
+        x={14}
+        y={8.5}
+        width={3.5}
+        height={strokeWidth}
+        color={color}
+      />
+    </IconCanvas>
   );
 }
 
@@ -162,21 +340,31 @@ export function ProfileIcon({
   strokeWidth = 1.8,
 }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Circle
-        cx="12"
-        cy="8"
-        r="3"
-        stroke={color}
+    <IconCanvas size={size}>
+      <CircleShape
+        x={8.6}
+        y={4}
+        size={6.8}
+        color={color}
         strokeWidth={strokeWidth}
       />
-      <Path
-        d="M6.5 19C7.3 15.9 9.3 14.3 12 14.3C14.7 14.3 16.7 15.9 17.5 19"
-        stroke={color}
+      <RectShape
+        x={5.5}
+        y={14}
+        width={13}
+        height={6}
+        color={color}
         strokeWidth={strokeWidth}
-        strokeLinecap="round"
+        radius={6}
       />
-    </Svg>
+      <LineShape
+        x={5.5}
+        y={18.6}
+        width={13}
+        height={3}
+        color={"transparent"}
+      />
+    </IconCanvas>
   );
 }
 
@@ -186,40 +374,54 @@ export function PostureIcon({
   strokeWidth = 1.8,
 }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Rect
-        x="4"
-        y="13"
-        width="7"
-        height="3"
-        rx="1"
-        stroke={color}
+    <IconCanvas size={size}>
+      <RectShape
+        x={4}
+        y={13}
+        width={7}
+        height={3.5}
+        color={color}
+        strokeWidth={strokeWidth}
+        radius={1.4}
+      />
+      <LineShape
+        x={5.5}
+        y={16}
+        width={strokeWidth}
+        height={4}
+        color={color}
+      />
+      <LineShape
+        x={9.5}
+        y={16}
+        width={strokeWidth}
+        height={4}
+        color={color}
+      />
+      <CircleShape
+        x={13}
+        y={4}
+        size={3.2}
+        color={color}
         strokeWidth={strokeWidth}
       />
-      <Line
-        x1="6"
-        y1="16"
-        x2="6"
-        y2="19"
-        stroke={color}
-        strokeWidth={strokeWidth}
+      <LineShape
+        x={14.1}
+        y={7.8}
+        width={strokeWidth}
+        height={8.5}
+        color={color}
+        rotate={12}
       />
-      <Line
-        x1="10"
-        y1="16"
-        x2="10"
-        y2="19"
-        stroke={color}
-        strokeWidth={strokeWidth}
+      <LineShape
+        x={12.5}
+        y={11.5}
+        width={5.4}
+        height={strokeWidth}
+        color={color}
+        rotate={-28}
       />
-      <Path
-        d="M14 6.5C15.5 8.2 16.1 10.3 15.5 12.5C15.1 14 14.3 15.4 13.2 16.5"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
-      />
-      <Circle cx="14" cy="5" r="1.4" stroke={color} strokeWidth={strokeWidth} />
-    </Svg>
+    </IconCanvas>
   );
 }
 
@@ -229,34 +431,179 @@ export function ProgressIcon({
   strokeWidth = 1.8,
 }: IconProps) {
   return (
-    <Svg width={size} height={size} viewBox="0 0 24 24" fill="none">
-      <Line
-        x1="5"
-        y1="18"
-        x2="19"
-        y2="18"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
+    <IconCanvas size={size}>
+      <LineShape
+        x={5}
+        y={18}
+        width={14}
+        height={strokeWidth}
+        color={color}
       />
-      <Line
-        x1="5"
-        y1="18"
-        x2="5"
-        y2="6"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        strokeLinecap="round"
+      <LineShape
+        x={5}
+        y={6}
+        width={strokeWidth}
+        height={12}
+        color={color}
       />
-      <Polyline
-        points="7,15 10,12 13,13 18,8"
-        stroke={color}
-        strokeWidth={strokeWidth}
-        fill="none"
-        strokeLinecap="round"
-        strokeLinejoin="round"
+      <LineShape
+        x={7}
+        y={14.2}
+        width={5}
+        height={strokeWidth}
+        color={color}
+        rotate={-42}
       />
-    </Svg>
+      <LineShape
+        x={10.8}
+        y={12.6}
+        width={4.2}
+        height={strokeWidth}
+        color={color}
+        rotate={18}
+      />
+      <LineShape
+        x={13.6}
+        y={10.7}
+        width={6}
+        height={strokeWidth}
+        color={color}
+        rotate={-42}
+      />
+    </IconCanvas>
+  );
+}
+
+export function PreventionIcon({
+  size = 20,
+  color = "#E0E0E0",
+  strokeWidth = 1.8,
+}: IconProps) {
+  return (
+    <IconCanvas size={size}>
+      <RectShape
+        x={6}
+        y={4.5}
+        width={12}
+        height={15}
+        color={color}
+        strokeWidth={strokeWidth}
+        radius={5}
+      />
+      <LineShape
+        x={8.8}
+        y={12.5}
+        width={4.7}
+        height={strokeWidth}
+        color={color}
+        rotate={42}
+      />
+      <LineShape
+        x={11.3}
+        y={11.4}
+        width={6.7}
+        height={strokeWidth}
+        color={color}
+        rotate={-46}
+      />
+    </IconCanvas>
+  );
+}
+
+export function BreakIcon({
+  size = 20,
+  color = "#E0E0E0",
+  strokeWidth = 1.8,
+}: IconProps) {
+  return (
+    <IconCanvas size={size}>
+      <CircleShape
+        x={4}
+        y={4}
+        size={16}
+        color={color}
+        strokeWidth={strokeWidth}
+      />
+      <LineShape
+        x={11.2}
+        y={8}
+        width={strokeWidth}
+        height={5}
+        color={color}
+      />
+      <LineShape
+        x={11.7}
+        y={12}
+        width={5}
+        height={strokeWidth}
+        color={color}
+        rotate={22}
+      />
+      <LineShape
+        x={8.5}
+        y={3}
+        width={7}
+        height={strokeWidth}
+        color={color}
+      />
+    </IconCanvas>
+  );
+}
+
+export function ExerciseIcon({
+  size = 20,
+  color = "#E0E0E0",
+  strokeWidth = 1.8,
+}: IconProps) {
+  return (
+    <IconCanvas size={size}>
+      <CircleShape
+        x={10}
+        y={4}
+        size={4}
+        color={color}
+        strokeWidth={strokeWidth}
+      />
+      <LineShape
+        x={11.2}
+        y={8}
+        width={strokeWidth}
+        height={6}
+        color={color}
+      />
+      <LineShape
+        x={7}
+        y={10}
+        width={5.8}
+        height={strokeWidth}
+        color={color}
+        rotate={-25}
+      />
+      <LineShape
+        x={11.5}
+        y={10}
+        width={5.8}
+        height={strokeWidth}
+        color={color}
+        rotate={25}
+      />
+      <LineShape
+        x={8.5}
+        y={15}
+        width={5.2}
+        height={strokeWidth}
+        color={color}
+        rotate={-55}
+      />
+      <LineShape
+        x={12}
+        y={15}
+        width={5.2}
+        height={strokeWidth}
+        color={color}
+        rotate={55}
+      />
+    </IconCanvas>
   );
 }
 
@@ -265,5 +612,13 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     borderWidth: 1,
+  },
+  canvas: {
+    width: 24,
+    height: 24,
+    position: "relative",
+  },
+  absolute: {
+    position: "absolute",
   },
 });

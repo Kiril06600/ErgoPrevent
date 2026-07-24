@@ -6,12 +6,23 @@ import {
   Text,
   Pressable,
   StyleSheet,
-} from "react-native";
-import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
-import BottomNav from "../components/BottomNav";
-import { ThemeColors } from "../theme/colors";
-import { useAppTheme } from "../theme/ThemeContext";
+  } from "react-native";
+  import { Link } from "expo-router";
+  import { AppStats, getAppStats } from "../lib/storage";
+  import BottomNav from "../components/BottomNav";
+  import { ThemeColors } from "../theme/colors";
+  import { useAppTheme } from "../theme/ThemeContext";
+  import {
+  IconBadge,
+  PreventionIcon,
+  RoutineIcon,
+  ProgressIcon,
+  PlanIcon,
+  BreakIcon,
+  EducationIcon,
+  PostureIcon,
+  ExerciseIcon,
+} from "../components/ErgoIcons";
 
 type AppRoute =
   | "/"
@@ -149,7 +160,13 @@ export default function HomeScreen() {
         <View style={styles.heroCard}>
           <View style={styles.heroTopRow}>
             <View style={styles.heroDecoration}>
-              <Text style={styles.heroIcon}>🌿</Text>
+              <IconBadge
+                size={52}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <PreventionIcon size={26} color={colors.text} />
+              </IconBadge>
             </View>
 
             <View style={styles.pointsBadge}>
@@ -218,7 +235,13 @@ export default function HomeScreen() {
         <View style={styles.quickGrid}>
           <Link href="/routine" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>✅</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <RoutineIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Routine</Text>
               <Text style={styles.quickText}>Actions du jour</Text>
             </Pressable>
@@ -226,7 +249,13 @@ export default function HomeScreen() {
 
           <Link href="/daily-checkin" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>📝</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <RoutineIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Check-in</Text>
               <Text style={styles.quickText}>Suivi du moment</Text>
             </Pressable>
@@ -234,7 +263,13 @@ export default function HomeScreen() {
 
           <Link href="/progress" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>📈</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <ProgressIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Évolution</Text>
               <Text style={styles.quickText}>Voir les tendances</Text>
             </Pressable>
@@ -242,7 +277,13 @@ export default function HomeScreen() {
 
           <Link href="/personal-plan" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>🧭</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <PlanIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Plan</Text>
               <Text style={styles.quickText}>Actions adaptées</Text>
             </Pressable>
@@ -250,7 +291,13 @@ export default function HomeScreen() {
 
           <Link href="/questionnaire" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>🧠</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <EducationIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Questionnaire</Text>
               <Text style={styles.quickText}>Évaluer les TMS</Text>
             </Pressable>
@@ -258,7 +305,13 @@ export default function HomeScreen() {
 
           <Link href="/workstation-audit" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>🖥️</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <PostureIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Audit</Text>
               <Text style={styles.quickText}>Analyser le poste</Text>
             </Pressable>
@@ -266,7 +319,13 @@ export default function HomeScreen() {
 
           <Link href="/timer" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>⏱️</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <BreakIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Minuterie</Text>
               <Text style={styles.quickText}>Pause active 25/2</Text>
             </Pressable>
@@ -274,7 +333,13 @@ export default function HomeScreen() {
 
           <Link href="/exercises" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>💪</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <ExerciseIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Exercices</Text>
               <Text style={styles.quickText}>Bouger simplement</Text>
             </Pressable>
@@ -282,7 +347,13 @@ export default function HomeScreen() {
 
           <Link href="/education" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>🎓</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <EducationIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Formation</Text>
               <Text style={styles.quickText}>Capsules courtes</Text>
             </Pressable>
@@ -290,7 +361,13 @@ export default function HomeScreen() {
 
           <Link href="/dashboard" asChild>
             <Pressable style={styles.quickCard}>
-              <Text style={styles.quickIcon}>📊</Text>
+              <IconBadge
+                    size={42}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <ProgressIcon size={22} color={colors.text} />
+                  </IconBadge>
               <Text style={styles.quickTitle}>Dashboard</Text>
               <Text style={styles.quickText}>Progression</Text>
             </Pressable>
