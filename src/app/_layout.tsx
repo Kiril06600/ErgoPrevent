@@ -4,7 +4,14 @@ import { ThemeProvider } from "../theme/ThemeContext";
 export default function RootLayout() {
   return (
     <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }} />
+      <Stack
+        screenOptions={{
+          headerShown: false,
+          contentStyle: {
+            backgroundColor: "transparent",
+          },
+        }}
+      />
     </ThemeProvider>
   );
 }
