@@ -12,6 +12,15 @@ import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import {
+  IconBadge,
+  RoutineIcon,
+  ProgressIcon,
+  PlanIcon,
+  BreakIcon,
+  EducationIcon,
+  ExerciseIcon,
+} from "../components/ErgoIcons";
 
 type AppRoute =
   | "/timer"
@@ -22,13 +31,30 @@ type AppRoute =
   | "/progress"
   | "/dashboard";
 
+type RoutineIconProps = {
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+};
+
+type RoutineIconType = React.ComponentType<RoutineIconProps>;
+
 type RoutineTask = {
   id: string;
-  icon: string;
+  label: string;
   title: string;
   text: string;
   href: AppRoute;
   buttonText: string;
+  Icon: RoutineIconType;
+};
+
+type QuickCard = {
+  label: string;
+  title: string;
+  text: string;
+  href: AppRoute;
+  Icon: RoutineIconType;
 };
 
 const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
@@ -36,43 +62,72 @@ const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
 const routineTasks: RoutineTask[] = [
   {
     id: "checkin",
-    icon: "📝",
+    label: "Suivi",
     title: "Faire mon check-in",
     text: "Notez rapidement votre douleur, votre fatigue et la zone principale du moment.",
     href: "/daily-checkin",
     buttonText: "Faire le check-in",
+    Icon: RoutineIcon,
   },
   {
     id: "pause",
-    icon: "⏱️",
+    label: "Pause",
     title: "Faire une pause active",
     text: "Prenez 2 minutes pour bouger, marcher ou changer de position.",
     href: "/timer",
-    buttonText: "Démarrer la minuterie",
+    buttonText: "Démarrer",
+    Icon: BreakIcon,
   },
   {
     id: "exercise",
-    icon: "💪",
+    label: "Bouger",
     title: "Faire un exercice",
     text: "Choisissez un exercice court pour le cou, le dos, les épaules ou les poignets.",
     href: "/exercises",
     buttonText: "Voir les exercices",
+    Icon: ExerciseIcon,
   },
   {
     id: "education",
-    icon: "🎓",
+    label: "Apprendre",
     title: "Lire une capsule",
     text: "Apprenez une notion simple d’ergonomie ou de prévention.",
     href: "/education",
     buttonText: "Lire une capsule",
+    Icon: EducationIcon,
   },
   {
     id: "plan",
-    icon: "🧭",
+    label: "Plan",
     title: "Consulter mon plan personnalisé",
     text: "Regardez vos priorités et les actions recommandées selon vos scores.",
     href: "/personal-plan",
     buttonText: "Voir mon plan",
+    Icon: PlanIcon,
+  },
+];
+
+const quickCards: QuickCard[] = [
+  {
+    label: "Objectifs",
+    title: "Plan personnalisé",
+    text: "Vos priorités selon vos résultats.",
+    href: "/personal-plan",
+    Icon: PlanIcon,
+  },
+  {
+    label: "Tendances",
+    title: "Évolution",
+    text: "Suivez vos habitudes dans le temps.",
+    href: "/progress",
+    Icon: ProgressIcon,
+  },
+  {
+    label: "Vue globale",
+    title: "Dashboard",
+    text: "Consultez votre résumé complet.",
+    href: "/dashboard",
+    Icon: ProgressIcon,
   },
 ];
 
@@ -94,7 +149,6 @@ function getCompletedTasksForToday() {
 
   try {
     const parsedData = JSON.parse(savedData);
-
     return parsedData[todayKey] ?? [];
   } catch {
     return [];
@@ -108,7 +162,14 @@ function saveCompletedTasksForToday(taskIds: string[]) {
 
   const todayKey = getTodayKey();
   const savedData = window.localStorage.getItem(ROUTINE_STORAGE_KEY);
-  const parsedData = savedData ? JSON.parse(savedData) : {};
+
+  let parsedData = {};
+
+  try {
+    parsedData = savedData ? JSON.parse(savedData) : {};
+  } catch {
+    parsedData = {};
+  }
 
   const updatedData = {
     ...parsedData,
@@ -121,8 +182,8 @@ function saveCompletedTasksForToday(taskIds: string[]) {
 export default function RoutineScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
   const [completedTaskIds, setCompletedTaskIds] = useState<string[]>([]);
-  const { colors } = useAppTheme();
-  const styles = createStyles(colors);
+  const { colors, mode } = useAppTheme();
+  const styles = createStyles(colors, mode);
 
   useEffect(() => {
     const savedStats = getAppStats();
@@ -153,62 +214,88 @@ export default function RoutineScreen() {
     saveCompletedTasksForToday(updatedTaskIds);
   }
 
+  const NextTaskIcon = nextTask?.Icon ?? RoutineIcon;
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Routine du jour</Text>
+        <View style={styles.pageHeader}>
+          <View style={styles.pagePill}>
+            <Text style={styles.pagePillText}>Routine quotidienne</Text>
+          </View>
 
-        <Text style={styles.subtitle}>
-          Un petit plan quotidien pour garder vos habitudes de prévention actives.
-        </Text>
+          <Text style={styles.pageTitle}>Routine du jour</Text>
+
+          <Text style={styles.subtitle}>
+            Un petit plan quotidien pour garder vos habitudes de prévention
+            actives, sans pression.
+          </Text>
+        </View>
 
         <View style={styles.heroCard}>
-          <Text style={styles.heroGreeting}>
-            {profile?.firstName
-              ? `Bonjour ${profile.firstName}`
-              : "Objectif du jour"}
-          </Text>
+          <View style={styles.heroShapeLarge} />
+          <View style={styles.heroShapeSmall} />
 
-          <Text style={styles.heroTitle}>
-            {completedCount === totalTasks
-              ? "Routine complétée"
-              : "Avancez une petite action à la fois"}
-          </Text>
+          <View style={styles.heroTopRow}>
+            <View>
+              <Text style={styles.heroGreeting}>
+                {profile?.firstName
+                  ? `Bonjour ${profile.firstName}`
+                  : "Objectif du jour"}
+              </Text>
+
+              <Text style={styles.heroTitle}>
+                {completedCount === totalTasks
+                  ? "Routine complétée"
+                  : "Une action à la fois"}
+              </Text>
+            </View>
+
+            <View style={styles.completionBadge}>
+              <Text style={styles.completionNumber}>{completedCount}</Text>
+              <Text style={styles.completionText}>/{totalTasks}</Text>
+            </View>
+          </View>
 
           <Text style={styles.heroText}>
             {completedCount === totalTasks
               ? "Vous avez complété toutes les actions prévues aujourd’hui."
-              : "L’objectif n’est pas d’être parfait, mais de bouger et de répéter des gestes simples."}
+              : "L’objectif n’est pas d’être parfait, mais de bouger un peu et de répéter des gestes simples."}
           </Text>
-        </View>
 
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Progression</Text>
-            <Text style={styles.progressValue}>{progressPercent}%</Text>
+          <View style={styles.progressArea}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressTitle}>Progression</Text>
+              <Text style={styles.progressValue}>{progressPercent}%</Text>
+            </View>
+
+            <View style={styles.progressBarBackground}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  { width: `${progressPercent}%` },
+                ]}
+              />
+            </View>
           </View>
-
-          <View style={styles.progressBarBackground}>
-            <View
-              style={[
-                styles.progressBarFill,
-                { width: `${progressPercent}%` },
-              ]}
-            />
-          </View>
-
-          <Text style={styles.progressText}>
-            {completedCount}/{totalTasks} actions complétées aujourd’hui
-          </Text>
         </View>
 
         {nextTask && (
           <View style={styles.nextCard}>
-            <Text style={styles.nextLabel}>Prochaine action</Text>
+            <View style={styles.nextTopRow}>
+              <IconBadge
+                size={48}
+                backgroundColor={colors.turquoiseSoft}
+                borderColor={colors.border}
+              >
+                <NextTaskIcon size={23} color={colors.text} />
+              </IconBadge>
 
-            <Text style={styles.nextTitle}>
-              {nextTask.icon} {nextTask.title}
-            </Text>
+              <View style={styles.nextTextBlock}>
+                <Text style={styles.nextLabel}>Prochaine action</Text>
+                <Text style={styles.nextTitle}>{nextTask.title}</Text>
+              </View>
+            </View>
 
             <Text style={styles.nextText}>{nextTask.text}</Text>
 
@@ -217,24 +304,52 @@ export default function RoutineScreen() {
                 <Text style={styles.primaryButtonText}>
                   {nextTask.buttonText}
                 </Text>
+                <Text style={styles.primaryButtonArrow}>→</Text>
               </Pressable>
             </Link>
           </View>
         )}
 
-        <Text style={styles.sectionTitle}>Checklist du jour</Text>
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Checklist du jour</Text>
+            <Text style={styles.sectionSubtitle}>
+              Cochez les actions que vous avez faites.
+            </Text>
+          </View>
+
+          <View style={styles.sectionCountPill}>
+            <Text style={styles.sectionCountText}>
+              {completedCount}/{totalTasks}
+            </Text>
+          </View>
+        </View>
 
         {routineTasks.map((task) => {
           const isCompleted = completedTaskIds.includes(task.id);
+          const TaskIcon = task.Icon;
 
           return (
-            <View key={task.id} style={styles.taskCard}>
+            <View
+              key={task.id}
+              style={[
+                styles.taskCard,
+                isCompleted ? styles.taskCardCompleted : null,
+              ]}
+            >
               <View style={styles.taskHeader}>
-                <View style={styles.taskIconBox}>
-                  <Text style={styles.taskIcon}>{task.icon}</Text>
-                </View>
+                <IconBadge
+                  size={48}
+                  backgroundColor={
+                    isCompleted ? colors.primaryLight : colors.backgroundSoft
+                  }
+                  borderColor={colors.border}
+                >
+                  <TaskIcon size={23} color={colors.text} />
+                </IconBadge>
 
                 <View style={styles.taskTextContainer}>
+                  <Text style={styles.taskLabel}>{task.label}</Text>
                   <Text style={styles.taskTitle}>{task.title}</Text>
                   <Text style={styles.taskText}>{task.text}</Text>
                 </View>
@@ -244,17 +359,33 @@ export default function RoutineScreen() {
                 <Pressable
                   style={[
                     styles.checkButton,
-                    isCompleted && styles.checkButtonCompleted,
+                    isCompleted ? styles.checkButtonCompleted : null,
                   ]}
                   onPress={() => toggleTask(task.id)}
                 >
+                  <View
+                    style={[
+                      styles.checkCircle,
+                      isCompleted ? styles.checkCircleCompleted : null,
+                    ]}
+                  >
+                    <Text
+                      style={[
+                        styles.checkSymbol,
+                        isCompleted ? styles.checkSymbolCompleted : null,
+                      ]}
+                    >
+                      {isCompleted ? "✓" : ""}
+                    </Text>
+                  </View>
+
                   <Text
                     style={[
                       styles.checkButtonText,
-                      isCompleted && styles.checkButtonTextCompleted,
+                      isCompleted ? styles.checkButtonTextCompleted : null,
                     ]}
                   >
-                    {isCompleted ? "Complété ✓" : "Marquer comme fait"}
+                    {isCompleted ? "Complété" : "Marquer comme fait"}
                   </Text>
                 </Pressable>
 
@@ -263,12 +394,56 @@ export default function RoutineScreen() {
                     <Text style={styles.secondaryButtonText}>
                       {task.buttonText}
                     </Text>
+                    <Text style={styles.secondaryButtonArrow}>→</Text>
                   </Pressable>
                 </Link>
               </View>
             </View>
           );
         })}
+
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Liens rapides</Text>
+            <Text style={styles.sectionSubtitle}>
+              Continuez votre suivi quand vous voulez.
+            </Text>
+          </View>
+
+          <Text style={styles.sectionAction}>Défilez →</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickCardsRow}
+        >
+          {quickCards.map((item) => {
+            const QuickIcon = item.Icon;
+
+            return (
+              <Link key={item.href} href={item.href} asChild>
+                <Pressable style={styles.quickCard}>
+                  <IconBadge
+                    size={44}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <QuickIcon size={21} color={colors.text} />
+                  </IconBadge>
+
+                  <Text style={styles.quickLabel}>{item.label}</Text>
+                  <Text style={styles.quickTitle}>{item.title}</Text>
+                  <Text style={styles.quickText}>{item.text}</Text>
+
+                  <View style={styles.quickArrowCircle}>
+                    <Text style={styles.quickArrowText}>→</Text>
+                  </View>
+                </Pressable>
+              </Link>
+            );
+          })}
+        </ScrollView>
 
         <View style={styles.tipBox}>
           <Text style={styles.tipTitle}>Conseil du jour</Text>
@@ -278,81 +453,150 @@ export default function RoutineScreen() {
           </Text>
         </View>
 
-        <Link href="/progress" asChild>
-          <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Voir mon évolution</Text>
-          </Pressable>
-        </Link>
-
-        <Link href="/dashboard" asChild>
-          <Pressable style={styles.primaryButton}>
-            <Text style={styles.primaryButtonText}>
-              Voir mon tableau de bord
-            </Text>
-          </Pressable>
-        </Link>
-
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
   );
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, mode: "light" | "dark") {
+  const isDark = mode === "dark";
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      padding: 24,
+      paddingTop: 24,
       paddingBottom: 48,
     },
+    pageHeader: {
+      paddingHorizontal: 24,
+      marginTop: 10,
+      marginBottom: 22,
+    },
+    pagePill: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.backgroundSoft,
+      borderRadius: 999,
+      paddingVertical: 8,
+      paddingHorizontal: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    pagePillText: {
+      color: colors.textSoft,
+      fontSize: 12,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+    },
     pageTitle: {
-      fontSize: 32,
+      fontSize: 38,
+      lineHeight: 43,
       fontWeight: "900",
       color: colors.text,
+      letterSpacing: -1,
       marginBottom: 10,
     },
     subtitle: {
       fontSize: 16,
       lineHeight: 24,
       color: colors.textSoft,
-      marginBottom: 24,
+      maxWidth: 520,
     },
     heroCard: {
-      backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 24,
+      marginHorizontal: 24,
       marginBottom: 18,
+      borderRadius: 36,
+      padding: 24,
+      minHeight: 275,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
+      overflow: "hidden",
+      position: "relative",
+      justifyContent: "space-between",
+    },
+    heroShapeLarge: {
+      position: "absolute",
+      width: 210,
+      height: 210,
+      borderRadius: 105,
+      right: -70,
+      top: -40,
+      backgroundColor: isDark
+        ? "rgba(95,159,149,0.16)"
+        : "rgba(216,196,182,0.26)",
+    },
+    heroShapeSmall: {
+      position: "absolute",
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      left: -28,
+      bottom: -28,
+      backgroundColor: isDark
+        ? "rgba(245,238,223,0.08)"
+        : "rgba(95,159,149,0.12)",
+    },
+    heroTopRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 16,
+      zIndex: 2,
     },
     heroGreeting: {
-      fontSize: 17,
+      fontSize: 16,
       fontWeight: "900",
       color: colors.primary,
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 27,
-      lineHeight: 34,
+      fontSize: 33,
+      lineHeight: 39,
       fontWeight: "900",
       color: colors.text,
-      marginBottom: 10,
+      letterSpacing: -0.7,
+      maxWidth: 300,
+    },
+    completionBadge: {
+      minWidth: 72,
+      height: 58,
+      borderRadius: 29,
+      backgroundColor: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      alignItems: "center",
+      justifyContent: "center",
+      flexDirection: "row",
+      paddingHorizontal: 10,
+    },
+    completionNumber: {
+      fontSize: 25,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    completionText: {
+      fontSize: 14,
+      fontWeight: "900",
+      color: colors.black,
+      marginTop: 5,
     },
     heroText: {
       fontSize: 15,
-      lineHeight: 22,
+      lineHeight: 23,
       color: colors.textSoft,
+      maxWidth: 420,
+      zIndex: 2,
+      marginTop: 18,
+      marginBottom: 18,
     },
-    progressCard: {
-      backgroundColor: colors.secondaryLight,
-      borderRadius: 24,
-      padding: 18,
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
+    progressArea: {
+      zIndex: 2,
     },
     progressHeader: {
       flexDirection: "row",
@@ -360,12 +604,14 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 12,
     },
     progressTitle: {
-      fontSize: 17,
+      fontSize: 14,
       fontWeight: "900",
-      color: colors.text,
+      color: colors.textSoft,
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
     },
     progressValue: {
-      fontSize: 17,
+      fontSize: 15,
       fontWeight: "900",
       color: colors.primary,
     },
@@ -374,7 +620,6 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.cardWarm,
       borderRadius: 20,
       overflow: "hidden",
-      marginBottom: 10,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -383,18 +628,23 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.primary,
       borderRadius: 20,
     },
-    progressText: {
-      fontSize: 14,
-      color: colors.textSoft,
-      fontWeight: "800",
-    },
     nextCard: {
-      backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 20,
-      marginBottom: 24,
+      marginHorizontal: 24,
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 30,
+      padding: 22,
+      marginBottom: 28,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    nextTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginBottom: 14,
+    },
+    nextTextBlock: {
+      flex: 1,
     },
     nextLabel: {
       fontSize: 12,
@@ -402,13 +652,13 @@ function createStyles(colors: ThemeColors) {
       color: colors.primary,
       textTransform: "uppercase",
       letterSpacing: 0.8,
-      marginBottom: 8,
+      marginBottom: 5,
     },
     nextTitle: {
-      fontSize: 22,
+      fontSize: 23,
+      lineHeight: 29,
       fontWeight: "900",
       color: colors.text,
-      marginBottom: 8,
     },
     nextText: {
       fontSize: 15,
@@ -416,47 +666,105 @@ function createStyles(colors: ThemeColors) {
       color: colors.textSoft,
       marginBottom: 16,
     },
+    primaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 15,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      flexDirection: "row",
+      gap: 10,
+      alignSelf: "flex-start",
+    },
+    primaryButtonText: {
+      color: colors.black,
+      fontSize: 15,
+      fontWeight: "900",
+    },
+    primaryButtonArrow: {
+      color: colors.black,
+      fontSize: 20,
+      fontWeight: "900",
+      lineHeight: 20,
+    },
+    sectionHeaderRow: {
+      paddingHorizontal: 24,
+      marginBottom: 14,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      gap: 16,
+    },
     sectionTitle: {
-      fontSize: 23,
+      fontSize: 24,
       fontWeight: "900",
       color: colors.text,
-      marginBottom: 14,
+      letterSpacing: -0.4,
+      marginBottom: 4,
+    },
+    sectionSubtitle: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+    },
+    sectionAction: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.textMuted,
+      marginBottom: 4,
+    },
+    sectionCountPill: {
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      borderRadius: 999,
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      marginBottom: 4,
+    },
+    sectionCountText: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.textSoft,
     },
     taskCard: {
+      marginHorizontal: 24,
       backgroundColor: colors.card,
-      borderRadius: 24,
+      borderRadius: 28,
       padding: 18,
       marginBottom: 14,
       borderWidth: 1,
       borderColor: colors.border,
     },
+    taskCardCompleted: {
+      backgroundColor: colors.turquoiseSoft,
+    },
     taskHeader: {
       flexDirection: "row",
       alignItems: "flex-start",
+      gap: 14,
       marginBottom: 16,
-    },
-    taskIconBox: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
-      backgroundColor: colors.secondaryLight,
-      alignItems: "center",
-      justifyContent: "center",
-      marginRight: 14,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    taskIcon: {
-      fontSize: 24,
     },
     taskTextContainer: {
       flex: 1,
     },
+    taskLabel: {
+      fontSize: 11,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginBottom: 5,
+    },
     taskTitle: {
-      fontSize: 18,
+      fontSize: 20,
+      lineHeight: 25,
       fontWeight: "900",
       color: colors.text,
-      marginBottom: 6,
+      marginBottom: 7,
     },
     taskText: {
       fontSize: 14,
@@ -464,13 +772,19 @@ function createStyles(colors: ThemeColors) {
       color: colors.textSoft,
     },
     taskActions: {
+      flexDirection: "row",
       gap: 10,
+      alignItems: "center",
+      flexWrap: "wrap",
     },
     checkButton: {
-      backgroundColor: colors.secondaryLight,
-      paddingVertical: 13,
-      borderRadius: 15,
+      flexDirection: "row",
       alignItems: "center",
+      gap: 8,
+      backgroundColor: colors.backgroundSoft,
+      paddingVertical: 12,
+      paddingHorizontal: 13,
+      borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -478,50 +792,120 @@ function createStyles(colors: ThemeColors) {
       backgroundColor: colors.primary,
       borderColor: colors.primaryDark,
     },
+    checkCircle: {
+      width: 19,
+      height: 19,
+      borderRadius: 10,
+      borderWidth: 2,
+      borderColor: colors.textMuted,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    checkCircleCompleted: {
+      borderColor: colors.black,
+      backgroundColor: colors.black,
+    },
+    checkSymbol: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: "transparent",
+      lineHeight: 14,
+    },
+    checkSymbolCompleted: {
+      color: colors.primary,
+    },
     checkButtonText: {
       color: colors.text,
-      fontSize: 15,
+      fontSize: 13,
       fontWeight: "900",
     },
     checkButtonTextCompleted: {
       color: colors.black,
     },
-    primaryButton: {
-      backgroundColor: colors.primary,
-      paddingVertical: 16,
-      borderRadius: 16,
-      alignItems: "center",
-      marginBottom: 12,
-      borderWidth: 1,
-      borderColor: colors.primaryDark,
-    },
-    primaryButtonText: {
-      color: colors.black,
-      fontSize: 16,
-      fontWeight: "900",
-    },
     secondaryButton: {
-      paddingVertical: 14,
-      borderRadius: 16,
+      flexDirection: "row",
       alignItems: "center",
+      gap: 8,
+      paddingVertical: 12,
+      paddingHorizontal: 14,
+      borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.cardWarm,
-      marginBottom: 12,
     },
     secondaryButtonText: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: "800",
+      fontSize: 13,
+      fontWeight: "900",
+    },
+    secondaryButtonArrow: {
+      color: colors.text,
+      fontSize: 17,
+      fontWeight: "900",
+      lineHeight: 17,
+    },
+    quickCardsRow: {
+      paddingLeft: 24,
+      paddingRight: 24,
+      gap: 12,
+      marginBottom: 24,
+    },
+    quickCard: {
+      width: 175,
+      minHeight: 205,
+      backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 17,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: "space-between",
+    },
+    quickLabel: {
+      fontSize: 10,
+      fontWeight: "900",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginTop: 14,
+      marginBottom: 7,
+    },
+    quickTitle: {
+      fontSize: 18,
+      lineHeight: 23,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    quickText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSoft,
+      marginBottom: 12,
+    },
+    quickArrowCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-end",
+    },
+    quickArrowText: {
+      color: colors.text,
+      fontSize: 19,
+      fontWeight: "900",
+      lineHeight: 19,
     },
     tipBox: {
+      marginHorizontal: 24,
       backgroundColor: colors.warning,
-      borderRadius: 20,
+      borderRadius: 22,
       padding: 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      marginTop: 8,
-      marginBottom: 18,
     },
     tipTitle: {
       fontSize: 16,
