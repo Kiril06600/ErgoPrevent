@@ -18,6 +18,7 @@ import {
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { ThemeMode, useAppTheme } from "../theme/ThemeContext";
+import { SunIcon, MoonIcon } from "../components/ErgoIcons";
 
 const statuses = ["Étudiant", "Travailleur", "Télétravailleur", "Autre"];
 
@@ -172,7 +173,7 @@ export default function ProfileScreen() {
               ]}
               onPress={() => handleThemeChange("light")}
             >
-              <Text style={styles.themeChoiceIcon}>☀️</Text>
+              <SunIcon size={24} color={mode === "light" ? colors.black : colors.text} />
               <Text
                 style={[
                   styles.themeChoiceText,
@@ -190,7 +191,7 @@ export default function ProfileScreen() {
               ]}
               onPress={() => handleThemeChange("dark")}
             >
-              <Text style={styles.themeChoiceIcon}>🌙</Text>
+              <MoonIcon size={26} color={mode === "dark" ? colors.black : colors.text} />
               <Text
                 style={[
                   styles.themeChoiceText,
