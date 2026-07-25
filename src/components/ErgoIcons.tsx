@@ -1,5 +1,5 @@
 import React from "react";
-import { View, StyleSheet } from "react-native";
+import { View, Text, StyleSheet } from "react-native";
 
 type IconProps = {
   size?: number;
@@ -670,47 +670,31 @@ export function SunIcon({
 export function MoonIcon({
   size = 20,
   color = "#E0E0E0",
-  strokeWidth = 2.4,
 }: IconProps) {
   return (
-    <IconCanvas size={size}>
-      <View
-        style={[
-          styles.absolute,
-          {
-            left: 6,
-            top: 3.5,
-            width: 13.5,
-            height: 17,
-            borderRadius: 999,
-            borderLeftWidth: strokeWidth + 1,
-            borderTopWidth: strokeWidth,
-            borderBottomWidth: strokeWidth,
-            borderRightWidth: 0,
-            borderColor: color,
-            transform: [{ rotate: "-13deg" }],
-          } as any,
-        ]}
-      />
-
-      <View
-        style={[
-          styles.absolute,
-          {
-            left: 12.5,
-            top: 5.3,
-            width: 5.5,
-            height: 13,
-            borderRadius: 999,
-            borderLeftWidth: strokeWidth,
-            borderColor: color,
-            transform: [{ rotate: "-8deg" }],
-          } as any,
-        ]}
-      />
-    </IconCanvas>
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <Text
+        style={{
+          color,
+          fontSize: size * 1.05,
+          fontWeight: "400",
+          lineHeight: size,
+          transform: [{ rotate: "-8deg" }],
+        }}
+      >
+        ☾
+      </Text>
+    </View>
   );
 }
+
 const styles = StyleSheet.create({
   badge: {
     alignItems: "center",
