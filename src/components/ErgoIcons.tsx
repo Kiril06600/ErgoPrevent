@@ -5,6 +5,7 @@ type IconProps = {
   size?: number;
   color?: string;
   strokeWidth?: number;
+  cutoutColor?: string;
 };
 
 type BadgeProps = {
@@ -606,7 +607,110 @@ export function ExerciseIcon({
     </IconCanvas>
   );
 }
+export function SunIcon({
+  size = 20,
+  color = "#E0E0E0",
+  strokeWidth = 1.9,
+}: IconProps) {
+  return (
+    <IconCanvas size={size}>
+      <CircleShape
+        x={8.2}
+        y={8.2}
+        size={7.6}
+        color={color}
+        strokeWidth={strokeWidth}
+      />
 
+      <LineShape x={11.2} y={3} width={strokeWidth} height={3} color={color} />
+      <LineShape x={11.2} y={18} width={strokeWidth} height={3} color={color} />
+
+      <LineShape x={3} y={11.2} width={3} height={strokeWidth} color={color} />
+      <LineShape x={18} y={11.2} width={3} height={strokeWidth} color={color} />
+
+      <LineShape
+        x={5.1}
+        y={5.4}
+        width={3.4}
+        height={strokeWidth}
+        color={color}
+        rotate={45}
+      />
+
+      <LineShape
+        x={15.6}
+        y={16}
+        width={3.4}
+        height={strokeWidth}
+        color={color}
+        rotate={45}
+      />
+
+      <LineShape
+        x={15.5}
+        y={5.4}
+        width={3.4}
+        height={strokeWidth}
+        color={color}
+        rotate={-45}
+      />
+
+      <LineShape
+        x={5.1}
+        y={16}
+        width={3.4}
+        height={strokeWidth}
+        color={color}
+        rotate={-45}
+      />
+    </IconCanvas>
+  );
+}
+
+export function MoonIcon({
+  size = 20,
+  color = "#E0E0E0",
+  strokeWidth = 2.4,
+}: IconProps) {
+  return (
+    <IconCanvas size={size}>
+      <View
+        style={[
+          styles.absolute,
+          {
+            left: 6,
+            top: 3.5,
+            width: 13.5,
+            height: 17,
+            borderRadius: 999,
+            borderLeftWidth: strokeWidth + 1,
+            borderTopWidth: strokeWidth,
+            borderBottomWidth: strokeWidth,
+            borderRightWidth: 0,
+            borderColor: color,
+            transform: [{ rotate: "-13deg" }],
+          } as any,
+        ]}
+      />
+
+      <View
+        style={[
+          styles.absolute,
+          {
+            left: 12.5,
+            top: 5.3,
+            width: 5.5,
+            height: 13,
+            borderRadius: 999,
+            borderLeftWidth: strokeWidth,
+            borderColor: color,
+            transform: [{ rotate: "-8deg" }],
+          } as any,
+        ]}
+      />
+    </IconCanvas>
+  );
+}
 const styles = StyleSheet.create({
   badge: {
     alignItems: "center",

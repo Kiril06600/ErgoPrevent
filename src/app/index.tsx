@@ -6,15 +6,14 @@ import {
   Text,
   Pressable,
   StyleSheet,
-  } from "react-native";
-  import { Link } from "expo-router";
-  import { AppStats, getAppStats } from "../lib/storage";
-  import BottomNav from "../components/BottomNav";
-  import { ThemeColors } from "../theme/colors";
-  import { useAppTheme } from "../theme/ThemeContext";
-  import {
+} from "react-native";
+import { Link } from "expo-router";
+import { AppStats, getAppStats } from "../lib/storage";
+import BottomNav from "../components/BottomNav";
+import { ThemeColors } from "../theme/colors";
+import { useAppTheme } from "../theme/ThemeContext";
+import {
   IconBadge,
-  PreventionIcon,
   RoutineIcon,
   ProgressIcon,
   PlanIcon,
@@ -22,6 +21,8 @@ import {
   EducationIcon,
   PostureIcon,
   ExerciseIcon,
+  SunIcon,
+  MoonIcon,
 } from "../components/ErgoIcons";
 
 type AppRoute =
@@ -144,13 +145,18 @@ export default function HomeScreen() {
         <View style={styles.topHeader}>
           <View>
             <Text style={styles.logo}>ErgoPrevent</Text>
-            <Text style={styles.tagline}>Prévention et confort au quotidien</Text>
+            <Text style={styles.tagline}>
+              Prévention et confort au quotidien
+            </Text>
           </View>
 
-          <Pressable style={styles.themeButton} onPress={toggleTheme}>
-            <Text style={styles.themeIcon}>
-              {mode === "dark" ? "☀️" : "🌙"}
-            </Text>
+                    <Pressable style={styles.themeButton} onPress={toggleTheme}>
+            {mode === "dark" ? (
+              <SunIcon size={20} color={colors.text} />
+            ) : (
+              <MoonIcon size={22} color={colors.text} />
+            )}
+
             <Text style={styles.themeText}>
               {mode === "dark" ? "Clair" : "Sombre"}
             </Text>
@@ -158,30 +164,20 @@ export default function HomeScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroDecoration}>
-              <IconBadge
-                size={52}
-                backgroundColor={colors.backgroundSoft}
-                borderColor={colors.border}
-              >
-                <PreventionIcon size={26} color={colors.text} />
-              </IconBadge>
-            </View>
+          <Text style={styles.greeting}>
+            {firstName ? `Bonjour ${firstName}` : "Bienvenue"}
+          </Text>
+
+          <View style={styles.titleRow}>
+            <Text style={styles.title}>
+              Prenez soin de votre posture, de vos pauses et de votre confort.
+            </Text>
 
             <View style={styles.pointsBadge}>
               <Text style={styles.pointsNumber}>{points}</Text>
               <Text style={styles.pointsLabel}>points</Text>
             </View>
           </View>
-
-          <Text style={styles.greeting}>
-            {firstName ? `Bonjour ${firstName}` : "Bienvenue"}
-          </Text>
-
-          <Text style={styles.title}>
-            Prenez soin de votre posture, de vos pauses et de votre confort.
-          </Text>
 
           <Text style={styles.subtitle}>
             Une application simple pour suivre vos habitudes, vos douleurs et vos
@@ -236,12 +232,13 @@ export default function HomeScreen() {
           <Link href="/routine" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <RoutineIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <BreakIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Routine</Text>
               <Text style={styles.quickText}>Actions du jour</Text>
             </Pressable>
@@ -250,12 +247,13 @@ export default function HomeScreen() {
           <Link href="/daily-checkin" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <RoutineIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <RoutineIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Check-in</Text>
               <Text style={styles.quickText}>Suivi du moment</Text>
             </Pressable>
@@ -264,12 +262,13 @@ export default function HomeScreen() {
           <Link href="/progress" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <ProgressIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <ProgressIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Évolution</Text>
               <Text style={styles.quickText}>Voir les tendances</Text>
             </Pressable>
@@ -278,12 +277,13 @@ export default function HomeScreen() {
           <Link href="/personal-plan" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <PlanIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <PlanIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Plan</Text>
               <Text style={styles.quickText}>Actions adaptées</Text>
             </Pressable>
@@ -292,12 +292,13 @@ export default function HomeScreen() {
           <Link href="/questionnaire" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <EducationIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <EducationIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Questionnaire</Text>
               <Text style={styles.quickText}>Évaluer les TMS</Text>
             </Pressable>
@@ -306,12 +307,13 @@ export default function HomeScreen() {
           <Link href="/workstation-audit" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <PostureIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <PostureIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Audit</Text>
               <Text style={styles.quickText}>Analyser le poste</Text>
             </Pressable>
@@ -320,12 +322,13 @@ export default function HomeScreen() {
           <Link href="/timer" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <BreakIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <BreakIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Minuterie</Text>
               <Text style={styles.quickText}>Pause active 25/2</Text>
             </Pressable>
@@ -334,12 +337,13 @@ export default function HomeScreen() {
           <Link href="/exercises" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <ExerciseIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <ExerciseIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Exercices</Text>
               <Text style={styles.quickText}>Bouger simplement</Text>
             </Pressable>
@@ -348,12 +352,13 @@ export default function HomeScreen() {
           <Link href="/education" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <EducationIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <EducationIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Formation</Text>
               <Text style={styles.quickText}>Capsules courtes</Text>
             </Pressable>
@@ -362,12 +367,13 @@ export default function HomeScreen() {
           <Link href="/dashboard" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
-                    size={42}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <ProgressIcon size={22} color={colors.text} />
-                  </IconBadge>
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <ProgressIcon size={22} color={colors.text} />
+              </IconBadge>
+
               <Text style={styles.quickTitle}>Dashboard</Text>
               <Text style={styles.quickText}>Progression</Text>
             </Pressable>
@@ -416,14 +422,14 @@ function createStyles(colors: ThemeColors) {
       fontSize: 14,
       color: colors.textSoft,
     },
-    themeButton: {
-      backgroundColor: colors.cardWarm,
+        themeButton: {
+      backgroundColor: "transparent",
       borderRadius: 18,
       paddingVertical: 10,
       paddingHorizontal: 13,
       alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
+      borderWidth: 0,
+      borderColor: "transparent",
       minWidth: 76,
     },
     themeIcon: {
@@ -442,23 +448,6 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 18,
       borderWidth: 1,
       borderColor: colors.border,
-    },
-    heroTopRow: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      marginBottom: 18,
-    },
-    heroDecoration: {
-      width: 68,
-      height: 68,
-      borderRadius: 34,
-      backgroundColor: colors.secondaryLight,
-      alignItems: "center",
-      justifyContent: "center",
-    },
-    heroIcon: {
-      fontSize: 34,
     },
     pointsBadge: {
       backgroundColor: colors.primary,
@@ -484,7 +473,15 @@ function createStyles(colors: ThemeColors) {
       color: colors.primary,
       marginBottom: 10,
     },
+    titleRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 14,
+      marginTop: 10,
+    },
     title: {
+      flex: 1,
       fontSize: 31,
       lineHeight: 39,
       fontWeight: "900",
@@ -611,14 +608,11 @@ function createStyles(colors: ThemeColors) {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    quickIcon: {
-      fontSize: 30,
-      marginBottom: 12,
-    },
     quickTitle: {
       fontSize: 16,
       fontWeight: "900",
       color: colors.text,
+      marginTop: 12,
       marginBottom: 5,
     },
     quickText: {

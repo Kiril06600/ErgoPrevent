@@ -12,6 +12,14 @@ import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import {
+  IconBadge,
+  ExerciseIcon,
+  EducationIcon,
+  MonitorIcon,
+  FireIcon,
+  GrowthIcon,
+} from "../components/ErgoIcons";
 
 export default function DashboardScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
@@ -163,28 +171,52 @@ export default function DashboardScreen() {
 
           {completedExercises > 0 && (
             <View style={styles.badgeCard}>
-              <Text style={styles.badgeIcon}>💪</Text>
+              <IconBadge
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <ExerciseIcon size={22} color={colors.text} />
+              </IconBadge>
               <Text style={styles.badgeText}>Premier exercice complété</Text>
             </View>
           )}
 
           {completedCapsules > 0 && (
             <View style={styles.badgeCard}>
-              <Text style={styles.badgeIcon}>🎓</Text>
+              <IconBadge
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <EducationIcon size={22} color={colors.text} />
+              </IconBadge>
               <Text style={styles.badgeText}>Première capsule lue</Text>
             </View>
           )}
 
           {workstationAuditResult && (
             <View style={styles.badgeCard}>
-              <Text style={styles.badgeIcon}>🖥️</Text>
+              <IconBadge
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <MonitorIcon size={22} color={colors.text} />
+              </IconBadge>
               <Text style={styles.badgeText}>Premier audit du poste</Text>
             </View>
           )}
 
           {points >= 100 && (
             <View style={styles.badgeCard}>
-              <Text style={styles.badgeIcon}>🔥</Text>
+              <IconBadge
+                size={42}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <FireIcon size={22} color={colors.text} />
+              </IconBadge>
               <Text style={styles.badgeText}>100 points obtenus</Text>
             </View>
           )}
@@ -195,7 +227,13 @@ export default function DashboardScreen() {
             !workstationAuditResult &&
             points === 0 && (
               <View style={styles.badgeCard}>
-                <Text style={styles.badgeIcon}>🌱</Text>
+                <IconBadge
+                  size={42}
+                  backgroundColor={colors.backgroundSoft}
+                  borderColor={colors.border}
+                >
+                  <GrowthIcon size={22} color={colors.text} />
+                </IconBadge>
                 <Text style={styles.badgeText}>
                   Commencez une action pour obtenir votre premier badge.
                 </Text>
