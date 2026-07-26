@@ -1936,7 +1936,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       lineHeight: 20,
       color: colors.warningText,
     },
-    quickActionsRow: {
+        quickActionsRow: {
       paddingLeft: 24,
       paddingRight: 24,
       gap: 12,
