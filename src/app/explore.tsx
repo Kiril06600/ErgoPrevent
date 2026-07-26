@@ -11,44 +11,300 @@ import { Link } from "expo-router";
 import BottomNav from "../components/BottomNav";
 import { useAppTheme } from "../theme/ThemeContext";
 import { ThemeColors } from "../theme/colors";
+import {
+  IconBadge,
+  HomeIcon,
+  RoutineIcon,
+  PlanIcon,
+  EducationIcon,
+  ProfileIcon,
+  PostureIcon,
+  ProgressIcon,
+  BreakIcon,
+  ExerciseIcon,
+} from "../components/ErgoIcons";
+
+type AppRoute =
+  | "/"
+  | "/routine"
+  | "/personal-plan"
+  | "/daily-checkin"
+  | "/questionnaire"
+  | "/workstation-audit"
+  | "/timer"
+  | "/exercises"
+  | "/education"
+  | "/progress"
+  | "/dashboard"
+  | "/profile"
+  | "/export-data";
+
+type ExploreItem = {
+  label: string;
+  title: string;
+  text: string;
+  href: AppRoute;
+  Icon: React.ComponentType<{
+    size?: number;
+    color?: string;
+    strokeWidth?: number;
+  }>;
+};
+
+type ExploreSection = {
+  title: string;
+  subtitle: string;
+  items: ExploreItem[];
+};
+
+const sections: ExploreSection[] = [
+  {
+    title: "Commencer",
+    subtitle: "Les pages principales pour utiliser l’application au quotidien.",
+    items: [
+      {
+        label: "Accueil",
+        title: "Vue d’ensemble",
+        text: "Retourner à la page principale.",
+        href: "/",
+        Icon: HomeIcon,
+      },
+      {
+        label: "Routine",
+        title: "Actions du jour",
+        text: "Voir les recommandations quotidiennes.",
+        href: "/routine",
+        Icon: RoutineIcon,
+      },
+      {
+        label: "Check-in",
+        title: "Suivi rapide",
+        text: "Noter douleur, fatigue et zone concernée.",
+        href: "/daily-checkin",
+        Icon: ProgressIcon,
+      },
+    ],
+  },
+  {
+    title: "Évaluer",
+    subtitle: "Les outils pour mieux comprendre vos priorités ergonomiques.",
+    items: [
+      {
+        label: "TMS",
+        title: "Questionnaire",
+        text: "Évaluer les zones à surveiller.",
+        href: "/questionnaire",
+        Icon: PostureIcon,
+      },
+      {
+        label: "Poste",
+        title: "Audit du poste",
+        text: "Analyser écran, chaise, clavier et souris.",
+        href: "/workstation-audit",
+        Icon: PostureIcon,
+      },
+      {
+        label: "Plan",
+        title: "Plan personnalisé",
+        text: "Voir vos priorités et recommandations.",
+        href: "/personal-plan",
+        Icon: PlanIcon,
+      },
+    ],
+  },
+  {
+    title: "Agir",
+    subtitle: "Les pages pour bouger, apprendre et suivre vos progrès.",
+    items: [
+      {
+        label: "Pause",
+        title: "Minuterie",
+        text: "Démarrer une pause active.",
+        href: "/timer",
+        Icon: BreakIcon,
+      },
+      {
+        label: "Mobilité",
+        title: "Exercices",
+        text: "Faire des mouvements courts.",
+        href: "/exercises",
+        Icon: ExerciseIcon,
+      },
+      {
+        label: "Formation",
+        title: "Capsules",
+        text: "Lire des notions simples d’ergonomie.",
+        href: "/education",
+        Icon: EducationIcon,
+      },
+    ],
+  },
+  {
+    title: "Suivre",
+    subtitle: "Les pages pour visualiser, gérer ou exporter vos données.",
+    items: [
+      {
+        label: "Évolution",
+        title: "Progression",
+        text: "Voir les tendances de vos check-ins.",
+        href: "/progress",
+        Icon: ProgressIcon,
+      },
+      {
+        label: "Résumé",
+        title: "Dashboard",
+        text: "Consulter scores, points et habitudes.",
+        href: "/dashboard",
+        Icon: PlanIcon,
+      },
+      {
+        label: "Profil",
+        title: "Paramètres",
+        text: "Gérer votre profil et vos données.",
+        href: "/profile",
+        Icon: ProfileIcon,
+      },
+      {
+        label: "Export",
+        title: "Exporter",
+        text: "Télécharger vos données locales.",
+        href: "/export-data",
+        Icon: ProfileIcon,
+      },
+    ],
+  },
+];
 
 export default function ExploreScreen() {
-  const { colors } = useAppTheme();
-  const styles = createStyles(colors);
+  const { colors, mode } = useAppTheme();
+  const styles = createStyles(colors, mode);
+
+  const totalItems = sections.reduce(
+    (total, section) => total + section.items.length,
+    0
+  );
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.card}>
-          <Text style={styles.icon}>🌿</Text>
+        <View style={styles.pageHeader}>
+          <View style={styles.pagePill}>
+            <Text style={styles.pagePillText}>Découverte</Text>
+          </View>
 
-          <Text style={styles.title}>Explorer ErgoPrevent</Text>
+          <Text style={styles.pageTitle}>Explorer</Text>
 
-          <Text style={styles.text}>
-            Cette page regroupe les principales sections de l’application. Elle
-            peut servir plus tard comme page de découverte ou d’aide.
+          <Text style={styles.subtitle}>
+            Retrouvez rapidement toutes les sections importantes
+            d’ErgoPrevent.
           </Text>
-
-          <Link href="/" asChild>
-            <Pressable style={styles.primaryButton}>
-              <Text style={styles.primaryButtonText}>Retour à l’accueil</Text>
-            </Pressable>
-          </Link>
-
-          <Link href="/routine" asChild>
-            <Pressable style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>Voir ma routine</Text>
-            </Pressable>
-          </Link>
-
-          <Link href="/personal-plan" asChild>
-            <Pressable style={styles.secondaryButton}>
-              <Text style={styles.secondaryButtonText}>
-                Voir mon plan personnalisé
-              </Text>
-            </Pressable>
-          </Link>
         </View>
+
+        <View style={styles.heroCard}>
+          <View style={styles.heroShapeLarge} />
+          <View style={styles.heroShapeSmall} />
+
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTextBlock}>
+              <Text style={styles.heroLabel}>Navigation</Text>
+              <Text style={styles.heroTitle}>Tout votre espace au même endroit.</Text>
+            </View>
+
+            <IconBadge
+              size={58}
+              backgroundColor={colors.backgroundSoft}
+              borderColor={colors.border}
+            >
+              <EducationIcon size={27} color={colors.text} />
+            </IconBadge>
+          </View>
+
+          <Text style={styles.heroText}>
+            Cette page sert de carte de l’application. Elle vous permet de
+            retrouver les questionnaires, les exercices, le suivi et les
+            paramètres.
+          </Text>
+        </View>
+
+        <View style={styles.statsPanel}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{sections.length}</Text>
+            <Text style={styles.statLabel}>sections</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{totalItems}</Text>
+            <Text style={styles.statLabel}>pages</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>1</Text>
+            <Text style={styles.statLabel}>hub</Text>
+          </View>
+        </View>
+
+        {sections.map((section) => (
+          <View key={section.title}>
+            <View style={styles.sectionHeaderRow}>
+              <View>
+                <Text style={styles.sectionTitle}>{section.title}</Text>
+                <Text style={styles.sectionSubtitle}>{section.subtitle}</Text>
+              </View>
+            </View>
+
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              contentContainerStyle={styles.cardsRow}
+            >
+              {section.items.map((item) => {
+                const ItemIcon = item.Icon;
+
+                return (
+                  <Link key={item.href} href={item.href} asChild>
+                    <Pressable style={styles.exploreCard}>
+                      <IconBadge
+                        size={46}
+                        backgroundColor={colors.backgroundSoft}
+                        borderColor={colors.border}
+                      >
+                        <ItemIcon size={22} color={colors.text} />
+                      </IconBadge>
+
+                      <Text style={styles.cardLabel}>{item.label}</Text>
+                      <Text style={styles.cardTitle}>{item.title}</Text>
+                      <Text style={styles.cardText}>{item.text}</Text>
+
+                      <View style={styles.cardArrowCircle}>
+                        <Text style={styles.cardArrowText}>→</Text>
+                      </View>
+                    </Pressable>
+                  </Link>
+                );
+              })}
+            </ScrollView>
+          </View>
+        ))}
+
+        <View style={styles.tipBox}>
+          <Text style={styles.tipTitle}>Conseil</Text>
+          <Text style={styles.tipText}>
+            Pour une utilisation simple, commencez par le questionnaire, puis
+            l’audit du poste. Ensuite, utilisez la routine, la minuterie et les
+            exercices au quotidien.
+          </Text>
+        </View>
+
+        <Link href="/" asChild>
+          <Pressable style={styles.primaryButton}>
+            <Text style={styles.primaryButtonText}>Retour à l’accueil</Text>
+            <Text style={styles.primaryButtonArrow}>→</Text>
+          </Pressable>
+        </Link>
 
         <BottomNav />
       </ScrollView>
@@ -56,65 +312,278 @@ export default function ExploreScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, mode: "light" | "dark") {
+  const isDark = mode === "dark";
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      padding: 24,
+      paddingTop: 24,
       paddingBottom: 48,
     },
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 24,
+    pageHeader: {
+      paddingHorizontal: 24,
+      marginTop: 10,
+      marginBottom: 22,
+    },
+    pagePill: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.backgroundSoft,
+      borderRadius: 999,
+      paddingVertical: 8,
+      paddingHorizontal: 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginTop: 20,
-    },
-    icon: {
-      fontSize: 42,
       marginBottom: 14,
     },
-    title: {
-      fontSize: 30,
+    pagePillText: {
+      color: colors.textSoft,
+      fontSize: 12,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+    },
+    pageTitle: {
+      fontSize: 38,
+      lineHeight: 43,
       fontWeight: "900",
       color: colors.text,
-      marginBottom: 12,
+      letterSpacing: -1,
+      marginBottom: 10,
     },
-    text: {
+    subtitle: {
       fontSize: 16,
       lineHeight: 24,
       color: colors.textSoft,
-      marginBottom: 22,
+      maxWidth: 520,
+    },
+    heroCard: {
+      marginHorizontal: 24,
+      marginBottom: 18,
+      borderRadius: 36,
+      padding: 24,
+      minHeight: 245,
+      backgroundColor: colors.card,
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: "hidden",
+      position: "relative",
+      justifyContent: "space-between",
+    },
+    heroShapeLarge: {
+      position: "absolute",
+      width: 210,
+      height: 210,
+      borderRadius: 105,
+      right: -70,
+      top: -42,
+      backgroundColor: isDark
+        ? "rgba(95,159,149,0.16)"
+        : "rgba(216,196,182,0.26)",
+    },
+    heroShapeSmall: {
+      position: "absolute",
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      left: -28,
+      bottom: -28,
+      backgroundColor: isDark
+        ? "rgba(245,238,223,0.08)"
+        : "rgba(95,159,149,0.12)",
+    },
+    heroTopRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 16,
+      zIndex: 2,
+    },
+    heroTextBlock: {
+      flex: 1,
+    },
+    heroLabel: {
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 8,
+    },
+    heroTitle: {
+      fontSize: 32,
+      lineHeight: 38,
+      fontWeight: "900",
+      color: colors.text,
+      letterSpacing: -0.7,
+      maxWidth: 390,
+    },
+    heroText: {
+      fontSize: 15,
+      lineHeight: 23,
+      color: colors.textSoft,
+      maxWidth: 500,
+      zIndex: 2,
+      marginTop: 22,
+    },
+    statsPanel: {
+      marginHorizontal: 24,
+      marginBottom: 26,
+      backgroundColor: colors.card,
+      borderRadius: 26,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    statItem: {
+      flex: 1,
+      alignItems: "center",
+    },
+    statDivider: {
+      width: 1,
+      height: 38,
+      backgroundColor: colors.border,
+    },
+    statNumber: {
+      fontSize: 23,
+      fontWeight: "900",
+      color: colors.text,
+      lineHeight: 27,
+    },
+    statLabel: {
+      marginTop: 4,
+      fontSize: 10,
+      color: colors.textMuted,
+      fontWeight: "900",
+      textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    sectionHeaderRow: {
+      paddingHorizontal: 24,
+      marginBottom: 14,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      gap: 16,
+    },
+    sectionTitle: {
+      fontSize: 24,
+      fontWeight: "900",
+      color: colors.text,
+      letterSpacing: -0.4,
+      marginBottom: 4,
+    },
+    sectionSubtitle: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+      maxWidth: 540,
+    },
+    cardsRow: {
+      paddingLeft: 24,
+      paddingRight: 24,
+      gap: 12,
+      marginBottom: 28,
+    },
+    exploreCard: {
+      width: 175,
+      minHeight: 215,
+      backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 17,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: "space-between",
+    },
+    cardLabel: {
+      fontSize: 10,
+      fontWeight: "900",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginTop: 14,
+      marginBottom: 7,
+    },
+    cardTitle: {
+      fontSize: 19,
+      lineHeight: 24,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    cardText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSoft,
+      marginBottom: 12,
+    },
+    cardArrowCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-end",
+    },
+    cardArrowText: {
+      color: colors.text,
+      fontSize: 19,
+      fontWeight: "900",
+      lineHeight: 19,
+    },
+    tipBox: {
+      marginHorizontal: 24,
+      backgroundColor: colors.warning,
+      borderRadius: 22,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 16,
+    },
+    tipTitle: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.warningText,
+      marginBottom: 5,
+    },
+    tipText: {
+      fontSize: 13,
+      lineHeight: 20,
+      color: colors.warningText,
     },
     primaryButton: {
+      marginHorizontal: 24,
       backgroundColor: colors.primary,
-      paddingVertical: 16,
-      borderRadius: 18,
+      paddingVertical: 15,
+      paddingHorizontal: 18,
+      borderRadius: 999,
       alignItems: "center",
-      marginBottom: 12,
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 8,
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: "900",
     },
-    secondaryButton: {
-      paddingVertical: 14,
-      borderRadius: 16,
-      alignItems: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
-      backgroundColor: colors.cardWarm,
-      marginBottom: 12,
-    },
-    secondaryButtonText: {
-      color: colors.text,
-      fontSize: 15,
-      fontWeight: "800",
+    primaryButtonArrow: {
+      color: colors.black,
+      fontSize: 20,
+      fontWeight: "900",
+      lineHeight: 20,
     },
   });
 }
