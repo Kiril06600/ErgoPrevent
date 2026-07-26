@@ -18,7 +18,15 @@ import {
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { ThemeMode, useAppTheme } from "../theme/ThemeContext";
-import { SunIcon, MoonIcon } from "../components/ErgoIcons";
+import {
+  IconBadge,
+  ProfileIcon,
+  ProgressIcon,
+  PlanIcon,
+  RoutineIcon,
+  SunIcon,
+  MoonIcon,
+} from "../components/ErgoIcons";
 
 const statuses = ["Étudiant", "Travailleur", "Télétravailleur", "Autre"];
 
@@ -32,6 +40,51 @@ const goals = [
 
 const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
 const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
+
+type AppRoute = "/dashboard" | "/routine" | "/personal-plan" | "/export-data";
+
+type QuickAction = {
+  label: string;
+  title: string;
+  text: string;
+  href: AppRoute;
+  Icon: React.ComponentType<{
+    size?: number;
+    color?: string;
+    strokeWidth?: number;
+  }>;
+};
+
+const quickActions: QuickAction[] = [
+  {
+    label: "Résumé",
+    title: "Dashboard",
+    text: "Voir vos scores et points.",
+    href: "/dashboard",
+    Icon: ProgressIcon,
+  },
+  {
+    label: "Aujourd’hui",
+    title: "Routine",
+    text: "Retourner aux actions du jour.",
+    href: "/routine",
+    Icon: RoutineIcon,
+  },
+  {
+    label: "Objectifs",
+    title: "Plan",
+    text: "Voir vos priorités personnalisées.",
+    href: "/personal-plan",
+    Icon: PlanIcon,
+  },
+  {
+    label: "Données",
+    title: "Exporter",
+    text: "Télécharger vos données locales.",
+    href: "/export-data",
+    Icon: ProfileIcon,
+  },
+];
 
 function readLocalStorageValue(key: string) {
   if (typeof window === "undefined") {
@@ -77,10 +130,13 @@ export default function ProfileScreen() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const { colors, mode, setThemeMode } = useAppTheme();
-  const styles = createStyles(colors);
+  const styles = createStyles(colors, mode);
 
   const questionnaireScore = stats.questionnaireResult?.score;
   const workstationScore = stats.workstationAuditResult?.score;
+
+  const displayName = firstName.trim().length > 0 ? firstName.trim() : "";
+  const avatarLetter = displayName.length > 0 ? displayName[0].toUpperCase() : "E";
 
   const exportedData = JSON.stringify(
     {
@@ -102,7 +158,7 @@ export default function ProfileScreen() {
     });
 
     setStats(updatedStats);
-    setSavedMessage("Profil sauvegardé ✓");
+    setSavedMessage("Profil sauvegardé");
     setShowResetConfirm(false);
   }
 
@@ -116,7 +172,7 @@ export default function ProfileScreen() {
     setStatus("Étudiant");
     setProfession("");
     setMainGoal("Prévenir les douleurs");
-    setSavedMessage("Données réinitialisées ✓");
+    setSavedMessage("Données réinitialisées");
     setShowData(false);
     setShowResetConfirm(false);
   }
@@ -124,60 +180,91 @@ export default function ProfileScreen() {
   function handleThemeChange(nextMode: ThemeMode) {
     setThemeMode(nextMode);
     setSavedMessage(
-      nextMode === "dark" ? "Mode sombre activé ✓" : "Mode clair activé ✓"
+      nextMode === "dark" ? "Mode sombre activé" : "Mode clair activé"
     );
   }
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Profil et paramètres</Text>
-
-        <Text style={styles.subtitle}>
-          Personnalisez votre profil, gérez l’apparence de l’application et
-          contrôlez vos données locales.
-        </Text>
-
-        <View style={styles.heroCard}>
-          <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>
-              {firstName.length > 0 ? firstName[0].toUpperCase() : "E"}
-            </Text>
+        <View style={styles.pageHeader}>
+          <View style={styles.pagePill}>
+            <Text style={styles.pagePillText}>Paramètres</Text>
           </View>
 
-          <View style={styles.heroTextContainer}>
-            <Text style={styles.heroTitle}>
-              {firstName ? firstName : "Votre espace"}
-            </Text>
-            <Text style={styles.heroText}>
-              {profession
-                ? profession
-                : "Configurez votre profil pour personnaliser votre expérience."}
-            </Text>
+          <Text style={styles.pageTitle}>Profil</Text>
+
+          <Text style={styles.subtitle}>
+            Personnalisez votre profil, gérez l’apparence de l’application et
+            contrôlez vos données locales.
+          </Text>
+        </View>
+
+        <View style={styles.heroCard}>
+          <View style={styles.heroShapeLarge} />
+          <View style={styles.heroShapeSmall} />
+
+          <View style={styles.heroTopRow}>
+            <View style={styles.avatarCircle}>
+              <Text style={styles.avatarText}>{avatarLetter}</Text>
+            </View>
+
+            <View style={styles.heroTextContainer}>
+              <Text style={styles.heroLabel}>
+                {displayName ? "Espace personnel" : "Bienvenue"}
+              </Text>
+
+              <Text style={styles.heroTitle}>
+                {displayName ? displayName : "Votre espace"}
+              </Text>
+
+              <Text style={styles.heroText}>
+                {profession
+                  ? profession
+                  : "Configurez votre profil pour personnaliser votre expérience."}
+              </Text>
+            </View>
           </View>
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Apparence</Text>
+          <View style={styles.cardHeader}>
+            <IconBadge
+              size={46}
+              backgroundColor={colors.backgroundSoft}
+              borderColor={colors.border}
+            >
+              <SunIcon
+                size={22}
+                color={mode === "light" ? colors.text : colors.textSoft}
+              />
+            </IconBadge>
 
-          <Text style={styles.dataText}>
-            Choisissez le mode visuel de l’application. Le choix est conservé
-            dans ce navigateur.
-          </Text>
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.sectionTitle}>Apparence</Text>
+              <Text style={styles.sectionSubtitle}>
+                Choisissez le mode visuel de l’application.
+              </Text>
+            </View>
+          </View>
 
           <View style={styles.themeOptions}>
             <Pressable
               style={[
                 styles.themeChoice,
-                mode === "light" && styles.themeChoiceSelected,
+                mode === "light" ? styles.themeChoiceSelected : null,
               ]}
               onPress={() => handleThemeChange("light")}
             >
-              <SunIcon size={24} color={mode === "light" ? colors.black : colors.text} />
+              <SunIcon
+                size={25}
+                color={mode === "light" ? colors.black : colors.text}
+              />
+
               <Text
                 style={[
                   styles.themeChoiceText,
-                  mode === "light" && styles.themeChoiceTextSelected,
+                  mode === "light" ? styles.themeChoiceTextSelected : null,
                 ]}
               >
                 Mode clair
@@ -187,15 +274,19 @@ export default function ProfileScreen() {
             <Pressable
               style={[
                 styles.themeChoice,
-                mode === "dark" && styles.themeChoiceSelected,
+                mode === "dark" ? styles.themeChoiceSelected : null,
               ]}
               onPress={() => handleThemeChange("dark")}
             >
-              <MoonIcon size={26} color={mode === "dark" ? colors.black : colors.text} />
+              <MoonIcon
+                size={27}
+                color={mode === "dark" ? colors.black : colors.text}
+              />
+
               <Text
                 style={[
                   styles.themeChoiceText,
-                  mode === "dark" && styles.themeChoiceTextSelected,
+                  mode === "dark" ? styles.themeChoiceTextSelected : null,
                 ]}
               >
                 Mode sombre
@@ -205,7 +296,22 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Informations personnelles</Text>
+          <View style={styles.cardHeader}>
+            <IconBadge
+              size={46}
+              backgroundColor={colors.backgroundSoft}
+              borderColor={colors.border}
+            >
+              <ProfileIcon size={22} color={colors.text} />
+            </IconBadge>
+
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.sectionTitle}>Informations personnelles</Text>
+              <Text style={styles.sectionSubtitle}>
+                Ces informations restent sauvegardées localement.
+              </Text>
+            </View>
+          </View>
 
           <Text style={styles.label}>Prénom</Text>
           <TextInput
@@ -227,14 +333,14 @@ export default function ProfileScreen() {
                   key={item}
                   style={[
                     styles.optionButton,
-                    selected && styles.optionButtonSelected,
+                    selected ? styles.optionButtonSelected : null,
                   ]}
                   onPress={() => setStatus(item)}
                 >
                   <Text
                     style={[
                       styles.optionText,
-                      selected && styles.optionTextSelected,
+                      selected ? styles.optionTextSelected : null,
                     ]}
                   >
                     {item}
@@ -264,14 +370,14 @@ export default function ProfileScreen() {
                   key={item}
                   style={[
                     styles.optionButton,
-                    selected && styles.optionButtonSelected,
+                    selected ? styles.optionButtonSelected : null,
                   ]}
                   onPress={() => setMainGoal(item)}
                 >
                   <Text
                     style={[
                       styles.optionText,
-                      selected && styles.optionTextSelected,
+                      selected ? styles.optionTextSelected : null,
                     ]}
                   >
                     {item}
@@ -283,34 +389,55 @@ export default function ProfileScreen() {
 
           <Pressable style={styles.primaryButton} onPress={handleSaveProfile}>
             <Text style={styles.primaryButtonText}>Sauvegarder mon profil</Text>
+            <Text style={styles.primaryButtonArrow}>→</Text>
           </Pressable>
 
           {savedMessage.length > 0 && (
-            <Text style={styles.savedMessage}>{savedMessage}</Text>
+            <View style={styles.messageBox}>
+              <Text style={styles.savedMessage}>{savedMessage}</Text>
+            </View>
           )}
         </View>
 
         <View style={styles.summaryCard}>
-          <Text style={styles.sectionTitle}>
-            {firstName ? `Résumé de ${firstName}` : "Résumé"}
-          </Text>
+          <View style={styles.summaryHeader}>
+            <IconBadge
+              size={46}
+              backgroundColor={colors.turquoiseSoft}
+              borderColor={colors.border}
+            >
+              <ProgressIcon size={22} color={colors.text} />
+            </IconBadge>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Score TMS</Text>
-            <Text style={styles.summaryValue}>
-              {questionnaireScore !== undefined
-                ? `${questionnaireScore}/100`
-                : "--/100"}
-            </Text>
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.sectionTitle}>
+                {displayName ? `Résumé de ${displayName}` : "Résumé"}
+              </Text>
+              <Text style={styles.sectionSubtitle}>
+                Aperçu de votre progression locale.
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Score du poste</Text>
-            <Text style={styles.summaryValue}>
-              {workstationScore !== undefined
-                ? `${workstationScore}/100`
-                : "--/100"}
-            </Text>
+          <View style={styles.summaryGrid}>
+            <View style={styles.summaryMiniCard}>
+              <Text style={styles.summaryMiniNumber}>
+                {questionnaireScore !== undefined ? questionnaireScore : "--"}
+              </Text>
+              <Text style={styles.summaryMiniLabel}>Score TMS</Text>
+            </View>
+
+            <View style={styles.summaryMiniCard}>
+              <Text style={styles.summaryMiniNumber}>
+                {workstationScore !== undefined ? workstationScore : "--"}
+              </Text>
+              <Text style={styles.summaryMiniLabel}>Score poste</Text>
+            </View>
+
+            <View style={styles.summaryMiniCard}>
+              <Text style={styles.summaryMiniNumber}>{stats.points}</Text>
+              <Text style={styles.summaryMiniLabel}>Points</Text>
+            </View>
           </View>
 
           <View style={styles.summaryRow}>
@@ -326,11 +453,6 @@ export default function ProfileScreen() {
           <View style={styles.summaryRow}>
             <Text style={styles.summaryLabel}>Capsules lues</Text>
             <Text style={styles.summaryValue}>{stats.completedCapsules}</Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Points</Text>
-            <Text style={styles.summaryValue}>{stats.points}</Text>
           </View>
 
           <View style={styles.summaryRow}>
@@ -351,7 +473,22 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.card}>
-          <Text style={styles.sectionTitle}>Données locales</Text>
+          <View style={styles.cardHeader}>
+            <IconBadge
+              size={46}
+              backgroundColor={colors.backgroundSoft}
+              borderColor={colors.border}
+            >
+              <ProfileIcon size={22} color={colors.text} />
+            </IconBadge>
+
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.sectionTitle}>Données locales</Text>
+              <Text style={styles.sectionSubtitle}>
+                Vos données restent dans ce navigateur.
+              </Text>
+            </View>
+          </View>
 
           <Text style={styles.dataText}>
             Vos données sont sauvegardées uniquement dans ce navigateur, sur cet
@@ -359,7 +496,7 @@ export default function ProfileScreen() {
           </Text>
 
           <Pressable
-            style={styles.secondaryButton}
+            style={styles.secondaryButtonInside}
             onPress={() => setShowData(!showData)}
           >
             <Text style={styles.secondaryButtonText}>
@@ -377,12 +514,14 @@ export default function ProfileScreen() {
         </View>
 
         <Link href="/export-data" asChild>
-          <Pressable style={styles.primaryButton}>
+          <Pressable style={styles.primaryButtonOutside}>
             <Text style={styles.primaryButtonText}>Exporter mes données</Text>
+            <Text style={styles.primaryButtonArrow}>→</Text>
           </Pressable>
         </Link>
 
         <View style={styles.warningBox}>
+          <Text style={styles.warningTitle}>Réinitialisation</Text>
           <Text style={styles.warningText}>
             La réinitialisation supprime le profil, les scores, les pauses, les
             exercices, les capsules, les points, les routines et les check-ins
@@ -407,14 +546,14 @@ export default function ProfileScreen() {
               l’application sur cet appareil.
             </Text>
 
-            <Pressable style={styles.dangerButton} onPress={handleResetData}>
+            <Pressable style={styles.dangerButtonInside} onPress={handleResetData}>
               <Text style={styles.dangerButtonText}>
                 Oui, tout réinitialiser
               </Text>
             </Pressable>
 
             <Pressable
-              style={styles.secondaryButton}
+              style={styles.secondaryButtonInside}
               onPress={() => setShowResetConfirm(false)}
             >
               <Text style={styles.secondaryButtonText}>Annuler</Text>
@@ -422,13 +561,48 @@ export default function ProfileScreen() {
           </View>
         )}
 
-        <Link href="/dashboard" asChild>
-          <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>
-              Voir mon tableau de bord
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitleLarge}>Actions rapides</Text>
+            <Text style={styles.sectionSubtitle}>
+              Accédez rapidement à vos pages principales.
             </Text>
-          </Pressable>
-        </Link>
+          </View>
+
+          <Text style={styles.sectionAction}>Défilez →</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickActionsRow}
+        >
+          {quickActions.map((item) => {
+            const QuickIcon = item.Icon;
+
+            return (
+              <Link key={item.href} href={item.href} asChild>
+                <Pressable style={styles.quickCard}>
+                  <IconBadge
+                    size={44}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <QuickIcon size={21} color={colors.text} />
+                  </IconBadge>
+
+                  <Text style={styles.quickLabel}>{item.label}</Text>
+                  <Text style={styles.quickTitle}>{item.title}</Text>
+                  <Text style={styles.quickText}>{item.text}</Text>
+
+                  <View style={styles.quickArrowCircle}>
+                    <Text style={styles.quickArrowText}>→</Text>
+                  </View>
+                </Pressable>
+              </Link>
+            );
+          })}
+        </ScrollView>
 
         <BottomNav />
       </ScrollView>
@@ -436,93 +610,186 @@ export default function ProfileScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, mode: "light" | "dark") {
+  const isDark = mode === "dark";
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      padding: 24,
+      paddingTop: 24,
       paddingBottom: 48,
     },
+    pageHeader: {
+      paddingHorizontal: 24,
+      marginTop: 10,
+      marginBottom: 22,
+    },
+    pagePill: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.backgroundSoft,
+      borderRadius: 999,
+      paddingVertical: 8,
+      paddingHorizontal: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    pagePillText: {
+      color: colors.textSoft,
+      fontSize: 12,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+    },
     pageTitle: {
-      fontSize: 32,
+      fontSize: 38,
+      lineHeight: 43,
       fontWeight: "900",
       color: colors.text,
+      letterSpacing: -1,
       marginBottom: 10,
     },
     subtitle: {
       fontSize: 16,
       lineHeight: 24,
       color: colors.textSoft,
-      marginBottom: 24,
+      maxWidth: 520,
     },
     heroCard: {
+      marginHorizontal: 24,
+      marginBottom: 18,
+      borderRadius: 36,
+      padding: 24,
+      minHeight: 210,
       backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 22,
-      marginBottom: 20,
       borderWidth: 1,
       borderColor: colors.border,
+      overflow: "hidden",
+      position: "relative",
+      justifyContent: "center",
+    },
+    heroShapeLarge: {
+      position: "absolute",
+      width: 210,
+      height: 210,
+      borderRadius: 105,
+      right: -70,
+      top: -42,
+      backgroundColor: isDark
+        ? "rgba(95,159,149,0.16)"
+        : "rgba(216,196,182,0.26)",
+    },
+    heroShapeSmall: {
+      position: "absolute",
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      left: -28,
+      bottom: -28,
+      backgroundColor: isDark
+        ? "rgba(245,238,223,0.08)"
+        : "rgba(95,159,149,0.12)",
+    },
+    heroTopRow: {
       flexDirection: "row",
       alignItems: "center",
       gap: 16,
+      zIndex: 2,
     },
     avatarCircle: {
-      width: 62,
-      height: 62,
-      borderRadius: 31,
-      backgroundColor: colors.secondaryLight,
+      width: 70,
+      height: 70,
+      borderRadius: 35,
+      backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
       borderWidth: 1,
-      borderColor: colors.border,
+      borderColor: colors.primaryDark,
     },
     avatarText: {
-      fontSize: 28,
+      fontSize: 30,
       fontWeight: "900",
-      color: colors.primary,
+      color: colors.black,
+      lineHeight: 34,
     },
     heroTextContainer: {
       flex: 1,
     },
+    heroLabel: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.primary,
+      textTransform: "uppercase",
+      letterSpacing: 0.8,
+      marginBottom: 6,
+    },
     heroTitle: {
-      fontSize: 23,
+      fontSize: 31,
+      lineHeight: 36,
+      fontWeight: "900",
+      color: colors.text,
+      letterSpacing: -0.6,
+      marginBottom: 6,
+    },
+    heroText: {
+      fontSize: 15,
+      lineHeight: 22,
+      color: colors.textSoft,
+      maxWidth: 440,
+    },
+    card: {
+      marginHorizontal: 24,
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    cardHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginBottom: 16,
+    },
+    cardHeaderText: {
+      flex: 1,
+    },
+    sectionTitle: {
+      fontSize: 21,
+      lineHeight: 26,
       fontWeight: "900",
       color: colors.text,
       marginBottom: 4,
     },
-    heroText: {
+    sectionTitleLarge: {
+      fontSize: 24,
+      fontWeight: "900",
+      color: colors.text,
+      letterSpacing: -0.4,
+      marginBottom: 4,
+    },
+    sectionSubtitle: {
       fontSize: 14,
       lineHeight: 20,
       color: colors.textSoft,
     },
-    card: {
-      backgroundColor: colors.card,
-      borderRadius: 24,
-      padding: 20,
-      marginBottom: 20,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    sectionTitle: {
-      fontSize: 22,
-      fontWeight: "900",
-      color: colors.text,
-      marginBottom: 14,
-    },
     label: {
-      fontSize: 15,
-      fontWeight: "800",
-      color: colors.text,
+      fontSize: 13,
+      fontWeight: "900",
+      color: colors.textSoft,
       marginBottom: 8,
-      marginTop: 12,
+      marginTop: 8,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
     },
     input: {
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 16,
+      borderRadius: 18,
       paddingVertical: 14,
       paddingHorizontal: 14,
       fontSize: 16,
@@ -535,12 +802,13 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 10,
     },
     optionButton: {
-      paddingVertical: 12,
+      paddingVertical: 13,
       paddingHorizontal: 14,
-      borderRadius: 14,
+      borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.cardWarm,
+      alignItems: "center",
     },
     optionButtonSelected: {
       backgroundColor: colors.primary,
@@ -548,8 +816,8 @@ function createStyles(colors: ThemeColors) {
     },
     optionText: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: "800",
+      fontSize: 14,
+      fontWeight: "900",
     },
     optionTextSelected: {
       color: colors.black,
@@ -557,29 +825,28 @@ function createStyles(colors: ThemeColors) {
     themeOptions: {
       flexDirection: "row",
       gap: 12,
-      marginTop: 10,
+      marginTop: 4,
     },
     themeChoice: {
       flex: 1,
       backgroundColor: colors.cardWarm,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 18,
-      padding: 16,
+      borderRadius: 24,
+      paddingVertical: 18,
+      paddingHorizontal: 14,
       alignItems: "center",
+      gap: 9,
     },
     themeChoiceSelected: {
       backgroundColor: colors.primary,
       borderColor: colors.primaryDark,
     },
-    themeChoiceIcon: {
-      fontSize: 24,
-      marginBottom: 8,
-    },
     themeChoiceText: {
       fontSize: 14,
       fontWeight: "900",
       color: colors.text,
+      textAlign: "center",
     },
     themeChoiceTextSelected: {
       color: colors.black,
@@ -587,32 +854,98 @@ function createStyles(colors: ThemeColors) {
     primaryButton: {
       marginTop: 8,
       backgroundColor: colors.primary,
-      paddingVertical: 16,
-      borderRadius: 16,
+      paddingVertical: 15,
+      paddingHorizontal: 18,
+      borderRadius: 999,
       alignItems: "center",
-      marginBottom: 12,
+      justifyContent: "center",
       borderWidth: 1,
       borderColor: colors.primaryDark,
+      flexDirection: "row",
+      gap: 10,
+    },
+    primaryButtonOutside: {
+      marginHorizontal: 24,
+      backgroundColor: colors.primary,
+      paddingVertical: 15,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 16,
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: "900",
     },
+    primaryButtonArrow: {
+      color: colors.black,
+      fontSize: 20,
+      fontWeight: "900",
+      lineHeight: 20,
+    },
+    messageBox: {
+      backgroundColor: colors.turquoiseSoft,
+      borderRadius: 18,
+      padding: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginTop: 14,
+    },
     savedMessage: {
-      marginTop: 4,
-      color: colors.primary,
-      fontSize: 15,
+      color: colors.text,
+      fontSize: 14,
       fontWeight: "900",
       textAlign: "center",
     },
     summaryCard: {
+      marginHorizontal: 24,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 22,
+      borderRadius: 30,
       padding: 20,
-      marginBottom: 20,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
+    },
+    summaryHeader: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 14,
+      marginBottom: 16,
+    },
+    summaryGrid: {
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 14,
+    },
+    summaryMiniCard: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      padding: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+    },
+    summaryMiniNumber: {
+      fontSize: 24,
+      fontWeight: "900",
+      color: colors.text,
+      lineHeight: 28,
+    },
+    summaryMiniLabel: {
+      marginTop: 5,
+      fontSize: 10,
+      color: colors.textMuted,
+      fontWeight: "900",
+      textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
     },
     summaryRow: {
       borderTopWidth: 1,
@@ -623,67 +956,94 @@ function createStyles(colors: ThemeColors) {
       gap: 14,
     },
     summaryLabel: {
-      fontSize: 15,
-      fontWeight: "800",
+      fontSize: 14,
+      fontWeight: "900",
       color: colors.textSoft,
     },
     summaryValue: {
-      fontSize: 16,
+      fontSize: 14,
       fontWeight: "900",
       color: colors.text,
+      textAlign: "right",
     },
     summaryValueSmall: {
       flex: 1,
       textAlign: "right",
-      fontSize: 15,
-      fontWeight: "800",
+      fontSize: 14,
+      fontWeight: "900",
       color: colors.text,
     },
     healthBox: {
+      marginHorizontal: 24,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 20,
+      borderRadius: 24,
       padding: 18,
-      marginBottom: 20,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
     healthTitle: {
-      fontSize: 18,
+      fontSize: 17,
       fontWeight: "900",
       color: colors.text,
       marginBottom: 8,
     },
     healthText: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: 13,
+      lineHeight: 20,
       color: colors.textSoft,
+      fontWeight: "700",
     },
     dataText: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: 14,
+      lineHeight: 21,
       color: colors.textSoft,
       marginBottom: 14,
     },
     dataBox: {
       backgroundColor: colors.cardWarm,
-      borderRadius: 16,
+      borderRadius: 18,
       padding: 14,
       marginTop: 12,
       borderWidth: 1,
       borderColor: colors.border,
+      maxHeight: 320,
     },
     dataCode: {
       fontSize: 12,
       lineHeight: 18,
       color: colors.text,
     },
+    secondaryButtonInside: {
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
+    },
     warningBox: {
+      marginHorizontal: 24,
       backgroundColor: colors.warning,
-      borderRadius: 18,
+      borderRadius: 22,
       padding: 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      marginBottom: 12,
+      marginBottom: 14,
+    },
+    warningTitle: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.warningText,
+      marginBottom: 5,
     },
     warningText: {
       fontSize: 13,
@@ -691,9 +1051,19 @@ function createStyles(colors: ThemeColors) {
       color: colors.warningText,
     },
     dangerButton: {
+      marginHorizontal: 24,
       backgroundColor: colors.danger,
       paddingVertical: 15,
-      borderRadius: 16,
+      borderRadius: 999,
+      alignItems: "center",
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.dangerBorder,
+    },
+    dangerButtonInside: {
+      backgroundColor: colors.danger,
+      paddingVertical: 15,
+      borderRadius: 999,
       alignItems: "center",
       marginBottom: 12,
       borderWidth: 1,
@@ -705,10 +1075,11 @@ function createStyles(colors: ThemeColors) {
       fontWeight: "900",
     },
     confirmBox: {
+      marginHorizontal: 24,
       backgroundColor: colors.card,
-      borderRadius: 22,
+      borderRadius: 26,
       padding: 18,
-      marginBottom: 14,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
     },
@@ -724,19 +1095,74 @@ function createStyles(colors: ThemeColors) {
       color: colors.textSoft,
       marginBottom: 14,
     },
-    secondaryButton: {
-      paddingVertical: 14,
-      borderRadius: 16,
-      alignItems: "center",
+    sectionHeaderRow: {
+      paddingHorizontal: 24,
+      marginBottom: 14,
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      gap: 16,
+    },
+    sectionAction: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.textMuted,
+      marginBottom: 4,
+    },
+    quickActionsRow: {
+      paddingLeft: 24,
+      paddingRight: 24,
+      gap: 12,
+      marginBottom: 24,
+    },
+    quickCard: {
+      width: 165,
+      minHeight: 200,
+      backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 17,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.cardWarm,
+      justifyContent: "space-between",
+    },
+    quickLabel: {
+      fontSize: 10,
+      fontWeight: "900",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginTop: 14,
+      marginBottom: 7,
+    },
+    quickTitle: {
+      fontSize: 18,
+      lineHeight: 23,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    quickText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSoft,
       marginBottom: 12,
     },
-    secondaryButtonText: {
+    quickArrowCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-end",
+    },
+    quickArrowText: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: "800",
+      fontSize: 19,
+      fontWeight: "900",
+      lineHeight: 19,
     },
   });
 }
