@@ -12,33 +12,53 @@ import {
   IconBadge,
 } from "./ErgoIcons";
 
-const navItems = [
+type NavItem = {
+  label: string;
+  href: string;
+  activePaths: string[];
+  Icon: React.ComponentType<{
+    size?: number;
+    color?: string;
+    strokeWidth?: number;
+  }>;
+};
+
+const navItems: NavItem[] = [
   {
     label: "Accueil",
     href: "/",
+    activePaths: ["/"],
     Icon: HomeIcon,
   },
   {
     label: "Routine",
     href: "/routine",
+    activePaths: ["/routine", "/timer", "/exercises", "/daily-checkin"],
     Icon: RoutineIcon,
   },
   {
     label: "Plan",
     href: "/personal-plan",
+    activePaths: ["/personal-plan", "/questionnaire", "/workstation-audit"],
     Icon: PlanIcon,
   },
   {
     label: "Formation",
     href: "/education",
+    activePaths: ["/education", "/explore", "/progress", "/dashboard"],
     Icon: EducationIcon,
   },
   {
     label: "Profil",
     href: "/profile",
+    activePaths: ["/profile", "/export-data"],
     Icon: ProfileIcon,
   },
-] as const;
+];
+
+function isCurrentPathActive(pathname: string, activePaths: string[]) {
+  return activePaths.some((path) => pathname === path);
+}
 
 export default function BottomNav() {
   const pathname = usePathname();
@@ -49,7 +69,7 @@ export default function BottomNav() {
     <View style={styles.navWrapper}>
       <View style={styles.navContainer}>
         {navItems.map((item) => {
-          const isActive = pathname === item.href;
+          const isActive = isCurrentPathActive(pathname, item.activePaths);
           const Icon = item.Icon;
 
           const navItemStyle = StyleSheet.flatten([
@@ -92,6 +112,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
   return StyleSheet.create({
     navWrapper: {
       marginTop: 28,
+      paddingHorizontal: 24,
       alignItems: "center",
     },
     navContainer: {
