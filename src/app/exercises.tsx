@@ -16,18 +16,47 @@ import {
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import {
+  IconBadge,
+  BreakIcon,
+  RoutineIcon,
+  ProgressIcon,
+  PlanIcon,
+} from "../components/ErgoIcons";
 
-type ExerciseCategory = "Tous" | "Cou" | "Dos" | "Épaules" | "Poignets" | "Jambes";
+type BodyCategory = "Cou" | "Dos" | "Épaules" | "Poignets" | "Jambes";
+type ExerciseCategory = "Tous" | BodyCategory;
 
 type Exercise = {
   id: string;
-  category: ExerciseCategory;
-  icon: string;
+  category: BodyCategory;
   title: string;
   duration: string;
   level: string;
   description: string;
   steps: string[];
+};
+
+type BodyIconProps = {
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+};
+
+type BodyIcon = React.ComponentType<BodyIconProps>;
+
+type AppRoute = "/routine" | "/timer" | "/progress" | "/dashboard";
+
+type QuickAction = {
+  label: string;
+  title: string;
+  text: string;
+  href: AppRoute;
+  Icon: React.ComponentType<{
+    size?: number;
+    color?: string;
+    strokeWidth?: number;
+  }>;
 };
 
 const categories: ExerciseCategory[] = [
@@ -39,11 +68,41 @@ const categories: ExerciseCategory[] = [
   "Jambes",
 ];
 
+const quickActions: QuickAction[] = [
+  {
+    label: "Aujourd’hui",
+    title: "Routine",
+    text: "Retourner aux actions du jour.",
+    href: "/routine",
+    Icon: RoutineIcon,
+  },
+  {
+    label: "Pause",
+    title: "Minuterie",
+    text: "Démarrer une pause active.",
+    href: "/timer",
+    Icon: BreakIcon,
+  },
+  {
+    label: "Suivi",
+    title: "Évolution",
+    text: "Voir vos exercices complétés.",
+    href: "/progress",
+    Icon: ProgressIcon,
+  },
+  {
+    label: "Résumé",
+    title: "Dashboard",
+    text: "Consulter vos points.",
+    href: "/dashboard",
+    Icon: PlanIcon,
+  },
+];
+
 const exercises: Exercise[] = [
   {
     id: "neck-mobility",
     category: "Cou",
-    icon: "🌿",
     title: "Mobilité douce du cou",
     duration: "1 min",
     level: "Facile",
@@ -59,7 +118,6 @@ const exercises: Exercise[] = [
   {
     id: "chin-tuck",
     category: "Cou",
-    icon: "🧘",
     title: "Rétraction cervicale",
     duration: "1 min",
     level: "Facile",
@@ -75,7 +133,6 @@ const exercises: Exercise[] = [
   {
     id: "thoracic-extension",
     category: "Dos",
-    icon: "🪑",
     title: "Extension du haut du dos",
     duration: "2 min",
     level: "Facile",
@@ -91,7 +148,6 @@ const exercises: Exercise[] = [
   {
     id: "standing-reset",
     category: "Dos",
-    icon: "🚶",
     title: "Reset debout",
     duration: "2 min",
     level: "Très facile",
@@ -107,7 +163,6 @@ const exercises: Exercise[] = [
   {
     id: "shoulder-rolls",
     category: "Épaules",
-    icon: "💫",
     title: "Cercles d’épaules",
     duration: "1 min",
     level: "Facile",
@@ -123,7 +178,6 @@ const exercises: Exercise[] = [
   {
     id: "scapular-squeeze",
     category: "Épaules",
-    icon: "🤲",
     title: "Rétraction des omoplates",
     duration: "1 min",
     level: "Facile",
@@ -139,7 +193,6 @@ const exercises: Exercise[] = [
   {
     id: "wrist-mobility",
     category: "Poignets",
-    icon: "✋",
     title: "Mobilité des poignets",
     duration: "1 min",
     level: "Facile",
@@ -155,7 +208,6 @@ const exercises: Exercise[] = [
   {
     id: "finger-stretch",
     category: "Poignets",
-    icon: "🖐️",
     title: "Étirement des doigts",
     duration: "1 min",
     level: "Facile",
@@ -171,7 +223,6 @@ const exercises: Exercise[] = [
   {
     id: "calf-raises",
     category: "Jambes",
-    icon: "🦵",
     title: "Montées sur pointes",
     duration: "1 min",
     level: "Facile",
@@ -187,7 +238,6 @@ const exercises: Exercise[] = [
   {
     id: "seated-leg-extension",
     category: "Jambes",
-    icon: "🪑",
     title: "Extension des jambes assis",
     duration: "1 min",
     level: "Facile",
@@ -202,13 +252,513 @@ const exercises: Exercise[] = [
   },
 ];
 
+/* -------------------- Icônes corps -------------------- */
+
+function NeckIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: BodyIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.34,
+          top: size * 0.08,
+          width: size * 0.32,
+          height: size * 0.32,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.42,
+          top: size * 0.37,
+          width: strokeWidth,
+          height: size * 0.18,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.54,
+          top: size * 0.37,
+          width: strokeWidth,
+          height: size * 0.18,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.24,
+          top: size * 0.58,
+          width: size * 0.52,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
+function HeadPositionIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: BodyIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.1,
+          top: size * 0.16,
+          width: size * 0.18,
+          height: size * 0.46,
+          borderRadius: 4,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.18,
+          top: size * 0.12,
+          width: size * 0.27,
+          height: size * 0.27,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.37,
+          top: size * 0.36,
+          width: strokeWidth,
+          height: size * 0.2,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "25deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.5,
+          top: size * 0.28,
+          width: size * 0.18,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
+function BackIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: BodyIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.39,
+          top: size * 0.06,
+          width: size * 0.22,
+          height: size * 0.22,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.22,
+          top: size * 0.32,
+          width: size * 0.56,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.49,
+          top: size * 0.34,
+          width: strokeWidth,
+          height: size * 0.44,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.34,
+          top: size * 0.42,
+          width: strokeWidth,
+          height: size * 0.28,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "16deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.34,
+          top: size * 0.42,
+          width: strokeWidth,
+          height: size * 0.28,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-16deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.32,
+          top: size * 0.78,
+          width: size * 0.36,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
+function ShoulderIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: BodyIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.36,
+          top: size * 0.1,
+          width: size * 0.28,
+          height: size * 0.28,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.47,
+          top: size * 0.34,
+          width: strokeWidth,
+          height: size * 0.12,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.16,
+          top: size * 0.5,
+          width: size * 0.28,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-18deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.16,
+          top: size * 0.5,
+          width: size * 0.28,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "18deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function WristIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: BodyIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.18,
+          top: size * 0.44,
+          width: size * 0.28,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.42,
+          top: size * 0.38,
+          width: strokeWidth,
+          height: size * 0.16,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.48,
+          top: size * 0.34,
+          width: strokeWidth,
+          height: size * 0.12,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-22deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.54,
+          top: size * 0.34,
+          width: strokeWidth,
+          height: size * 0.12,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-6deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.6,
+          top: size * 0.36,
+          width: strokeWidth,
+          height: size * 0.1,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "10deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function LegsIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: BodyIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.36,
+          top: size * 0.12,
+          width: size * 0.28,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.4,
+          top: size * 0.18,
+          width: strokeWidth,
+          height: size * 0.28,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.56,
+          top: size * 0.18,
+          width: strokeWidth,
+          height: size * 0.28,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.34,
+          top: size * 0.44,
+          width: size * 0.16,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "30deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.52,
+          top: size * 0.44,
+          width: size * 0.16,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-30deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function MovementIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: BodyIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.38,
+          top: size * 0.08,
+          width: size * 0.22,
+          height: size * 0.22,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.48,
+          top: size * 0.28,
+          width: strokeWidth,
+          height: size * 0.18,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.33,
+          top: size * 0.42,
+          width: size * 0.16,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-25deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.5,
+          top: size * 0.42,
+          width: size * 0.16,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "25deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.42,
+          top: size * 0.5,
+          width: size * 0.12,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "28deg" }],
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.52,
+          top: size * 0.5,
+          width: size * 0.12,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-28deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function getExerciseIcon(exerciseId: string): BodyIcon {
+  switch (exerciseId) {
+    case "neck-mobility":
+      return NeckIcon;
+    case "chin-tuck":
+      return HeadPositionIcon;
+    case "thoracic-extension":
+      return BackIcon;
+    case "standing-reset":
+      return MovementIcon;
+    case "shoulder-rolls":
+      return ShoulderIcon;
+    case "scapular-squeeze":
+      return ShoulderIcon;
+    case "wrist-mobility":
+      return WristIcon;
+    case "finger-stretch":
+      return WristIcon;
+    case "calf-raises":
+      return LegsIcon;
+    case "seated-leg-extension":
+      return LegsIcon;
+    default:
+      return MovementIcon;
+  }
+}
+
 export default function ExercisesScreen() {
   const [stats, setStats] = useState<AppStats | null>(null);
   const [selectedCategory, setSelectedCategory] =
     useState<ExerciseCategory>("Tous");
 
-  const { colors } = useAppTheme();
-  const styles = createStyles(colors);
+  const { colors, mode } = useAppTheme();
+  const styles = createStyles(colors, mode);
 
   useEffect(() => {
     const savedStats = getAppStats();
@@ -232,44 +782,76 @@ export default function ExercisesScreen() {
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <Text style={styles.pageTitle}>Exercices</Text>
+        <View style={styles.pageHeader}>
+          <View style={styles.pagePill}>
+            <Text style={styles.pagePillText}>Mobilité</Text>
+          </View>
 
-        <Text style={styles.subtitle}>
-          Des mouvements courts et simples pour intégrer plus de mobilité dans
-          votre journée.
-        </Text>
+          <Text style={styles.pageTitle}>Exercices</Text>
+
+          <Text style={styles.subtitle}>
+            Des mouvements courts et simples pour intégrer plus de mobilité dans
+            votre journée.
+          </Text>
+        </View>
 
         <View style={styles.heroCard}>
+          <View style={styles.heroShapeLarge} />
+          <View style={styles.heroShapeSmall} />
+
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTextBlock}>
+              <Text style={styles.heroLabel}>Mouvement</Text>
+              <Text style={styles.heroTitle}>Bouger un peu, souvent.</Text>
+            </View>
+
+            <View style={styles.pointsCircle}>
+              <Text style={styles.pointsNumber}>{points}</Text>
+              <Text style={styles.pointsLabel}>points</Text>
+            </View>
+          </View>
+
+          <Text style={styles.heroText}>
+            Choisissez un exercice court selon la zone que vous souhaitez
+            mobiliser. L’objectif est la régularité, pas la performance.
+          </Text>
+        </View>
+
+        <View style={styles.statsPanel}>
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{completedExercises}</Text>
+            <Text style={styles.statLabel}>exercices</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{points}</Text>
+            <Text style={styles.statLabel}>points</Text>
+          </View>
+
+          <View style={styles.statDivider} />
+
+          <View style={styles.statItem}>
+            <Text style={styles.statNumber}>{filteredExercises.length}</Text>
+            <Text style={styles.statLabel}>proposés</Text>
+          </View>
+        </View>
+
+        <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.heroLabel}>Mouvement</Text>
-            <Text style={styles.heroTitle}>Bouger un peu, souvent.</Text>
-            <Text style={styles.heroText}>
-              Choisissez un exercice court selon la zone que vous souhaitez
-              mobiliser. L’objectif est la régularité, pas la performance.
+            <Text style={styles.sectionTitle}>Catégories</Text>
+            <Text style={styles.sectionSubtitle}>
+              Filtrez les exercices par zone.
             </Text>
           </View>
-
-          <View style={styles.pointsCircle}>
-            <Text style={styles.pointsNumber}>{points}</Text>
-            <Text style={styles.pointsLabel}>points</Text>
-          </View>
         </View>
 
-        <View style={styles.statsGrid}>
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{completedExercises}</Text>
-            <Text style={styles.statLabel}>exercices complétés</Text>
-          </View>
-
-          <View style={styles.statCard}>
-            <Text style={styles.statNumber}>{points}</Text>
-            <Text style={styles.statLabel}>points cumulés</Text>
-          </View>
-        </View>
-
-        <Text style={styles.sectionTitle}>Catégories</Text>
-
-        <View style={styles.categoryGrid}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.categoryRow}
+        >
           {categories.map((category) => {
             const selected = selectedCategory === category;
 
@@ -278,14 +860,14 @@ export default function ExercisesScreen() {
                 key={category}
                 style={[
                   styles.categoryButton,
-                  selected && styles.categoryButtonSelected,
+                  selected ? styles.categoryButtonSelected : null,
                 ]}
                 onPress={() => setSelectedCategory(category)}
               >
                 <Text
                   style={[
                     styles.categoryButtonText,
-                    selected && styles.categoryButtonTextSelected,
+                    selected ? styles.categoryButtonTextSelected : null,
                   ]}
                 >
                   {category}
@@ -293,19 +875,31 @@ export default function ExercisesScreen() {
               </Pressable>
             );
           })}
-        </View>
+        </ScrollView>
 
-        <Text style={styles.sectionTitle}>Exercices proposés</Text>
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Exercices proposés</Text>
+            <Text style={styles.sectionSubtitle}>
+              Suivez les étapes lentement et sans douleur.
+            </Text>
+          </View>
+        </View>
 
         {filteredExercises.map((exercise) => {
           const completed = completedExerciseIds.includes(exercise.id);
+          const ExerciseIcon = getExerciseIcon(exercise.id);
 
           return (
             <View key={exercise.id} style={styles.exerciseCard}>
               <View style={styles.exerciseHeader}>
-                <View style={styles.exerciseIconBox}>
-                  <Text style={styles.exerciseIcon}>{exercise.icon}</Text>
-                </View>
+                <IconBadge
+                  size={52}
+                  backgroundColor={colors.backgroundSoft}
+                  borderColor={colors.border}
+                >
+                  <ExerciseIcon size={25} color={colors.text} />
+                </IconBadge>
 
                 <View style={styles.exerciseHeaderText}>
                   <Text style={styles.exerciseCategory}>
@@ -339,10 +933,11 @@ export default function ExercisesScreen() {
                   <Text style={styles.primaryButtonText}>
                     Marquer comme complété
                   </Text>
+                  <Text style={styles.primaryButtonArrow}>→</Text>
                 </Pressable>
               ) : (
                 <View style={styles.completedBox}>
-                  <Text style={styles.completedText}>Complété ✓</Text>
+                  <Text style={styles.completedText}>Complété</Text>
                 </View>
               )}
             </View>
@@ -358,17 +953,48 @@ export default function ExercisesScreen() {
           </Text>
         </View>
 
-        <Link href="/routine" asChild>
-          <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Voir ma routine du jour</Text>
-          </Pressable>
-        </Link>
+        <View style={styles.sectionHeaderRow}>
+          <View>
+            <Text style={styles.sectionTitle}>Actions rapides</Text>
+            <Text style={styles.sectionSubtitle}>
+              Continuez avec une pause ou votre routine.
+            </Text>
+          </View>
 
-        <Link href="/timer" asChild>
-          <Pressable style={styles.secondaryButton}>
-            <Text style={styles.secondaryButtonText}>Démarrer une pause</Text>
-          </Pressable>
-        </Link>
+          <Text style={styles.sectionAction}>Défilez →</Text>
+        </View>
+
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.quickActionsRow}
+        >
+          {quickActions.map((item) => {
+            const QuickIcon = item.Icon;
+
+            return (
+              <Link key={item.href} href={item.href} asChild>
+                <Pressable style={styles.quickCard}>
+                  <IconBadge
+                    size={44}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <QuickIcon size={21} color={colors.text} />
+                  </IconBadge>
+
+                  <Text style={styles.quickLabel}>{item.label}</Text>
+                  <Text style={styles.quickTitle}>{item.title}</Text>
+                  <Text style={styles.quickText}>{item.text}</Text>
+
+                  <View style={styles.quickArrowCircle}>
+                    <Text style={styles.quickArrowText}>→</Text>
+                  </View>
+                </Pressable>
+              </Link>
+            );
+          })}
+        </ScrollView>
 
         <BottomNav />
       </ScrollView>
@@ -376,39 +1002,98 @@ export default function ExercisesScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors) {
+function createStyles(colors: ThemeColors, mode: "light" | "dark") {
+  const isDark = mode === "dark";
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      padding: 24,
+      paddingTop: 24,
       paddingBottom: 48,
     },
+    pageHeader: {
+      paddingHorizontal: 24,
+      marginTop: 10,
+      marginBottom: 22,
+    },
+    pagePill: {
+      alignSelf: "flex-start",
+      backgroundColor: colors.backgroundSoft,
+      borderRadius: 999,
+      paddingVertical: 8,
+      paddingHorizontal: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 14,
+    },
+    pagePillText: {
+      color: colors.textSoft,
+      fontSize: 12,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+    },
     pageTitle: {
-      fontSize: 32,
+      fontSize: 38,
+      lineHeight: 43,
       fontWeight: "900",
       color: colors.text,
+      letterSpacing: -1,
       marginBottom: 10,
     },
     subtitle: {
       fontSize: 16,
       lineHeight: 24,
       color: colors.textSoft,
-      marginBottom: 24,
+      maxWidth: 520,
     },
     heroCard: {
-      backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 24,
+      marginHorizontal: 24,
       marginBottom: 18,
+      borderRadius: 36,
+      padding: 24,
+      minHeight: 245,
+      backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
-      flexDirection: "row",
-      alignItems: "center",
+      overflow: "hidden",
+      position: "relative",
       justifyContent: "space-between",
-      gap: 18,
+    },
+    heroShapeLarge: {
+      position: "absolute",
+      width: 210,
+      height: 210,
+      borderRadius: 105,
+      right: -70,
+      top: -42,
+      backgroundColor: isDark
+        ? "rgba(95,159,149,0.16)"
+        : "rgba(216,196,182,0.26)",
+    },
+    heroShapeSmall: {
+      position: "absolute",
+      width: 100,
+      height: 100,
+      borderRadius: 50,
+      left: -28,
+      bottom: -28,
+      backgroundColor: isDark
+        ? "rgba(245,238,223,0.08)"
+        : "rgba(95,159,149,0.12)",
+    },
+    heroTopRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "flex-start",
+      gap: 16,
+      zIndex: 2,
+    },
+    heroTextBlock: {
+      flex: 1,
     },
     heroLabel: {
       fontSize: 13,
@@ -416,25 +1101,28 @@ function createStyles(colors: ThemeColors) {
       color: colors.primary,
       textTransform: "uppercase",
       letterSpacing: 0.8,
-      marginBottom: 6,
+      marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 27,
-      lineHeight: 34,
+      fontSize: 32,
+      lineHeight: 38,
       fontWeight: "900",
       color: colors.text,
-      marginBottom: 8,
+      letterSpacing: -0.7,
+      maxWidth: 360,
     },
     heroText: {
       fontSize: 15,
-      lineHeight: 22,
+      lineHeight: 23,
       color: colors.textSoft,
-      maxWidth: 520,
+      maxWidth: 460,
+      zIndex: 2,
+      marginTop: 22,
     },
     pointsCircle: {
-      width: 78,
-      height: 78,
-      borderRadius: 39,
+      width: 74,
+      height: 74,
+      borderRadius: 37,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -442,58 +1130,87 @@ function createStyles(colors: ThemeColors) {
       borderColor: colors.primaryDark,
     },
     pointsNumber: {
-      fontSize: 22,
+      fontSize: 23,
       fontWeight: "900",
       color: colors.black,
+      lineHeight: 27,
     },
     pointsLabel: {
       fontSize: 11,
       fontWeight: "900",
       color: colors.black,
     },
-    statsGrid: {
-      flexDirection: "row",
-      gap: 12,
-      marginBottom: 22,
-    },
-    statCard: {
-      flex: 1,
-      backgroundColor: colors.cardWarm,
-      borderRadius: 22,
-      padding: 18,
-      alignItems: "center",
+    statsPanel: {
+      marginHorizontal: 24,
+      marginBottom: 26,
+      backgroundColor: colors.card,
+      borderRadius: 26,
+      padding: 16,
       borderWidth: 1,
       borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    statItem: {
+      flex: 1,
+      alignItems: "center",
+    },
+    statDivider: {
+      width: 1,
+      height: 38,
+      backgroundColor: colors.border,
     },
     statNumber: {
-      fontSize: 34,
-      fontWeight: "900",
-      color: colors.primary,
-    },
-    statLabel: {
-      fontSize: 14,
-      lineHeight: 19,
-      color: colors.textSoft,
-      fontWeight: "800",
-      textAlign: "center",
-      marginTop: 6,
-    },
-    sectionTitle: {
-      fontSize: 22,
+      fontSize: 23,
       fontWeight: "900",
       color: colors.text,
-      marginBottom: 14,
+      lineHeight: 27,
     },
-    categoryGrid: {
+    statLabel: {
+      marginTop: 4,
+      fontSize: 10,
+      color: colors.textMuted,
+      fontWeight: "900",
+      textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    sectionHeaderRow: {
+      paddingHorizontal: 24,
+      marginBottom: 14,
       flexDirection: "row",
-      flexWrap: "wrap",
+      justifyContent: "space-between",
+      alignItems: "flex-end",
+      gap: 16,
+    },
+    sectionTitle: {
+      fontSize: 24,
+      fontWeight: "900",
+      color: colors.text,
+      letterSpacing: -0.4,
+      marginBottom: 4,
+    },
+    sectionSubtitle: {
+      fontSize: 14,
+      lineHeight: 20,
+      color: colors.textSoft,
+    },
+    sectionAction: {
+      fontSize: 12,
+      fontWeight: "900",
+      color: colors.textMuted,
+      marginBottom: 4,
+    },
+    categoryRow: {
+      paddingLeft: 24,
+      paddingRight: 24,
       gap: 10,
-      marginBottom: 24,
+      marginBottom: 26,
     },
     categoryButton: {
       paddingVertical: 11,
-      paddingHorizontal: 14,
-      borderRadius: 16,
+      paddingHorizontal: 16,
+      borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.cardWarm,
@@ -511,10 +1228,11 @@ function createStyles(colors: ThemeColors) {
       color: colors.black,
     },
     exerciseCard: {
+      marginHorizontal: 24,
       backgroundColor: colors.card,
-      borderRadius: 24,
+      borderRadius: 30,
       padding: 20,
-      marginBottom: 18,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -524,32 +1242,20 @@ function createStyles(colors: ThemeColors) {
       marginBottom: 14,
       gap: 14,
     },
-    exerciseIconBox: {
-      width: 54,
-      height: 54,
-      borderRadius: 27,
-      backgroundColor: colors.secondaryLight,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    exerciseIcon: {
-      fontSize: 28,
-    },
     exerciseHeaderText: {
       flex: 1,
     },
     exerciseCategory: {
-      fontSize: 12,
+      fontSize: 11,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
-      letterSpacing: 0.6,
-      marginBottom: 4,
+      letterSpacing: 0.7,
+      marginBottom: 5,
     },
     exerciseTitle: {
-      fontSize: 20,
+      fontSize: 21,
+      lineHeight: 26,
       fontWeight: "900",
       color: colors.text,
     },
@@ -561,7 +1267,7 @@ function createStyles(colors: ThemeColors) {
     },
     stepsBox: {
       backgroundColor: colors.cardWarm,
-      borderRadius: 18,
+      borderRadius: 22,
       padding: 14,
       marginBottom: 16,
       borderWidth: 1,
@@ -574,12 +1280,14 @@ function createStyles(colors: ThemeColors) {
       gap: 10,
     },
     stepNumber: {
-      width: 26,
-      height: 26,
-      borderRadius: 13,
+      width: 28,
+      height: 28,
+      borderRadius: 14,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
       marginTop: 1,
     },
     stepNumberText: {
@@ -597,61 +1305,113 @@ function createStyles(colors: ThemeColors) {
     primaryButton: {
       backgroundColor: colors.primary,
       paddingVertical: 15,
-      borderRadius: 16,
+      paddingHorizontal: 18,
+      borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
       borderWidth: 1,
       borderColor: colors.primaryDark,
+      flexDirection: "row",
+      gap: 10,
     },
     primaryButtonText: {
       color: colors.black,
       fontSize: 15,
       fontWeight: "900",
     },
+    primaryButtonArrow: {
+      color: colors.black,
+      fontSize: 20,
+      fontWeight: "900",
+      lineHeight: 20,
+    },
     completedBox: {
-      backgroundColor: colors.secondaryLight,
+      backgroundColor: colors.turquoiseSoft,
       paddingVertical: 14,
-      borderRadius: 16,
+      borderRadius: 999,
       alignItems: "center",
       borderWidth: 1,
       borderColor: colors.border,
     },
     completedText: {
-      color: colors.primary,
+      color: colors.text,
       fontSize: 15,
       fontWeight: "900",
     },
     tipBox: {
+      marginHorizontal: 24,
       backgroundColor: colors.warning,
-      borderRadius: 18,
+      borderRadius: 22,
       padding: 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      marginBottom: 14,
+      marginBottom: 26,
     },
     tipTitle: {
-      fontSize: 16,
+      fontSize: 15,
       fontWeight: "900",
       color: colors.warningText,
-      marginBottom: 6,
+      marginBottom: 5,
     },
     tipText: {
       fontSize: 13,
       lineHeight: 20,
       color: colors.warningText,
     },
-    secondaryButton: {
-      paddingVertical: 14,
-      borderRadius: 16,
-      alignItems: "center",
+    quickActionsRow: {
+      paddingLeft: 24,
+      paddingRight: 24,
+      gap: 12,
+      marginBottom: 24,
+    },
+    quickCard: {
+      width: 165,
+      minHeight: 200,
+      backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 17,
       borderWidth: 1,
       borderColor: colors.border,
-      backgroundColor: colors.cardWarm,
+      justifyContent: "space-between",
+    },
+    quickLabel: {
+      fontSize: 10,
+      fontWeight: "900",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginTop: 14,
+      marginBottom: 7,
+    },
+    quickTitle: {
+      fontSize: 18,
+      lineHeight: 23,
+      fontWeight: "900",
+      color: colors.text,
+      marginBottom: 6,
+    },
+    quickText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.textSoft,
       marginBottom: 12,
     },
-    secondaryButtonText: {
+    quickArrowCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      alignSelf: "flex-end",
+    },
+    quickArrowText: {
       color: colors.text,
-      fontSize: 15,
-      fontWeight: "800",
+      fontSize: 19,
+      fontWeight: "900",
+      lineHeight: 19,
     },
   });
 }
