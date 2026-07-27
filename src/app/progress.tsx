@@ -8,7 +8,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
+import {
+  APP_STATS_UPDATED_EVENT,
+  AppStats,
+  getAppStats,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -54,6 +58,8 @@ type QuickAction = {
 };
 
 const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
+
+const CHECKINS_UPDATED_EVENT = "ergoprevent_checkins_updated";
 
 const quickActions: QuickAction[] = [
   {
@@ -129,6 +135,7 @@ function saveCheckins(checkins: DailyCheckin[]) {
   }
 
   window.localStorage.setItem(CHECKIN_STORAGE_KEY, JSON.stringify(checkins));
+  window.dispatchEvent(new Event(CHECKINS_UPDATED_EVENT));
 }
 
 function getAveragePain(checkins: DailyCheckin[]) {
@@ -245,22 +252,41 @@ function getCheckinsToday(checkins: DailyCheckin[]) {
 }
 
 export default function ProgressScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
-  const [checkins, setCheckins] = useState<DailyCheckin[]>([]);
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
+const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
+  getSavedCheckins()
+);
+const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-  const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+const { colors, mode } = useAppTheme();
+const styles = createStyles(colors, mode);
 
-  useEffect(() => {
-    const savedStats = getAppStats();
-    const savedCheckins = getSavedCheckins();
+useEffect(() => {
+  function refreshData() {
+    setStats(getAppStats());
+    setCheckins(getSavedCheckins());
+  }
 
-    setStats(savedStats);
-    setCheckins(savedCheckins);
-  }, []);
+  refreshData();
 
-  const profile = stats?.profile ?? null;
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+  window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+  window.addEventListener("focus", refreshData);
+  window.addEventListener("storage", refreshData);
+
+  return () => {
+    window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+    window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+    window.removeEventListener("focus", refreshData);
+    window.removeEventListener("storage", refreshData);
+  };
+}, []);
+
+  const profile = stats.profile ?? null;
 
   const hasCheckins = checkins.length > 0;
   const latestCheckin = checkins[0] ?? null;
@@ -306,8 +332,6 @@ export default function ProgressScreen() {
         {!hasCheckins && (
           <>
             <View style={styles.emptyCard}>
-              <View style={styles.emptyShapeLarge} />
-              <View style={styles.emptyShapeSmall} />
 
               <IconBadge
                 size={58}
@@ -349,8 +373,6 @@ export default function ProgressScreen() {
         {hasCheckins && (
           <>
             <View style={styles.heroCard}>
-              <View style={styles.heroShapeLarge} />
-              <View style={styles.heroShapeSmall} />
 
               <View style={styles.heroTopRow}>
                 <View style={styles.heroTextBlock}>
@@ -805,13 +827,16 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
-      fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
-      marginBottom: 10,
-    },
+  fontFamily: "Georgia",
+  fontSize: 38,
+  lineHeight: 45,
+  color: colors.primary,
+  letterSpacing: -0.8,
+  marginBottom: 10,
+  textShadowColor: "rgba(0,0,0,0.20)",
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 7,
+},
     subtitle: {
       fontSize: 16,
       lineHeight: 24,
@@ -830,38 +855,19 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       overflow: "hidden",
       position: "relative",
     },
-    emptyShapeLarge: {
-      position: "absolute",
-      width: 180,
-      height: 180,
-      borderRadius: 90,
-      right: -60,
-      top: -50,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.15)"
-        : "rgba(216,196,182,0.25)",
-    },
-    emptyShapeSmall: {
-      position: "absolute",
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      left: -24,
-      bottom: -20,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     emptyTitle: {
-      fontSize: 25,
-      lineHeight: 30,
-      fontWeight: "900",
-      color: colors.text,
-      textAlign: "center",
-      marginTop: 18,
-      marginBottom: 10,
-      zIndex: 2,
-    },
+  fontFamily: "Georgia",
+  fontSize: 27,
+  lineHeight: 34,
+  color: colors.primary,
+  textAlign: "center",
+  marginTop: 18,
+  marginBottom: 10,
+  zIndex: 2,
+  textShadowColor: "rgba(0,0,0,0.18)",
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 7,
+},
     emptyText: {
       fontSize: 15,
       lineHeight: 22,
@@ -884,28 +890,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -923,13 +907,16 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.7,
-      maxWidth: 360,
-    },
+  fontFamily: "Georgia",
+  fontSize: 34,
+  lineHeight: 41,
+  color: colors.primary,
+  letterSpacing: -0.7,
+  maxWidth: 360,
+  textShadowColor: "rgba(0,0,0,0.20)",
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 7,
+},
     heroText: {
       fontSize: 15,
       lineHeight: 23,
@@ -994,12 +981,13 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
-      marginBottom: 4,
-    },
+  fontFamily: "Georgia",
+  fontSize: 28,
+  lineHeight: 35,
+  color: colors.primary,
+  letterSpacing: -0.5,
+  marginBottom: 4,
+},
     sectionSubtitle: {
       fontSize: 14,
       lineHeight: 20,
@@ -1041,10 +1029,12 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 5,
     },
     latestTitle: {
-      fontSize: 21,
-      fontWeight: "900",
-      color: colors.text,
-    },
+  fontFamily: "Georgia",
+  fontSize: 23,
+  lineHeight: 29,
+  color: colors.primary,
+  letterSpacing: -0.3,
+},
     painHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -1287,12 +1277,12 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
-      marginBottom: 6,
-    },
+  fontFamily: "Georgia",
+  fontSize: 19,
+  lineHeight: 24,
+  color: colors.primary,
+  marginBottom: 6,
+},
     quickText: {
       fontSize: 13,
       lineHeight: 19,
@@ -1326,11 +1316,12 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       borderColor: colors.border,
     },
     tipTitle: {
-      fontSize: 15,
-      fontWeight: "900",
-      color: colors.text,
-      marginBottom: 6,
-    },
+  fontFamily: "Georgia",
+  fontSize: 18,
+  lineHeight: 23,
+  color: colors.primary,
+  marginBottom: 6,
+},
     tipText: {
       fontSize: 13,
       lineHeight: 20,
@@ -1346,11 +1337,12 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 14,
     },
     warningTitle: {
-      fontSize: 15,
-      fontWeight: "900",
-      color: colors.warningText,
-      marginBottom: 5,
-    },
+  fontFamily: "Georgia",
+  fontSize: 18,
+  lineHeight: 23,
+  color: colors.warningText,
+  marginBottom: 5,
+},
     warningText: {
       fontSize: 13,
       lineHeight: 20,

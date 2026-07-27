@@ -8,14 +8,17 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
+import {
+  APP_STATS_UPDATED_EVENT,
+  AppStats,
+  getAppStats,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
   IconBadge,
   RoutineIcon,
-  ProgressIcon,
   PlanIcon,
   BreakIcon,
   EducationIcon,
@@ -345,19 +348,36 @@ const quickActions: QuickAction[] = [
 ];
 
 export default function PersonalPlanScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
 
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    setStats(savedStats);
+    function refreshStats() {
+      setStats(getAppStats());
+    }
+
+    refreshStats();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener("focus", refreshStats);
+    window.addEventListener("storage", refreshStats);
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener("focus", refreshStats);
+      window.removeEventListener("storage", refreshStats);
+    };
   }, []);
 
-  const profile = stats?.profile ?? null;
-  const questionnaireResult = stats?.questionnaireResult ?? null;
-  const workstationAuditResult = stats?.workstationAuditResult ?? null;
+  const profile = stats.profile ?? null;
+  const questionnaireResult = stats.questionnaireResult ?? null;
+  const workstationAuditResult = stats.workstationAuditResult ?? null;
 
   const tmsPriorities = questionnaireResult?.priorities ?? [];
   const workstationPriorities = workstationAuditResult?.priorities ?? [];
@@ -389,9 +409,6 @@ export default function PersonalPlanScreen() {
         {!hasEnoughData && (
           <>
             <View style={styles.emptyCard}>
-              <View style={styles.emptyShapeLarge} />
-              <View style={styles.emptyShapeSmall} />
-
               <IconBadge
                 size={58}
                 backgroundColor={colors.backgroundSoft}
@@ -443,9 +460,6 @@ export default function PersonalPlanScreen() {
         {hasEnoughData && (
           <>
             <View style={styles.heroCard}>
-              <View style={styles.heroShapeLarge} />
-              <View style={styles.heroShapeSmall} />
-
               <View style={styles.heroTopRow}>
                 <View style={styles.heroTextBlock}>
                   <Text style={styles.heroLabel}>
@@ -685,9 +699,7 @@ export default function PersonalPlanScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -720,12 +732,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -745,37 +760,18 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       overflow: "hidden",
       position: "relative",
     },
-    emptyShapeLarge: {
-      position: "absolute",
-      width: 180,
-      height: 180,
-      borderRadius: 90,
-      right: -60,
-      top: -50,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.15)"
-        : "rgba(216,196,182,0.25)",
-    },
-    emptyShapeSmall: {
-      position: "absolute",
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      left: -24,
-      bottom: -20,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     emptyTitle: {
-      fontSize: 25,
-      lineHeight: 30,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 27,
+      lineHeight: 34,
+      color: colors.primary,
       textAlign: "center",
       marginTop: 18,
       marginBottom: 10,
       zIndex: 2,
+      textShadowColor: "rgba(0,0,0,0.18)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     emptyText: {
       fontSize: 15,
@@ -804,28 +800,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -845,12 +819,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 360,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     heroText: {
       fontSize: 15,
@@ -914,10 +891,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -983,10 +961,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       fontSize: 13,
     },
     priorityText: {
-      fontSize: 21,
-      lineHeight: 25,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 22,
+      lineHeight: 27,
+      color: colors.primary,
       letterSpacing: -0.3,
       marginTop: 20,
     },
@@ -1006,9 +984,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 26,
     },
     noPriorityTitle: {
-      fontSize: 20,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 22,
+      lineHeight: 28,
+      color: colors.primary,
       marginBottom: 8,
     },
     noPriorityText: {
@@ -1040,10 +1019,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 4,
     },
     planSectionTitle: {
-      fontSize: 22,
-      lineHeight: 27,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.primary,
+      letterSpacing: -0.3,
     },
     recommendationCard: {
       backgroundColor: colors.card,
@@ -1054,10 +1034,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       borderColor: colors.border,
     },
     recommendationTitle: {
-      fontSize: 19,
-      lineHeight: 24,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 21,
+      lineHeight: 27,
+      color: colors.primary,
       marginBottom: 8,
     },
     recommendationText: {
@@ -1115,10 +1095,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
@@ -1154,8 +1134,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 16,
     },
     warningTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1174,8 +1155,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 22,
     },
     tipTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },

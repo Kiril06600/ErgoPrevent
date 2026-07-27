@@ -8,7 +8,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
+import {
+  APP_STATS_UPDATED_EVENT,
+  AppStats,
+  getAppStats,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -58,6 +62,7 @@ type QuickCard = {
 };
 
 const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
+const ROUTINE_UPDATED_EVENT = "ergoprevent_routine_updated";
 
 const routineTasks: RoutineTask[] = [
   {
@@ -177,23 +182,44 @@ function saveCompletedTasksForToday(taskIds: string[]) {
   };
 
   window.localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(updatedData));
+  window.dispatchEvent(new Event(ROUTINE_UPDATED_EVENT));
 }
 
 export default function RoutineScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
-  const [completedTaskIds, setCompletedTaskIds] = useState<string[]>([]);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
+  const [completedTaskIds, setCompletedTaskIds] = useState<string[]>(() =>
+    getCompletedTasksForToday()
+  );
+
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    const savedCompletedTasks = getCompletedTasksForToday();
+    function refreshData() {
+      setStats(getAppStats());
+      setCompletedTaskIds(getCompletedTasksForToday());
+    }
 
-    setStats(savedStats);
-    setCompletedTaskIds(savedCompletedTasks);
+    refreshData();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+    window.addEventListener(ROUTINE_UPDATED_EVENT, refreshData);
+    window.addEventListener("focus", refreshData);
+    window.addEventListener("storage", refreshData);
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+      window.removeEventListener(ROUTINE_UPDATED_EVENT, refreshData);
+      window.removeEventListener("focus", refreshData);
+      window.removeEventListener("storage", refreshData);
+    };
   }, []);
 
-  const profile = stats?.profile ?? null;
+  const profile = stats.profile ?? null;
   const completedCount = completedTaskIds.length;
   const totalTasks = routineTasks.length;
   const progressPercent = Math.round((completedCount / totalTasks) * 100);
@@ -233,9 +259,6 @@ export default function RoutineScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View>
               <Text style={styles.heroGreeting}>
@@ -459,9 +482,7 @@ export default function RoutineScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -494,12 +515,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -520,28 +544,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -40,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -556,12 +558,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 33,
-      lineHeight: 39,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 300,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     completionBadge: {
       minWidth: 72,
@@ -655,10 +660,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 5,
     },
     nextTitle: {
-      fontSize: 23,
-      lineHeight: 29,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.primary,
+      letterSpacing: -0.3,
     },
     nextText: {
       fontSize: 15,
@@ -699,10 +705,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -760,10 +767,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 5,
     },
     taskTitle: {
-      fontSize: 20,
-      lineHeight: 25,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 22,
+      lineHeight: 28,
+      color: colors.primary,
       marginBottom: 7,
     },
     taskText: {
@@ -870,10 +877,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
@@ -908,8 +915,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       borderColor: colors.warningBorder,
     },
     tipTitle: {
-      fontSize: 16,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 6,
     },

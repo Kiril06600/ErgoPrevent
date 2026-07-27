@@ -8,7 +8,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
+import {
+  APP_STATS_UPDATED_EVENT,
+  AppStats,
+  getAppStats,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -118,20 +122,95 @@ const quickActions: QuickAction[] = [
   },
 ];
 
+function LockIcon({
+  size = 16,
+  color = "#F5EEDF",
+  strokeWidth = 1.7,
+}: {
+  size?: number;
+  color?: string;
+  strokeWidth?: number;
+}) {
+  return (
+    <View
+      style={{
+        width: size,
+        height: size,
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <View
+        style={{
+          position: "absolute",
+          top: size * 0.18,
+          width: size * 0.48,
+          height: size * 0.42,
+          borderWidth: strokeWidth,
+          borderColor: color,
+          borderBottomWidth: 0,
+          borderTopLeftRadius: size * 0.24,
+          borderTopRightRadius: size * 0.24,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          bottom: size * 0.14,
+          width: size * 0.68,
+          height: size * 0.52,
+          borderRadius: size * 0.16,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          bottom: size * 0.31,
+          width: size * 0.12,
+          height: size * 0.16,
+          borderRadius: size * 0.08,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
 export default function DashboardScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
 
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    setStats(savedStats);
+    function refreshStats() {
+      setStats(getAppStats());
+    }
+
+    refreshStats();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener("focus", refreshStats);
+    window.addEventListener("storage", refreshStats);
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener("focus", refreshStats);
+      window.removeEventListener("storage", refreshStats);
+    };
   }, []);
 
-  const profile = stats?.profile ?? null;
-  const questionnaireResult = stats?.questionnaireResult ?? null;
-  const workstationAuditResult = stats?.workstationAuditResult ?? null;
+  const profile = stats.profile ?? null;
+  const questionnaireResult = stats.questionnaireResult ?? null;
+  const workstationAuditResult = stats.workstationAuditResult ?? null;
 
   const score = questionnaireResult?.score ?? 0;
   const level = questionnaireResult?.level ?? "Questionnaire non complété";
@@ -141,10 +220,10 @@ export default function DashboardScreen() {
   const workstationLevel = workstationAuditResult?.level ?? "Audit non complété";
   const workstationPriorities = workstationAuditResult?.priorities ?? [];
 
-  const completedBreaks = stats?.completedBreaks ?? 0;
-  const completedExercises = stats?.completedExercises ?? 0;
-  const completedCapsules = stats?.completedCapsules ?? 0;
-  const points = stats?.points ?? 0;
+  const completedBreaks = stats.completedBreaks ?? 0;
+  const completedExercises = stats.completedExercises ?? 0;
+  const completedCapsules = stats.completedCapsules ?? 0;
+  const points = stats.points ?? 0;
 
   const userLevel = points >= 100 ? "Ergonaute niveau 2" : "Débutant";
   const totalActions = completedBreaks + completedExercises + completedCapsules;
@@ -183,7 +262,8 @@ export default function DashboardScreen() {
   ];
 
   const unlockedBadges = badgeItems.filter((badge) => badge.isUnlocked);
-  const hasAnyPriority = priorities.length > 0 || workstationPriorities.length > 0;
+  const hasAnyPriority =
+    priorities.length > 0 || workstationPriorities.length > 0;
 
   return (
     <SafeAreaView style={styles.safeArea}>
@@ -205,9 +285,6 @@ export default function DashboardScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
               <Text style={styles.heroLabel}>Niveau actuel</Text>
@@ -393,12 +470,18 @@ export default function DashboardScreen() {
 
             return (
               <View
-                key={badge.title}
-                style={[
-                  styles.badgeCard,
-                  badge.isUnlocked ? styles.badgeCardUnlocked : null,
-                ]}
-              >
+  key={badge.title}
+  style={[
+    styles.badgeCard,
+    badge.isUnlocked ? styles.badgeCardUnlocked : styles.badgeCardLocked,
+  ]}
+>
+  {!badge.isUnlocked && (
+    <View style={styles.lockPill}>
+      <LockIcon size={14} color={colors.primary} />
+      <Text style={styles.lockText}>Verrouillé</Text>
+    </View>
+  )}
                 <IconBadge
                   size={46}
                   backgroundColor={
@@ -489,8 +572,6 @@ export default function DashboardScreen() {
 }
 
 function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -523,13 +604,16 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
-      fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
-      marginBottom: 10,
-    },
+  fontFamily: "Georgia",
+  fontSize: 38,
+  lineHeight: 45,
+  color: colors.primary,
+  letterSpacing: -0.8,
+  marginBottom: 10,
+  textShadowColor: "rgba(0,0,0,0.20)",
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 7,
+},
     subtitle: {
       fontSize: 16,
       lineHeight: 24,
@@ -548,28 +632,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
-    },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
     },
     heroTopRow: {
       flexDirection: "row",
@@ -590,13 +652,16 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.7,
-      maxWidth: 360,
-    },
+  fontFamily: "Georgia",
+  fontSize: 34,
+  lineHeight: 41,
+  color: colors.primary,
+  letterSpacing: -0.7,
+  maxWidth: 360,
+  textShadowColor: "rgba(0,0,0,0.20)",
+  textShadowOffset: { width: 0, height: 2 },
+  textShadowRadius: 7,
+},
     heroText: {
       fontSize: 15,
       lineHeight: 23,
@@ -712,12 +777,13 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
-      marginBottom: 4,
-    },
+  fontFamily: "Georgia",
+  fontSize: 28,
+  lineHeight: 35,
+  color: colors.primary,
+  letterSpacing: -0.5,
+  marginBottom: 4,
+},
     sectionSubtitle: {
       fontSize: 14,
       lineHeight: 20,
@@ -767,11 +833,12 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 4,
     },
     priorityTitle: {
-      fontSize: 21,
-      lineHeight: 26,
-      fontWeight: "900",
-      color: colors.text,
-    },
+  fontFamily: "Georgia",
+  fontSize: 23,
+  lineHeight: 29,
+  color: colors.primary,
+  letterSpacing: -0.3,
+},
     priorityRow: {
       flexDirection: "row",
       alignItems: "center",
@@ -816,14 +883,14 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       alignItems: "center",
     },
     emptyPriorityTitle: {
-      fontSize: 20,
-      lineHeight: 25,
-      fontWeight: "900",
-      color: colors.text,
-      textAlign: "center",
-      marginTop: 15,
-      marginBottom: 8,
-    },
+  fontFamily: "Georgia",
+  fontSize: 22,
+  lineHeight: 28,
+  color: colors.primary,
+  textAlign: "center",
+  marginTop: 15,
+  marginBottom: 8,
+},
     emptyPriorityText: {
       fontSize: 14,
       lineHeight: 21,
@@ -832,42 +899,69 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       maxWidth: 430,
     },
     badgesRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
-      gap: 12,
-      marginBottom: 28,
-    },
-    badgeCard: {
-      width: 160,
-      minHeight: 170,
-      backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
-      borderWidth: 1,
-      borderColor: colors.border,
-      justifyContent: "space-between",
-      opacity: 0.72,
-    },
-    badgeCardUnlocked: {
-      opacity: 1,
-      backgroundColor: colors.card,
-    },
-    badgeTitle: {
-      fontSize: 17,
-      lineHeight: 22,
-      fontWeight: "900",
-      color: colors.text,
-      marginTop: 14,
-      marginBottom: 6,
-    },
-    badgeTitleLocked: {
-      color: colors.textMuted,
-    },
-    badgeText: {
-      fontSize: 13,
-      lineHeight: 18,
-      color: colors.textSoft,
-    },
+  paddingLeft: 24,
+  paddingRight: 24,
+  gap: 12,
+  marginBottom: 28,
+},
+badgeCard: {
+  width: 160,
+  minHeight: 170,
+  backgroundColor: colors.card,
+  borderRadius: 28,
+  padding: 17,
+  borderWidth: 1,
+  borderColor: colors.border,
+  justifyContent: "space-between",
+  opacity: 0.72,
+  position: "relative",
+},
+badgeCardUnlocked: {
+  opacity: 1,
+  backgroundColor: colors.card,
+},
+badgeCardLocked: {
+  opacity: 0.62,
+  backgroundColor: colors.cardWarm,
+},
+lockPill: {
+  position: "absolute",
+  top: 12,
+  right: 12,
+  zIndex: 5,
+  flexDirection: "row",
+  alignItems: "center",
+  gap: 5,
+  backgroundColor: "rgba(0, 30, 24, 0.42)",
+  borderWidth: 1,
+  borderColor: "rgba(245, 238, 223, 0.16)",
+  borderRadius: 999,
+  paddingVertical: 5,
+  paddingHorizontal: 8,
+},
+lockText: {
+  color: colors.primary,
+  fontSize: 9,
+  fontWeight: "900",
+  textTransform: "uppercase",
+  letterSpacing: 0.4,
+},
+badgeTitle: {
+  fontFamily: "Georgia",
+  fontSize: 18,
+  lineHeight: 23,
+  color: colors.primary,
+  marginTop: 14,
+  marginBottom: 6,
+},
+badgeTitleLocked: {
+  color: colors.textMuted,
+},
+badgeText: {
+  fontSize: 13,
+  lineHeight: 18,
+  color: colors.textSoft,
+},  
     quickActionsRow: {
       paddingLeft: 24,
       paddingRight: 24,
@@ -894,12 +988,12 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
-      marginBottom: 6,
-    },
+  fontFamily: "Georgia",
+  fontSize: 19,
+  lineHeight: 24,
+  color: colors.primary,
+  marginBottom: 6,
+},
     quickText: {
       fontSize: 13,
       lineHeight: 19,
