@@ -9,7 +9,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
+import {
+  APP_STATS_UPDATED_EVENT,
+  AppStats,
+  getAppStats,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -54,6 +58,7 @@ type QuickAction = {
 };
 
 const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
+const CHECKINS_UPDATED_EVENT = "ergoprevent_checkins_updated";
 
 const fatigueOptions = ["Faible", "Moyenne", "Élevée"];
 
@@ -161,6 +166,8 @@ function saveNewCheckin(checkin: DailyCheckin) {
     CHECKIN_STORAGE_KEY,
     JSON.stringify(updatedCheckins)
   );
+
+  window.dispatchEvent(new Event(CHECKINS_UPDATED_EVENT));
 }
 
 function PainIcon({
@@ -689,7 +696,7 @@ function getZoneIcon(zone: string): CheckinIcon {
 export default function DailyCheckinScreen() {
   const currentDateAndTime = getCurrentDateAndTime();
 
-  const [stats, setStats] = useState<AppStats | null>(null);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [painLevel, setPainLevel] = useState(0);
   const [fatigueLevel, setFatigueLevel] = useState("Moyenne");
   const [mainZone, setMainZone] = useState("Aucune zone");
@@ -697,20 +704,47 @@ export default function DailyCheckinScreen() {
   const [date, setDate] = useState(currentDateAndTime.date);
   const [time, setTime] = useState(currentDateAndTime.time);
   const [savedMessage, setSavedMessage] = useState("");
-  const [previousCheckins, setPreviousCheckins] = useState<DailyCheckin[]>([]);
+  const [previousCheckins, setPreviousCheckins] = useState<DailyCheckin[]>(() =>
+    getSavedCheckins().slice(0, 8)
+  );
 
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    const savedCheckins = getSavedCheckins();
+    function refreshData() {
+      setStats(getAppStats());
+      setPreviousCheckins(getSavedCheckins().slice(0, 8));
+    }
 
-    setStats(savedStats);
-    setPreviousCheckins(savedCheckins.slice(0, 8));
+    refreshData();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+    window.addEventListener("focus", refreshData);
+    window.addEventListener("storage", refreshData);
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", refreshData);
+    }
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+      window.removeEventListener("focus", refreshData);
+      window.removeEventListener("storage", refreshData);
+
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", refreshData);
+      }
+    };
   }, []);
 
-  const profile = stats?.profile ?? null;
+  const profile = stats.profile ?? null;
   const SelectedZoneIcon = getZoneIcon(mainZone);
 
   function getPainMessage() {
@@ -780,9 +814,6 @@ export default function DailyCheckinScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
               <Text style={styles.heroGreeting}>
@@ -1183,9 +1214,7 @@ export default function DailyCheckinScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -1218,12 +1247,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -1244,28 +1276,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -1285,12 +1295,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 390,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     heroText: {
       fontSize: 15,
@@ -1319,17 +1332,19 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       flex: 1,
     },
     sectionTitle: {
-      fontSize: 21,
-      lineHeight: 26,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.primary,
+      letterSpacing: -0.3,
       marginBottom: 4,
     },
     sectionTitleLarge: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -1383,9 +1398,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       paddingHorizontal: 18,
     },
     painNumber: {
-      fontSize: 54,
-      lineHeight: 60,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 56,
+      lineHeight: 62,
       color: colors.black,
     },
     painSmall: {
@@ -1594,8 +1609,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       flex: 1,
     },
     historyDate: {
-      fontSize: 14,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 17,
+      lineHeight: 22,
       color: colors.primary,
       marginBottom: 4,
     },
@@ -1621,8 +1637,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 26,
     },
     warningTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1677,10 +1694,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
