@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Link } from "expo-router";
 import {
+  APP_STATS_UPDATED_EVENT,
   AppStats,
   addCompletedBreak,
   getAppStats,
@@ -86,7 +87,7 @@ function formatTime(totalSeconds: number) {
 }
 
 export default function TimerScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [secondsRemaining, setSecondsRemaining] = useState(WORK_DURATION);
   const [isRunning, setIsRunning] = useState(false);
   const [timerMode, setTimerMode] = useState<TimerMode>("work");
@@ -96,8 +97,33 @@ export default function TimerScreen() {
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    setStats(savedStats);
+    function refreshStats() {
+      setStats(getAppStats());
+    }
+
+    refreshStats();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener("focus", refreshStats);
+    window.addEventListener("storage", refreshStats);
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", refreshStats);
+    }
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener("focus", refreshStats);
+      window.removeEventListener("storage", refreshStats);
+
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", refreshStats);
+      }
+    };
   }, []);
 
   useEffect(() => {
@@ -131,8 +157,8 @@ export default function TimerScreen() {
     return () => clearInterval(interval);
   }, [isRunning, timerMode]);
 
-  const completedBreaks = stats?.completedBreaks ?? 0;
-  const points = stats?.points ?? 0;
+  const completedBreaks = stats.completedBreaks ?? 0;
+  const points = stats.points ?? 0;
 
   const totalDuration = timerMode === "work" ? WORK_DURATION : BREAK_DURATION;
   const progressPercent = Math.round(
@@ -202,9 +228,6 @@ export default function TimerScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
               <Text style={styles.heroLabel}>{modeLabel}</Text>
@@ -407,9 +430,7 @@ export default function TimerScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -442,12 +463,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -468,28 +492,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -509,12 +511,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 360,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     heroText: {
       fontSize: 15,
@@ -590,9 +595,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       alignItems: "center",
       justifyContent: "center",
       marginBottom: 22,
-      backgroundColor: isDark
-        ? "rgba(255,255,255,0.035)"
-        : "rgba(255,255,255,0.25)",
+      backgroundColor: colors.backgroundSoft,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -616,10 +619,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     timerText: {
-      fontSize: 52,
-      lineHeight: 58,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 54,
+      lineHeight: 60,
+      color: colors.primary,
       letterSpacing: -1,
     },
     timerSmallText: {
@@ -753,7 +756,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     statNumber: {
       fontSize: 23,
       fontWeight: "900",
-      color: colors.text,
+      color: colors.primary,
       lineHeight: 27,
     },
     statLabel: {
@@ -775,8 +778,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 26,
     },
     tipTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -794,10 +798,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -837,10 +842,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
