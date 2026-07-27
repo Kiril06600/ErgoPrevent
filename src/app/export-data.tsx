@@ -8,7 +8,11 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
+import {
+  APP_STATS_UPDATED_EVENT,
+  AppStats,
+  getAppStats,
+} from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -54,6 +58,9 @@ type QuickAction = {
 const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
 const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
 const THEME_STORAGE_KEY = "ergoprevent_theme_mode";
+
+const CHECKINS_UPDATED_EVENT = "ergoprevent_checkins_updated";
+const ROUTINE_UPDATED_EVENT = "ergoprevent_routine_updated";
 
 const quickActions: QuickAction[] = [
   {
@@ -487,8 +494,6 @@ function createPdfReportHtml(stats: AppStats, checkins: DailyCheckin[]) {
   `;
 }
 
-/* -------------------- Icônes personnalisées -------------------- */
-
 function LockIcon({
   size = 22,
   color = "#163028",
@@ -565,7 +570,6 @@ function CsvIcon({
 function JsonIcon({
   size = 22,
   color = "#163028",
-  strokeWidth = 2,
 }: ExportIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
@@ -691,22 +695,51 @@ function DownloadIcon({
 }
 
 export default function ExportDataScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
-  const [checkins, setCheckins] = useState<DailyCheckin[]>([]);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
+  const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
+    getSavedCheckins()
+  );
   const [message, setMessage] = useState("");
 
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    const savedCheckins = getSavedCheckins();
+    function refreshData() {
+      setStats(getAppStats());
+      setCheckins(getSavedCheckins());
+    }
 
-    setStats(savedStats);
-    setCheckins(savedCheckins);
+    refreshData();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+    window.addEventListener(ROUTINE_UPDATED_EVENT, refreshData);
+    window.addEventListener("focus", refreshData);
+    window.addEventListener("storage", refreshData);
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", refreshData);
+    }
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+      window.removeEventListener(ROUTINE_UPDATED_EVENT, refreshData);
+      window.removeEventListener("focus", refreshData);
+      window.removeEventListener("storage", refreshData);
+
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", refreshData);
+      }
+    };
   }, []);
 
-  const appStats = stats ?? getAppStats();
+  const appStats = stats;
 
   const fullExportData = {
     appStats,
@@ -803,9 +836,6 @@ export default function ExportDataScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
               <Text style={styles.heroLabel}>Confidentialité</Text>
@@ -1038,18 +1068,18 @@ export default function ExportDataScreen() {
           </Text>
 
           <View style={styles.dataBox}>
-  <ScrollView
-    style={styles.dataScroll}
-    nestedScrollEnabled
-    showsVerticalScrollIndicator
-  >
-    <ScrollView horizontal showsHorizontalScrollIndicator>
-      <Text selectable style={styles.dataCode}>
-        {JSON.stringify(fullExportData, null, 2)}
-      </Text>
-    </ScrollView>
-  </ScrollView>
-</View>
+            <ScrollView
+              style={styles.dataScroll}
+              nestedScrollEnabled
+              showsVerticalScrollIndicator
+            >
+              <ScrollView horizontal showsHorizontalScrollIndicator>
+                <Text selectable style={styles.dataCode}>
+                  {JSON.stringify(fullExportData, null, 2)}
+                </Text>
+              </ScrollView>
+            </ScrollView>
+          </View>
         </View>
 
         <View style={styles.warningBox}>
@@ -1110,9 +1140,7 @@ export default function ExportDataScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -1145,12 +1173,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -1171,28 +1202,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -1212,12 +1221,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 360,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     heroText: {
       fontSize: 15,
@@ -1250,7 +1262,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     statNumber: {
       fontSize: 23,
       fontWeight: "900",
-      color: colors.text,
+      color: colors.primary,
       lineHeight: 27,
     },
     statLabel: {
@@ -1281,17 +1293,19 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       flex: 1,
     },
     sectionTitle: {
-      fontSize: 21,
-      lineHeight: 26,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.primary,
+      letterSpacing: -0.3,
       marginBottom: 4,
     },
     sectionTitleLarge: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -1339,9 +1353,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.6,
     },
     exportButtonTitle: {
-      fontSize: 15,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
+      color: colors.primary,
       marginBottom: 2,
     },
     exportButtonSubtitle: {
@@ -1409,7 +1424,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     summaryMiniNumber: {
       fontSize: 24,
       fontWeight: "900",
-      color: colors.text,
+      color: colors.primary,
       lineHeight: 28,
     },
     summaryMiniLabel: {
@@ -1456,22 +1471,22 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 14,
     },
     dataBox: {
-  backgroundColor: colors.cardWarm,
-  borderRadius: 18,
-  padding: 14,
-  borderWidth: 1,
-  borderColor: colors.border,
-  height: 320,
-  overflow: "hidden",
-},
-dataScroll: {
-  maxHeight: 292,
-},
-dataCode: {
-  fontSize: 12,
-  lineHeight: 18,
-  color: colors.text,
-},
+      backgroundColor: colors.cardWarm,
+      borderRadius: 18,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      height: 320,
+      overflow: "hidden",
+    },
+    dataScroll: {
+      maxHeight: 292,
+    },
+    dataCode: {
+      fontSize: 12,
+      lineHeight: 18,
+      color: colors.text,
+    },
     warningBox: {
       marginHorizontal: 24,
       backgroundColor: colors.warning,
@@ -1482,8 +1497,9 @@ dataCode: {
       marginBottom: 26,
     },
     warningTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1532,10 +1548,10 @@ dataCode: {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
