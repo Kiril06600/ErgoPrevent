@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Link } from "expo-router";
 import {
+  APP_STATS_UPDATED_EVENT,
   AppStats,
   addCompletedCapsule,
   getAppStats,
@@ -223,8 +224,6 @@ const capsules: Capsule[] = [
       "Dans votre check-in, notez aussi la fatigue. Cela peut aider à repérer des liens avec les douleurs.",
   },
 ];
-
-/* -------------------- Icônes personnalisées -------------------- */
 
 function ScreenIcon({
   size = 22,
@@ -520,7 +519,7 @@ function getCapsuleIcon(capsuleId: string, category: CapsuleTopic): CapsuleIcon 
 }
 
 export default function EducationScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [selectedCategory, setSelectedCategory] =
     useState<CapsuleCategory>("Toutes");
 
@@ -528,13 +527,38 @@ export default function EducationScreen() {
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    setStats(savedStats);
+    function refreshStats() {
+      setStats(getAppStats());
+    }
+
+    refreshStats();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener("focus", refreshStats);
+    window.addEventListener("storage", refreshStats);
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", refreshStats);
+    }
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener("focus", refreshStats);
+      window.removeEventListener("storage", refreshStats);
+
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", refreshStats);
+      }
+    };
   }, []);
 
-  const completedCapsuleIds = stats?.completedCapsuleIds ?? [];
-  const completedCapsules = stats?.completedCapsules ?? 0;
-  const points = stats?.points ?? 0;
+  const completedCapsuleIds = stats.completedCapsuleIds ?? [];
+  const completedCapsules = stats.completedCapsules ?? 0;
+  const points = stats.points ?? 0;
 
   const filteredCapsules =
     selectedCategory === "Toutes"
@@ -563,9 +587,6 @@ export default function EducationScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
               <Text style={styles.heroLabel}>Apprendre</Text>
@@ -773,9 +794,7 @@ export default function EducationScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -808,12 +827,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -834,28 +856,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -875,12 +875,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 360,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     heroText: {
       fontSize: 15,
@@ -934,7 +937,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     statNumber: {
       fontSize: 23,
       fontWeight: "900",
-      color: colors.text,
+      color: colors.primary,
       lineHeight: 27,
     },
     statLabel: {
@@ -955,10 +958,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -1025,10 +1029,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 5,
     },
     capsuleTitle: {
-      fontSize: 21,
-      lineHeight: 26,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 23,
+      lineHeight: 29,
+      color: colors.primary,
     },
     capsuleIntro: {
       fontSize: 15,
@@ -1045,9 +1049,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       borderColor: colors.border,
     },
     keyPointsTitle: {
-      fontSize: 15,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
+      color: colors.primary,
       marginBottom: 12,
     },
     pointRow: {
@@ -1088,8 +1093,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 16,
     },
     tipSmallTitle: {
-      fontSize: 14,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 17,
+      lineHeight: 22,
       color: colors.warningText,
       marginBottom: 6,
     },
@@ -1144,8 +1150,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 26,
     },
     warningTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1180,10 +1187,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
