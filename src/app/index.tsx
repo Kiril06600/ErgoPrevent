@@ -8,551 +8,185 @@ import {
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
-import { AppStats, getAppStats } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
-import { ThemeColors } from "../theme/colors";
+import AppLogo from "../components/AppLogo";
 import { useAppTheme } from "../theme/ThemeContext";
+import { ThemeColors } from "../theme/colors";
+import {
+  APP_STATS_UPDATED_EVENT,
+  getAppStats,
+} from "../lib/storage";
 import {
   IconBadge,
   RoutineIcon,
-  ProgressIcon,
   PlanIcon,
-  BreakIcon,
   EducationIcon,
-  PostureIcon,
+  ProfileIcon,
+  ProgressIcon,
+  BreakIcon,
   ExerciseIcon,
-  SunIcon,
-  MoonIcon,
 } from "../components/ErgoIcons";
 
-type AppRoute =
-  | "/"
-  | "/profile"
-  | "/questionnaire"
-  | "/workstation-audit"
-  | "/timer"
-  | "/exercises"
-  | "/education"
-  | "/routine"
-  | "/daily-checkin"
-  | "/progress"
-  | "/personal-plan"
-  | "/dashboard";
+const essentialItems = [
+  {
+    title: "Bilan du jour",
+    text: "Suivez comment votre corps va.",
+    href: "/daily-checkin",
+    Icon: ProgressIcon,
+  },
+  {
+    title: "Posture",
+    text: "Analysez votre poste de travail.",
+    href: "/workstation-audit",
+    Icon: PlanIcon,
+  },
+  {
+    title: "Rappels Pauses",
+    text: "Restez actif et bougez souvent.",
+    href: "/timer",
+    Icon: BreakIcon,
+  },
+  {
+    title: "Objectifs",
+    text: "Consultez votre plan personnalisé.",
+    href: "/personal-plan",
+    Icon: RoutineIcon,
+  },
+] as const;
 
-type HomeIconProps = {
-  size?: number;
-  color?: string;
-  strokeWidth?: number;
-};
-
-type HomeIcon = React.ComponentType<HomeIconProps>;
-
-function RoutineHomeIcon({
-  size = 24,
-  color = "#FFFFFF",
-  strokeWidth = 2.2,
-}: HomeIconProps) {
-  const scale = size / 24;
-
-  function line(
-    x: number,
-    y: number,
-    width: number,
-    height: number,
-    rotate = 0
-  ) {
-    return {
-      position: "absolute",
-      left: x,
-      top: y,
-      width,
-      height,
-      borderRadius: 999,
-      backgroundColor: color,
-      transform: [{ rotate: `${rotate}deg` }],
-    } as any;
-  }
-
-  return (
-    <View
-      style={{
-        width: size,
-        height: size,
-        alignItems: "center",
-        justifyContent: "center",
-      }}
-    >
-      <View
-        style={{
-          width: 24,
-          height: 24,
-          position: "relative",
-          transform: [{ scale }],
-        }}
-      >
-        <View style={line(4.5, 6.6, 4.2, strokeWidth, 42)} />
-        <View style={line(7.2, 5.7, 6.4, strokeWidth, -45)} />
-        <View style={line(14, 6.7, 6.5, strokeWidth)} />
-
-        <View style={line(4.5, 12, 4.2, strokeWidth, 42)} />
-        <View style={line(7.2, 11.1, 6.4, strokeWidth, -45)} />
-        <View style={line(14, 12.1, 6.5, strokeWidth)} />
-
-        <View style={line(4.5, 17.4, 4.2, strokeWidth, 42)} />
-        <View style={line(7.2, 16.5, 6.4, strokeWidth, -45)} />
-        <View style={line(14, 17.5, 6.5, strokeWidth)} />
-      </View>
-    </View>
-  );
-}
-
-type NextAction = {
-  eyebrow: string;
-  title: string;
-  text: string;
-  href: AppRoute;
-  button: string;
-  Icon: HomeIcon;
-};
-
-type HomeCard = {
-  eyebrow: string;
-  title: string;
-  text: string;
-  meta: string;
-  href: AppRoute;
-  Icon: HomeIcon;
-  featured?: boolean;
-};
+const toolItems = [
+  {
+    title: "Étirements",
+    text: "Exercices guidés pour chaque besoin.",
+    href: "/exercises",
+    Icon: ExerciseIcon,
+  },
+  {
+    title: "Progression",
+    text: "Suivez vos progrès dans le temps.",
+    href: "/progress",
+    Icon: ProgressIcon,
+  },
+  {
+    title: "Formation",
+    text: "Conseils et astuces pour votre bien-être.",
+    href: "/education",
+    Icon: EducationIcon,
+  },
+  {
+    title: "Profil",
+    text: "Gérez vos données et préférences.",
+    href: "/profile",
+    Icon: ProfileIcon,
+  },
+] as const;
 
 export default function HomeScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
-  const { colors, mode, toggleTheme } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const [stats, setStats] = useState(() => getAppStats());
 
-  useEffect(() => {
-    const savedStats = getAppStats();
-    setStats(savedStats);
-  }, []);
-
-  const profile = stats?.profile ?? null;
-  const questionnaireResult = stats?.questionnaireResult ?? null;
-  const workstationAuditResult = stats?.workstationAuditResult ?? null;
-
-  const firstName = profile?.firstName;
-  const points = stats?.points ?? 0;
-  const completedBreaks = stats?.completedBreaks ?? 0;
-  const completedExercises = stats?.completedExercises ?? 0;
-  const completedCapsules = stats?.completedCapsules ?? 0;
-
-  function getNextAction(): NextAction {
-    if (!profile) {
-      return {
-        eyebrow: "Première étape",
-        title: "Créer votre profil",
-        text: "Personnalisez ErgoPrevent selon votre situation, votre travail et vos objectifs.",
-        href: "/profile",
-        button: "Créer mon profil",
-        Icon: PlanIcon,
-      };
-    }
-
-    if (!questionnaireResult) {
-      return {
-        eyebrow: "Évaluation",
-        title: "Évaluer votre risque TMS",
-        text: "Complétez le questionnaire pour obtenir votre premier score de prévention.",
-        href: "/questionnaire",
-        button: "Faire le questionnaire",
-        Icon: EducationIcon,
-      };
-    }
-
-    if (!workstationAuditResult) {
-      return {
-        eyebrow: "Poste de travail",
-        title: "Analyser votre poste",
-        text: "Identifiez les ajustements prioritaires pour améliorer votre confort.",
-        href: "/workstation-audit",
-        button: "Faire l’audit",
-        Icon: PostureIcon,
-      };
-    }
-
-    if (completedBreaks === 0) {
-      return {
-        eyebrow: "Pause active",
-        title: "Lancer votre première pause",
-        text: "Une courte pause guidée pour bouger, respirer et relâcher les tensions.",
-        href: "/timer",
-        button: "Démarrer",
-        Icon: BreakIcon,
-      };
-    }
-
-    if (completedExercises === 0) {
-      return {
-        eyebrow: "Mouvement",
-        title: "Faire un exercice simple",
-        text: "Choisissez un exercice rapide pour le cou, le dos, les épaules ou les poignets.",
-        href: "/exercises",
-        button: "Voir les exercices",
-        Icon: ExerciseIcon,
-      };
-    }
-
-    if (completedCapsules === 0) {
-      return {
-        eyebrow: "Comprendre",
-        title: "Lire une capsule éducative",
-        text: "Apprenez une notion courte pour mieux prévenir les douleurs au quotidien.",
-        href: "/education",
-        button: "Lire une capsule",
-        Icon: EducationIcon,
-      };
-    }
-
-    return {
-      eyebrow: "Aujourd’hui",
-      title: "Continuer votre routine",
-      text: "Gardez vos habitudes actives avec votre routine, vos check-ins et votre plan personnalisé.",
-      href: "/routine",
-      button: "Voir ma routine",
-      Icon: BreakIcon,
-    };
+useEffect(() => {
+  function refreshStats() {
+    setStats(getAppStats());
   }
 
-  const nextAction = getNextAction();
-  const NextActionIcon = nextAction.Icon;
+  refreshStats();
 
-  const essentialCards: HomeCard[] = [
-    {
-      eyebrow: "Aujourd’hui",
-      title: "Routine",
-      text: "Vos habitudes prioritaires pour rester actif et confortable.",
-      meta: "2–5 min",
-      href: "/routine",
-      Icon: RoutineHomeIcon,
-      featured: true,
-    },
-    {
-      eyebrow: "Suivi rapide",
-      title: "Check-in",
-      text: "Notez votre confort, vos douleurs et votre énergie.",
-      meta: "1 min",
-      href: "/daily-checkin",
-      Icon: RoutineIcon,
-    },
-    {
-      eyebrow: "Objectifs",
-      title: "Plan personnalisé",
-      text: "Des recommandations adaptées à vos besoins.",
-      meta: "Adapté",
-      href: "/personal-plan",
-      Icon: PlanIcon,
-    },
-    {
-      eyebrow: "Tendances",
-      title: "Évolution",
-      text: "Visualisez vos progrès et vos habitudes.",
-      meta: "Stats",
-      href: "/progress",
-      Icon: ProgressIcon,
-    },
-  ];
+  if (typeof window === "undefined") {
+    return;
+  }
 
-  const toolCards: HomeCard[] = [
-    {
-      eyebrow: "Évaluer",
-      title: "Questionnaire",
-      text: "Identifiez vos risques TMS.",
-      meta: "5–7 min",
-      href: "/questionnaire",
-      Icon: EducationIcon,
-    },
-    {
-      eyebrow: "Poste",
-      title: "Audit du poste",
-      text: "Analysez votre environnement.",
-      meta: "10 min",
-      href: "/workstation-audit",
-      Icon: PostureIcon,
-    },
-    {
-      eyebrow: "Pause",
-      title: "Minuterie",
-      text: "Rappels et pauses actives.",
-      meta: "25/2",
-      href: "/timer",
-      Icon: BreakIcon,
-    },
-    {
-      eyebrow: "Bouger",
-      title: "Exercices",
-      text: "Mouvements simples au quotidien.",
-      meta: "5 min",
-      href: "/exercises",
-      Icon: ExerciseIcon,
-    },
-    {
-      eyebrow: "Apprendre",
-      title: "Formation",
-      text: "Capsules courtes et utiles.",
-      meta: "Modules",
-      href: "/education",
-      Icon: EducationIcon,
-    },
-    {
-      eyebrow: "Vue globale",
-      title: "Dashboard",
-      text: "Pilotez votre progression.",
-      meta: "Résumé",
-      href: "/dashboard",
-      Icon: ProgressIcon,
-    },
-  ];
+  window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+  window.addEventListener("focus", refreshStats);
+  window.addEventListener("storage", refreshStats);
+
+  return () => {
+    window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.removeEventListener("focus", refreshStats);
+    window.removeEventListener("storage", refreshStats);
+  };
+}, []);
+
+const firstName = stats.profile?.firstName?.trim() || "Alex";
+const points = stats.points;
+  const { colors, mode } = useAppTheme();
+  const styles = createStyles(colors, mode);
 
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.topHeader}>
-          <View style={styles.brandBlock}>
-            <Text style={styles.logo}>ErgoPrevent</Text>
-            <Text style={styles.tagline}>Prévention et confort au quotidien</Text>
+        <View style={styles.topBar}>
+          <AppLogo height={54} />
+
+          <View style={styles.notificationButton}>
+            <Text style={styles.notificationIcon}>⌾</Text>
           </View>
-
-          <Pressable style={styles.themeButton} onPress={toggleTheme}>
-            {mode === "dark" ? (
-              <SunIcon size={20} color={colors.text} />
-            ) : (
-              <MoonIcon size={22} color={colors.text} />
-            )}
-
-            <Text style={styles.themeText}>
-              {mode === "dark" ? "Clair" : "Sombre"}
-            </Text>
-          </Pressable>
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroVisual}>
-            <View style={styles.heroShapeLarge} />
-            <View style={styles.heroShapeMedium} />
-            <View style={styles.heroShapeSmall} />
+          <View style={styles.heroTopRow}>
+            <View style={styles.heroTextBlock}>
+              <Text style={styles.greeting}>Bonjour, {firstName}</Text>
 
-            <View style={styles.heroHeader}>
-              <View style={styles.heroPill}>
-                <Text style={styles.heroPillText}>Espace personnel</Text>
-              </View>
+              <Text style={styles.heroTitle}>
+                De petits pas aujourd’hui,{"\n"}plus fort demain.
+              </Text>
 
-              <View style={styles.pointsBadge}>
-                <Text style={styles.pointsNumber}>{points}</Text>
-                <Text style={styles.pointsLabel}>points</Text>
-              </View>
+              <Text style={styles.heroSubtitle}>
+                Restez constant, restez sans douleur.
+              </Text>
             </View>
 
-            <Text style={styles.greeting}>
-              {firstName ? `Bonjour ${firstName}` : "Bienvenue"}
-            </Text>
-
-            <Text style={styles.title}>Prenez soin de votre posture.</Text>
-
-            <Text style={styles.subtitle}>
-              De petites actions chaque jour pour prévenir les tensions et créer
-              une routine durable.
-            </Text>
-
-            <Link href={nextAction.href} asChild>
-              <Pressable style={styles.heroButton}>
-                <Text style={styles.heroButtonText}>{nextAction.button}</Text>
-                <Text style={styles.heroButtonArrow}>→</Text>
-              </Pressable>
-            </Link>
-          </View>
-        </View>
-
-        <View style={styles.recommendationCard}>
-          <View style={styles.recommendationTop}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <NextActionIcon size={23} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.recommendationTextBlock}>
-              <Text style={styles.nextActionLabel}>{nextAction.eyebrow}</Text>
-              <Text style={styles.nextActionTitle}>{nextAction.title}</Text>
+            <View style={styles.pointsBadge}>
+              <Text style={styles.pointsNumber}>{points}</Text>
+              <Text style={styles.pointsText}>points</Text>
             </View>
           </View>
 
-          <Text style={styles.nextActionText}>{nextAction.text}</Text>
+          <Link href="/daily-checkin" asChild>
+            <Pressable style={styles.heroButton}>
+              <Text style={styles.heroButtonText}>
+                Commencer le bilan du jour
+              </Text>
+              <Text style={styles.heroButtonArrow}>›</Text>
+            </Pressable>
+          </Link>
         </View>
 
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Vos essentiels</Text>
-            <Text style={styles.sectionSubtitle}>
-              Les actions les plus utiles au quotidien.
-            </Text>
-          </View>
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Vos essentiels</Text>
 
-          <Text style={styles.sectionAction}>Défilez →</Text>
+          <Link href="/explore" asChild>
+            <Pressable style={styles.viewAllButton}>
+              <Text style={styles.viewAllText}>Voir tout</Text>
+              <Text style={styles.viewAllArrow}>›</Text>
+            </Pressable>
+          </Link>
         </View>
 
         <ScrollView
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalCards}
+          contentContainerStyle={styles.cardsRow}
         >
-          {essentialCards.map((item) => {
-            const Icon = item.Icon;
-            const cardStyle = item.featured
-              ? styles.essentialCardFeatured
-              : styles.essentialCard;
-
-            const titleStyle = item.featured
-              ? styles.essentialTitleFeatured
-              : styles.essentialTitle;
-
-            const textStyle = item.featured
-              ? styles.essentialTextFeatured
-              : styles.essentialText;
+          {essentialItems.map((item) => {
+            const ItemIcon = item.Icon;
 
             return (
               <Link key={item.href} href={item.href} asChild>
-                <Pressable style={cardStyle}>
-                  <View style={styles.cardTopLine}>
-                    {item.featured ? (
-  <View style={styles.featuredTopIconBubble}>
-    <View style={styles.routineMiniIcon}>
-      <View style={styles.routineMiniRow}>
-        <View style={styles.routineMiniDot} />
-        <View style={styles.routineMiniLine} />
-      </View>
-
-      <View style={styles.routineMiniRow}>
-        <View style={styles.routineMiniDot} />
-        <View style={styles.routineMiniLine} />
-      </View>
-
-      <View style={styles.routineMiniRow}>
-        <View style={styles.routineMiniDot} />
-        <View style={styles.routineMiniLineShort} />
-      </View>
-    </View>
-  </View>
-) : (
-  <IconBadge
-    size={44}
-    backgroundColor={colors.backgroundSoft}
-    borderColor={colors.border}
-  >
-    <Icon size={22} color={colors.text} />
-  </IconBadge>
-)}
-
-                    <Text
-                      style={
-                        item.featured
-                          ? styles.cardEyebrowFeatured
-                          : styles.cardEyebrow
-                      }
-                    >
-                      {item.eyebrow}
-                    </Text>
-                  </View>
-
-                  <View>
-                    <Text style={titleStyle}>{item.title}</Text>
-                    <Text style={textStyle}>{item.text}</Text>
-                  </View>
-
-                  <View style={styles.cardBottomLine}>
-                    <View
-                      style={
-                        item.featured
-                          ? styles.metaPillFeatured
-                          : styles.metaPill
-                      }
-                    >
-                      <Text
-                        style={
-                          item.featured
-                            ? styles.metaTextFeatured
-                            : styles.metaText
-                        }
-                      >
-                        {item.meta}
-                      </Text>
-                    </View>
-
-                    <View
-                      style={
-                        item.featured
-                          ? styles.arrowCircleFeatured
-                          : styles.arrowCircle
-                      }
-                    >
-                      <Text
-                        style={
-                          item.featured
-                            ? styles.arrowTextFeatured
-                            : styles.arrowText
-                        }
-                      >
-                        →
-                      </Text>
-                    </View>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
-        </ScrollView>
-
-        <View style={styles.dotsRow}>
-          <View style={styles.dotActive} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
-        </View>
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Outils</Text>
-            <Text style={styles.sectionSubtitle}>
-              Accédez rapidement aux fonctions de prévention.
-            </Text>
-          </View>
-
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.horizontalTools}
-        >
-          {toolCards.map((item) => {
-            const Icon = item.Icon;
-
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.toolCard}>
+                <Pressable style={styles.featureCard}>
                   <IconBadge
-                    size={44}
-                    backgroundColor={colors.turquoiseSoft}
-                    borderColor={colors.border}
+                    size={70}
+                    backgroundColor="rgba(0, 48, 38, 0.26)"
+                    borderColor="rgba(245, 238, 223, 0.18)"
                   >
-                    <Icon size={21} color={colors.text} />
+                    <ItemIcon size={32} color={colors.primary} />
                   </IconBadge>
 
-                  <Text style={styles.toolTitle}>{item.title}</Text>
-                  <Text style={styles.toolText}>{item.text}</Text>
+                  <Text style={styles.featureTitle}>{item.title}</Text>
+                  <Text style={styles.featureText}>{item.text}</Text>
 
-                  <View style={styles.toolMetaPill}>
-                    <Text style={styles.toolMetaText}>{item.meta}</Text>
+                  <View style={styles.arrowCircle}>
+                    <Text style={styles.arrowText}>›</Text>
                   </View>
                 </Pressable>
               </Link>
@@ -560,44 +194,47 @@ export default function HomeScreen() {
           })}
         </ScrollView>
 
-        <View style={styles.dotsRow}>
-          <View style={styles.dotActive} />
-          <View style={styles.dot} />
-          <View style={styles.dot} />
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>Outils</Text>
+
+          <Link href="/explore" asChild>
+            <Pressable style={styles.viewAllButton}>
+              <Text style={styles.viewAllText}>Voir tout</Text>
+              <Text style={styles.viewAllArrow}>›</Text>
+            </Pressable>
+          </Link>
         </View>
 
-        <View style={styles.metricsPanel}>
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Score TMS</Text>
-            <Text style={styles.metricValue}>
-              {questionnaireResult ? questionnaireResult.score : "--"}
-            </Text>
-          </View>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.cardsRow}
+        >
+          {toolItems.map((item) => {
+            const ItemIcon = item.Icon;
 
-          <View style={styles.metricDivider} />
+            return (
+              <Link key={item.href} href={item.href} asChild>
+                <Pressable style={styles.featureCard}>
+                  <IconBadge
+                    size={70}
+                    backgroundColor="rgba(0, 48, 38, 0.26)"
+                    borderColor="rgba(245, 238, 223, 0.18)"
+                  >
+                    <ItemIcon size={32} color={colors.primary} />
+                  </IconBadge>
 
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Poste</Text>
-            <Text style={styles.metricValue}>
-              {workstationAuditResult ? workstationAuditResult.score : "--"}
-            </Text>
-          </View>
+                  <Text style={styles.featureTitle}>{item.title}</Text>
+                  <Text style={styles.featureText}>{item.text}</Text>
 
-          <View style={styles.metricDivider} />
-
-          <View style={styles.metricItem}>
-            <Text style={styles.metricLabel}>Pauses</Text>
-            <Text style={styles.metricValue}>{completedBreaks}</Text>
-          </View>
-        </View>
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>À retenir</Text>
-          <Text style={styles.infoText}>
-            ErgoPrevent est un outil d’éducation et de prévention. Il ne remplace
-            pas une consultation avec un professionnel de la santé.
-          </Text>
-        </View>
+                  <View style={styles.arrowCircle}>
+                    <Text style={styles.arrowText}>›</Text>
+                  </View>
+                </Pressable>
+              </Link>
+            );
+          })}
+        </ScrollView>
 
         <BottomNav />
       </ScrollView>
@@ -606,559 +243,216 @@ export default function HomeScreen() {
 }
 
 function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: 28,
+      paddingBottom: 42,
     },
-    topHeader: {
+    topBar: {
       paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      marginBottom: 28,
       flexDirection: "row",
+      alignItems: "center",
       justifyContent: "space-between",
+    },
+    notificationButton: {
+      width: 46,
+      height: 46,
+      borderRadius: 23,
       alignItems: "center",
-      gap: 14,
+      justifyContent: "center",
     },
-    brandBlock: {
-      flex: 1,
-    },
-    logo: {
-      fontSize: 31,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.6,
-    },
-    tagline: {
-      marginTop: 4,
-      fontSize: 14,
-      color: colors.textSoft,
-    },
-    themeButton: {
-      backgroundColor: "transparent",
-      borderRadius: 18,
-      paddingVertical: 10,
-      paddingHorizontal: 12,
-      alignItems: "center",
-      borderWidth: 0,
-      borderColor: "transparent",
-      minWidth: 72,
-    },
-    themeText: {
-      color: colors.textSoft,
-      fontSize: 12,
-      fontWeight: "900",
-      marginTop: 4,
+    notificationIcon: {
+      color: colors.primary,
+      fontSize: 34,
+      fontWeight: "300",
+      lineHeight: 34,
     },
     heroCard: {
       marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 38,
-      overflow: "hidden",
+      marginBottom: 28,
+      minHeight: 320,
+      borderRadius: 36,
+      padding: 28,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
-    },
-    heroVisual: {
-      minHeight: 340,
-      padding: 24,
-      position: "relative",
+      justifyContent: "space-between",
       overflow: "hidden",
+      boxShadow:
+        mode === "dark"
+          ? "0px 26px 52px rgba(0,0,0,0.18)"
+          : "0px 26px 52px rgba(0,0,0,0.14)",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 230,
-      height: 230,
-      borderRadius: 115,
-      right: -62,
-      top: 62,
-      backgroundColor: isDark
-        ? "rgba(95, 159, 149, 0.18)"
-        : "rgba(216, 196, 182, 0.28)",
-    },
-    heroShapeMedium: {
-      position: "absolute",
-      width: 160,
-      height: 160,
-      borderRadius: 80,
-      right: 46,
-      top: 112,
-      backgroundColor: isDark
-        ? "rgba(245, 238, 223, 0.08)"
-        : "rgba(95, 159, 149, 0.15)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 96,
-      height: 96,
-      borderRadius: 48,
-      left: -24,
-      bottom: 40,
-      backgroundColor: isDark
-        ? "rgba(216, 196, 182, 0.12)"
-        : "rgba(255, 255, 255, 0.30)",
-    },
-    heroHeader: {
+    heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
-      alignItems: "center",
-      gap: 12,
-      marginBottom: 34,
-      zIndex: 2,
+      alignItems: "flex-start",
+      gap: 18,
     },
-    heroPill: {
-      backgroundColor: colors.backgroundSoft,
-      borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    heroPillText: {
-      color: colors.textSoft,
-      fontSize: 12,
-      fontWeight: "900",
-      textTransform: "uppercase",
-      letterSpacing: 0.7,
-    },
-    pointsBadge: {
-      backgroundColor: colors.primary,
-      borderRadius: 26,
-      minWidth: 70,
-      height: 52,
-      paddingHorizontal: 12,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: colors.primaryDark,
-    },
-    pointsNumber: {
-      fontSize: 19,
-      fontWeight: "900",
-      color: colors.black,
-    },
-    pointsLabel: {
-      fontSize: 10,
-      fontWeight: "900",
-      color: colors.black,
+    heroTextBlock: {
+      flex: 1,
+      paddingTop: 8,
     },
     greeting: {
-      fontSize: 16,
-      fontWeight: "900",
-      color: colors.primary,
-      marginBottom: 10,
-      zIndex: 2,
-    },
-    title: {
-      maxWidth: 290,
-      fontSize: 36,
-      lineHeight: 42,
-      fontWeight: "900",
-      color: colors.text,
-      marginBottom: 14,
-      letterSpacing: -0.9,
-      zIndex: 2,
-    },
-    subtitle: {
-      maxWidth: 320,
-      fontSize: 16,
+      fontSize: 17,
       lineHeight: 24,
       color: colors.textSoft,
-      marginBottom: 20,
-      zIndex: 2,
+      marginBottom: 24,
+      fontWeight: "500",
     },
-    heroButton: {
+    heroTitle: {
+      fontFamily: "Georgia",
+      fontSize: 39,
+      lineHeight: 48,
+      color: colors.primary,
+      letterSpacing: -1,
+      marginBottom: 18,
+      textShadowColor: "rgba(0,0,0,0.22)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 8,
+    },
+    heroSubtitle: {
+      fontSize: 18,
+      lineHeight: 27,
+      color: colors.textSoft,
+      fontWeight: "400",
+    },
+    pointsBadge: {
+      width: 112,
+      minHeight: 82,
+      borderRadius: 38,
       backgroundColor: colors.primary,
-      paddingVertical: 15,
-      paddingHorizontal: 18,
-      borderRadius: 999,
-      alignItems: "center",
-      alignSelf: "flex-start",
       borderWidth: 1,
       borderColor: colors.primaryDark,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingVertical: 10,
+      boxShadow: "0px 12px 26px rgba(0,0,0,0.16)",
+    },
+    pointsNumber: {
+      fontSize: 34,
+      lineHeight: 37,
+      fontWeight: "900",
+      color: colors.black,
+      letterSpacing: -1,
+    },
+    pointsText: {
+      fontSize: 18,
+      lineHeight: 22,
+      fontWeight: "900",
+      color: colors.black,
+    },
+    heroButton: {
+      alignSelf: "flex-start",
+      minWidth: 300,
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      paddingVertical: 16,
+      paddingHorizontal: 25,
       flexDirection: "row",
-      gap: 12,
-      zIndex: 2,
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 20,
+      marginTop: 30,
     },
     heroButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: 17,
       fontWeight: "900",
     },
     heroButtonArrow: {
       color: colors.black,
-      fontSize: 20,
-      fontWeight: "900",
-      lineHeight: 20,
+      fontSize: 34,
+      fontWeight: "600",
+      lineHeight: 28,
+      marginTop: -2,
     },
-    recommendationCard: {
-      marginHorizontal: 24,
-      backgroundColor: colors.secondaryLight,
-      borderRadius: 30,
-      padding: 22,
-      marginBottom: 28,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    recommendationTop: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 14,
-      marginBottom: 14,
-    },
-    recommendationTextBlock: {
-      flex: 1,
-    },
-    nextActionLabel: {
-      fontSize: 12,
-      fontWeight: "900",
-      color: colors.primary,
-      textTransform: "uppercase",
-      letterSpacing: 0.8,
-      marginBottom: 5,
-    },
-    nextActionTitle: {
-      fontSize: 23,
-      lineHeight: 29,
-      fontWeight: "900",
-      color: colors.text,
-    },
-    nextActionText: {
-      fontSize: 15,
-      lineHeight: 22,
-      color: colors.textSoft,
-    },
-    sectionHeaderRow: {
+    sectionHeader: {
       paddingHorizontal: 24,
       marginBottom: 14,
       flexDirection: "row",
+      alignItems: "center",
       justifyContent: "space-between",
-      alignItems: "flex-end",
-      gap: 16,
     },
     sectionTitle: {
-      fontSize: 23,
-      fontWeight: "900",
-      color: colors.text,
-      marginBottom: 4,
-      letterSpacing: -0.3,
+      fontFamily: "Georgia",
+      fontSize: 31,
+      lineHeight: 38,
+      color: colors.primary,
+      letterSpacing: -0.5,
     },
-    sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+    viewAllButton: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    viewAllText: {
       color: colors.textSoft,
+      fontSize: 17,
+      fontWeight: "500",
     },
-    sectionAction: {
-      fontSize: 12,
-      fontWeight: "900",
-      color: colors.textMuted,
-      marginBottom: 4,
+    viewAllArrow: {
+      color: colors.primary,
+      fontSize: 32,
+      lineHeight: 30,
+      fontWeight: "500",
     },
-    horizontalCards: {
+    cardsRow: {
       paddingLeft: 24,
       paddingRight: 24,
-      gap: 12,
+      gap: 14,
+      marginBottom: 30,
     },
-    essentialCard: {
-      width: 178,
-      minHeight: 235,
+    featureCard: {
+      width: 205,
+      minHeight: 205,
+      borderRadius: 24,
+      padding: 18,
       backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 18,
-      borderWidth: 1,
-      borderColor: colors.border,
-      justifyContent: "space-between",
-    },
-    essentialCardFeatured: {
-      width: 245,
-      minHeight: 235,
-      backgroundColor: colors.secondary,
-      borderRadius: 30,
-      padding: 18,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
       overflow: "hidden",
     },
-    cardTopLine: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: 8,
-    },
-    featuredIconOnly: {
-  width: 44,
-  height: 44,
-  alignItems: "center",
-  justifyContent: "center",
-},
-featuredTopIconBubble: {
-  width: 44,
-  height: 44,
-  borderRadius: 22,
-  alignItems: "center",
-  justifyContent: "center",
-  backgroundColor: "rgba(255,255,255,0.06)",
-  borderWidth: 1,
-  borderColor: "rgba(255,255,255,0.18)",
-},
-routineMiniIcon: {
-  width: 13,
-  gap: 2.5,
-},
-routineMiniRow: {
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 3,
-},
-routineMiniDot: {
-  width: 2.2,
-  height: 2.2,
-  borderRadius: 2,
-  backgroundColor: "rgba(255,255,255,0.95)",
-},
-routineMiniLine: {
-  width: 8,
-  height: 1.8,
-  borderRadius: 999,
-  backgroundColor: "rgba(255,255,255,0.95)",
-},
-routineMiniLineShort: {
-  width: 6,
-  height: 1.8,
-  borderRadius: 999,
-  backgroundColor: "rgba(255,255,255,0.95)",
-},
-    cardEyebrow: {
-      flex: 1,
-      fontSize: 10,
-      lineHeight: 14,
-      fontWeight: "900",
-      color: colors.textMuted,
-      textTransform: "uppercase",
-      letterSpacing: 0.6,
-      textAlign: "right",
-    },
-    cardEyebrowFeatured: {
-      flex: 1,
-      fontSize: 10,
-      lineHeight: 14,
-      fontWeight: "900",
-      color: "rgba(255,255,255,0.72)",
-      textTransform: "uppercase",
-      letterSpacing: 0.6,
-      textAlign: "right",
-    },
-    essentialTitle: {
-      fontSize: 21,
-      lineHeight: 25,
-      fontWeight: "900",
+    featureTitle: {
       color: colors.text,
-      marginBottom: 8,
-      letterSpacing: -0.3,
-    },
-    essentialTitleFeatured: {
-      fontSize: 25,
-      lineHeight: 29,
+      fontSize: 18,
+      lineHeight: 24,
       fontWeight: "900",
-      color: "#FFFFFF",
-      marginBottom: 8,
-      letterSpacing: -0.4,
+      marginTop: 18,
     },
-    essentialText: {
-      fontSize: 13,
-      lineHeight: 19,
+    featureText: {
       color: colors.textSoft,
-    },
-    essentialTextFeatured: {
-      fontSize: 13,
-      lineHeight: 19,
-      color: "rgba(255,255,255,0.78)",
-    },
-    cardBottomLine: {
-      flexDirection: "row",
-      justifyContent: "space-between",
-      alignItems: "center",
-      gap: 12,
-    },
-    metaPill: {
-      backgroundColor: colors.backgroundSoft,
-      borderRadius: 999,
-      paddingVertical: 7,
-      paddingHorizontal: 10,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    metaPillFeatured: {
-      backgroundColor: "rgba(255,255,255,0.16)",
-      borderRadius: 999,
-      paddingVertical: 7,
-      paddingHorizontal: 10,
-      borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.20)",
-    },
-    metaText: {
-      fontSize: 11,
-      fontWeight: "900",
-      color: colors.textMuted,
-    },
-    metaTextFeatured: {
-      fontSize: 11,
-      fontWeight: "900",
-      color: "rgba(255,255,255,0.82)",
+      fontSize: 15,
+      lineHeight: 21,
+      marginTop: 8,
+      paddingRight: 10,
     },
     arrowCircle: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      backgroundColor: colors.primaryLight,
+      width: 36,
+      height: 36,
+      borderRadius: 18,
+      backgroundColor: "rgba(255,255,255,0.11)",
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.12)",
       alignItems: "center",
       justifyContent: "center",
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    arrowCircleFeatured: {
-      width: 42,
-      height: 42,
-      borderRadius: 21,
-      backgroundColor: colors.primary,
-      alignItems: "center",
-      justifyContent: "center",
-      borderWidth: 1,
-      borderColor: colors.primaryDark,
+      alignSelf: "flex-end",
+      marginTop: 8,
     },
     arrowText: {
-      color: colors.text,
-      fontSize: 21,
-      fontWeight: "900",
-      lineHeight: 21,
-    },
-    arrowTextFeatured: {
-      color: colors.black,
-      fontSize: 21,
-      fontWeight: "900",
-      lineHeight: 21,
-    },
-    horizontalTools: {
-      paddingLeft: 24,
-      paddingRight: 24,
-      gap: 12,
-    },
-    toolCard: {
-      width: 142,
-      minHeight: 190,
-      backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    toolTitle: {
-      fontSize: 15,
-      lineHeight: 19,
-      fontWeight: "900",
-      color: colors.text,
-      marginTop: 14,
-      marginBottom: 6,
-    },
-    toolText: {
-      fontSize: 12,
-      lineHeight: 17,
-      color: colors.textSoft,
-      marginBottom: 14,
-    },
-    toolMetaPill: {
-      alignSelf: "flex-start",
-      backgroundColor: colors.backgroundSoft,
-      borderRadius: 999,
-      paddingVertical: 6,
-      paddingHorizontal: 9,
-      borderWidth: 1,
-      borderColor: colors.border,
-      marginTop: "auto",
-    },
-    toolMetaText: {
-      fontSize: 10,
-      fontWeight: "900",
-      color: colors.textMuted,
-    },
-    dotsRow: {
-      flexDirection: "row",
-      justifyContent: "center",
-      gap: 7,
-      marginTop: 14,
-      marginBottom: 26,
-    },
-    dotActive: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.text,
-      opacity: 0.7,
-    },
-    dot: {
-      width: 8,
-      height: 8,
-      borderRadius: 4,
-      backgroundColor: colors.text,
-      opacity: 0.18,
-    },
-    metricsPanel: {
-      marginHorizontal: 24,
-      marginBottom: 24,
-      backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 18,
-      borderWidth: 1,
-      borderColor: colors.border,
-      flexDirection: "row",
-      alignItems: "center",
-    },
-    metricItem: {
-      flex: 1,
-      alignItems: "center",
-    },
-    metricDivider: {
-      width: 1,
-      height: 38,
-      backgroundColor: colors.border,
-    },
-    metricLabel: {
-      fontSize: 11,
-      fontWeight: "900",
-      color: colors.textMuted,
-      marginBottom: 5,
-      textAlign: "center",
-    },
-    metricValue: {
-      fontSize: 22,
-      fontWeight: "900",
-      color: colors.text,
-    },
-    infoBox: {
-      marginHorizontal: 24,
-      backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
-      borderWidth: 1,
-      borderColor: colors.warningBorder,
-    },
-    infoTitle: {
-      fontSize: 15,
-      fontWeight: "900",
-      color: colors.warningText,
-      marginBottom: 5,
-    },
-    infoText: {
-      fontSize: 13,
-      lineHeight: 20,
-      color: colors.warningText,
+      color: colors.primary,
+      fontSize: 30,
+      lineHeight: 28,
+      fontWeight: "500",
+      marginTop: -2,
     },
   });
 }

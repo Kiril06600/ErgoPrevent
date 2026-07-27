@@ -33,6 +33,8 @@ export type AppStats = {
 
 const STORAGE_KEY = "ergoprevent_stats";
 
+export const APP_STATS_UPDATED_EVENT = "ergoprevent_stats_updated";
+
 const defaultStats: AppStats = {
   profile: null,
   questionnaireResult: null,
@@ -44,6 +46,18 @@ const defaultStats: AppStats = {
   completedCapsuleIds: [],
   points: 0,
 };
+
+function notifyAppStatsUpdated(stats: AppStats) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent(APP_STATS_UPDATED_EVENT, {
+      detail: stats,
+    })
+  );
+}
 
 export function getAppStats(): AppStats {
   if (typeof window === "undefined") {
@@ -84,6 +98,7 @@ export function saveAppStats(stats: AppStats) {
   }
 
   window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+  notifyAppStatsUpdated(stats);
 }
 
 export function saveUserProfile(profile: UserProfile) {
@@ -105,6 +120,7 @@ export function resetAppStats() {
   }
 
   window.localStorage.removeItem(STORAGE_KEY);
+  notifyAppStatsUpdated(defaultStats);
 
   return defaultStats;
 }
@@ -118,6 +134,8 @@ export function saveQuestionnaireResult(result: QuestionnaireResult) {
   };
 
   saveAppStats(updatedStats);
+
+  return updatedStats;
 }
 
 export function saveWorkstationAuditResult(result: WorkstationAuditResult) {
