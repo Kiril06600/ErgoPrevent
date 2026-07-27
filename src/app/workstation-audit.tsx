@@ -9,6 +9,7 @@ import {
 } from "react-native";
 import { Link } from "expo-router";
 import {
+  APP_STATS_UPDATED_EVENT,
   AppStats,
   getAppStats,
   saveWorkstationAuditResult,
@@ -175,8 +176,6 @@ function getPriorities(answers: Record<string, number>) {
     .sort((a, b) => a.average - b.average)
     .map((item) => item.category);
 }
-
-/* -------------------- Icônes corps conservées du questionnaire -------------------- */
 
 function BackIcon({
   size = 22,
@@ -517,8 +516,6 @@ function MovementIcon({
     </View>
   );
 }
-
-/* -------------------- Icônes spécifiques audit du poste -------------------- */
 
 function ScreenHeightIcon({
   size = 22,
@@ -1007,7 +1004,7 @@ function getPriorityIcon(priority: Priority): AuditIcon {
 }
 
 export default function WorkstationAuditScreen() {
-  const [stats, setStats] = useState<AppStats | null>(null);
+  const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [showResult, setShowResult] = useState(false);
   const [savedMessage, setSavedMessage] = useState("");
@@ -1016,8 +1013,33 @@ export default function WorkstationAuditScreen() {
   const styles = createStyles(colors, mode);
 
   useEffect(() => {
-    const savedStats = getAppStats();
-    setStats(savedStats);
+    function refreshStats() {
+      setStats(getAppStats());
+    }
+
+    refreshStats();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener("focus", refreshStats);
+    window.addEventListener("storage", refreshStats);
+
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", refreshStats);
+    }
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener("focus", refreshStats);
+      window.removeEventListener("storage", refreshStats);
+
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", refreshStats);
+      }
+    };
   }, []);
 
   const completedQuestions = Object.keys(answers).length;
@@ -1028,7 +1050,7 @@ export default function WorkstationAuditScreen() {
   const level = getLevel(score);
   const priorities = getPriorities(answers);
 
-  const previousResult = stats?.workstationAuditResult ?? null;
+  const previousResult = stats.workstationAuditResult ?? null;
   const progressPercent = Math.round(
     (completedQuestions / totalQuestions) * 100
   );
@@ -1080,9 +1102,6 @@ export default function WorkstationAuditScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
               <Text style={styles.heroLabel}>Ergonomie</Text>
@@ -1243,9 +1262,6 @@ export default function WorkstationAuditScreen() {
 
         {showResult && (
           <View style={styles.resultCard}>
-            <View style={styles.resultShapeLarge} />
-            <View style={styles.resultShapeSmall} />
-
             <Text style={styles.resultLabel}>Résultat</Text>
 
             <Text style={styles.resultScore}>{score}</Text>
@@ -1385,9 +1401,7 @@ export default function WorkstationAuditScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -1420,12 +1434,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -1446,28 +1463,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -1487,12 +1482,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 360,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     heroText: {
       fontSize: 15,
@@ -1513,10 +1511,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     progressNumber: {
-      fontSize: 24,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 26,
+      lineHeight: 30,
       color: colors.black,
-      lineHeight: 28,
     },
     progressLabel: {
       fontSize: 12,
@@ -1550,10 +1548,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 4,
     },
     previousLevel: {
-      fontSize: 20,
-      lineHeight: 25,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 22,
+      lineHeight: 28,
+      color: colors.primary,
     },
     previousScoreBadge: {
       minWidth: 62,
@@ -1568,8 +1566,8 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       paddingHorizontal: 9,
     },
     previousScore: {
-      fontSize: 20,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 21,
       color: colors.black,
     },
     previousScoreSmall: {
@@ -1631,10 +1629,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -1675,10 +1674,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 5,
     },
     questionTitle: {
-      fontSize: 21,
-      lineHeight: 26,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 23,
+      lineHeight: 29,
+      color: colors.primary,
     },
     questionText: {
       fontSize: 15,
@@ -1720,9 +1719,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 14,
     },
     infoTitle: {
-      fontSize: 15,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
+      color: colors.primary,
       marginBottom: 5,
     },
     infoText: {
@@ -1802,28 +1802,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       overflow: "hidden",
       position: "relative",
     },
-    resultShapeLarge: {
-      position: "absolute",
-      width: 180,
-      height: 180,
-      borderRadius: 90,
-      right: -60,
-      top: -50,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.15)"
-        : "rgba(216,196,182,0.25)",
-    },
-    resultShapeSmall: {
-      position: "absolute",
-      width: 90,
-      height: 90,
-      borderRadius: 45,
-      left: -24,
-      bottom: -20,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     resultLabel: {
       fontSize: 13,
       fontWeight: "900",
@@ -1834,9 +1812,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       zIndex: 2,
     },
     resultScore: {
-      fontSize: 58,
-      lineHeight: 62,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 62,
+      lineHeight: 68,
       color: colors.primary,
       zIndex: 2,
     },
@@ -1848,10 +1826,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       zIndex: 2,
     },
     resultLevel: {
-      fontSize: 24,
-      lineHeight: 29,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 34,
+      color: colors.primary,
       marginBottom: 12,
       textAlign: "center",
       zIndex: 2,
@@ -1866,9 +1844,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       zIndex: 2,
     },
     resultSectionTitle: {
-      fontSize: 21,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 24,
+      lineHeight: 30,
+      color: colors.primary,
       marginBottom: 14,
       alignSelf: "stretch",
       zIndex: 2,
@@ -1926,8 +1905,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 26,
     },
     warningTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1936,7 +1916,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       lineHeight: 20,
       color: colors.warningText,
     },
-        quickActionsRow: {
+    quickActionsRow: {
       paddingLeft: 24,
       paddingRight: 24,
       gap: 12,
@@ -1962,10 +1942,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     quickTitle: {
-      fontSize: 18,
-      lineHeight: 23,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
