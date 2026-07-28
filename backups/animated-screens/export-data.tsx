@@ -14,7 +14,6 @@ import {
   getAppStats,
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
-import AnimatedScreen from "../components/AnimatedScreen";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -821,8 +820,7 @@ export default function ExportDataScreen() {
   }
 
   return (
-    <AnimatedScreen>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.pageHeader}>
           <View style={styles.pagePill}>
@@ -1139,7 +1137,6 @@ export default function ExportDataScreen() {
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
-    </AnimatedScreen>
   );
 }
 

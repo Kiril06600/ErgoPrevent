@@ -9,7 +9,6 @@ import {
 } from "react-native";
 import { Link } from "expo-router";
 import BottomNav from "../components/BottomNav";
-import AnimatedScreen from "../components/AnimatedScreen";
 import { useAppTheme } from "../theme/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 import {
@@ -186,8 +185,7 @@ export default function ExploreScreen() {
   );
 
   return (
-    <AnimatedScreen>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.pageHeader}>
           <View style={styles.pagePill}>
@@ -310,7 +308,6 @@ export default function ExploreScreen() {
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
-    </AnimatedScreen>
   );
 }
 

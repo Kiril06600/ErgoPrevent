@@ -24,7 +24,6 @@ import {
   setNotificationsEnabled,
 } from "../lib/notifications";
 import BottomNav from "../components/BottomNav";
-import AnimatedScreen from "../components/AnimatedScreen";
 import { ThemeColors } from "../theme/colors";
 import { ThemeMode, useAppTheme } from "../theme/ThemeContext";
 import {
@@ -287,8 +286,7 @@ export default function ProfileScreen() {
   }
 
   return (
-    <AnimatedScreen>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.pageHeader}>
           <View style={styles.pagePill}>
@@ -805,7 +803,6 @@ export default function ProfileScreen() {
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
-    </AnimatedScreen>
   );
 }
 

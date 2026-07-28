@@ -12,10 +12,9 @@ import {
   APP_STATS_UPDATED_EVENT,
   AppStats,
   getAppStats,
-  saveQuestionnaireResult,
+  saveWorkstationAuditResult,
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
-import AnimatedScreen from "../components/AnimatedScreen";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -26,96 +25,95 @@ import {
 } from "../components/ErgoIcons";
 
 type Priority =
-  | "Cou"
-  | "Dos"
-  | "Épaules"
-  | "Poignets"
-  | "Jambes"
-  | "Habitudes";
+  | "Écran"
+  | "Chaise"
+  | "Souris"
+  | "Clavier"
+  | "Ordinateur portable"
+  | "Mouvement";
 
-type Question = {
+type AuditQuestion = {
   id: string;
   category: Priority;
   title: string;
   text: string;
 };
 
-type BodyIconProps = {
+type AuditIconProps = {
   size?: number;
   color?: string;
   strokeWidth?: number;
 };
 
-type BodyIcon = React.ComponentType<BodyIconProps>;
+type AuditIcon = React.ComponentType<AuditIconProps>;
 
-const questions: Question[] = [
+const questions: AuditQuestion[] = [
   {
-    id: "neck-pain",
-    category: "Cou",
-    title: "Cou",
-    text: "Je ressens des tensions ou douleurs au cou après une période de travail.",
+    id: "screen-height",
+    category: "Écran",
+    title: "Hauteur de l’écran",
+    text: "Le haut de mon écran est proche de la hauteur de mes yeux.",
   },
   {
-    id: "neck-position",
-    category: "Cou",
-    title: "Position de la tête",
-    text: "J’ai tendance à avancer la tête vers l’écran ou à regarder vers le bas longtemps.",
+    id: "screen-position",
+    category: "Écran",
+    title: "Position de l’écran",
+    text: "Mon écran est placé devant moi, sans rotation prolongée du cou.",
   },
   {
-    id: "back-pain",
-    category: "Dos",
-    title: "Dos",
-    text: "Je ressens des douleurs ou raideurs au dos pendant ou après ma journée.",
+    id: "chair-feet",
+    category: "Chaise",
+    title: "Appui des pieds",
+    text: "Mes pieds touchent le sol ou un repose-pieds de façon confortable.",
   },
   {
-    id: "sitting-long",
-    category: "Dos",
-    title: "Position assise",
-    text: "Je reste assis longtemps sans changer de position.",
+    id: "chair-back",
+    category: "Chaise",
+    title: "Support du dos",
+    text: "Mon dos est soutenu de façon confortable lorsque je travaille assis.",
   },
   {
-    id: "shoulder-tension",
-    category: "Épaules",
-    title: "Épaules",
-    text: "Je ressens souvent des tensions dans les épaules ou les trapèzes.",
+    id: "mouse-close",
+    category: "Souris",
+    title: "Souris proche",
+    text: "Ma souris est proche de mon corps et facile à atteindre.",
   },
   {
-    id: "mouse-far",
-    category: "Épaules",
-    title: "Souris et bras",
-    text: "Ma souris ou mes objets de travail sont parfois placés trop loin de moi.",
+    id: "mouse-shoulder",
+    category: "Souris",
+    title: "Épaule détendue",
+    text: "Je peux utiliser ma souris sans garder l’épaule élevée ou le bras tendu.",
   },
   {
-    id: "wrist-pain",
-    category: "Poignets",
-    title: "Poignets",
-    text: "Je ressens des tensions aux poignets, aux mains ou aux avant-bras.",
+    id: "keyboard-close",
+    category: "Clavier",
+    title: "Clavier proche",
+    text: "Mon clavier est placé assez près pour éviter de tendre les bras.",
   },
   {
-    id: "keyboard-mouse",
-    category: "Poignets",
-    title: "Clavier et souris",
-    text: "J’utilise beaucoup le clavier ou la souris sans pauses régulières.",
+    id: "keyboard-wrists",
+    category: "Clavier",
+    title: "Poignets neutres",
+    text: "Mes poignets restent relativement droits lorsque j’utilise le clavier.",
   },
   {
-    id: "legs-discomfort",
-    category: "Jambes",
-    title: "Jambes",
-    text: "Je ressens de l’inconfort, de la lourdeur ou de la fatigue dans les jambes.",
+    id: "laptop-setup",
+    category: "Ordinateur portable",
+    title: "Portable bien installé",
+    text: "Si j’utilise un ordinateur portable longtemps, j’utilise un support, un clavier externe ou une souris externe.",
   },
   {
-    id: "movement-low",
-    category: "Habitudes",
-    title: "Mouvement",
-    text: "Je bouge peu pendant ma journée de travail ou d’étude.",
+    id: "movement-breaks",
+    category: "Mouvement",
+    title: "Pauses régulières",
+    text: "Je prends de courtes pauses pour changer de position ou bouger.",
   },
 ];
 
 const answerOptions = [
-  { label: "Jamais", value: 0 },
-  { label: "Parfois", value: 1 },
-  { label: "Souvent", value: 2 },
-  { label: "Très souvent", value: 3 },
+  { label: "Non", value: 0 },
+  { label: "Partiellement", value: 1 },
+  { label: "Oui", value: 2 },
 ];
 
 function calculateScore(answers: Record<string, number>) {
@@ -123,185 +121,67 @@ function calculateScore(answers: Record<string, number>) {
     return sum + (answers[question.id] ?? 0);
   }, 0);
 
-  const maxScore = questions.length * 3;
+  const maxScore = questions.length * 2;
 
   return Math.round((total / maxScore) * 100);
 }
 
-function getRiskLevel(score: number) {
-  if (score < 30) {
-    return "Risque faible";
+function getLevel(score: number) {
+  if (score >= 80) {
+    return "Poste bien ajusté";
   }
 
-  if (score < 60) {
-    return "Risque modéré";
+  if (score >= 60) {
+    return "Ajustements légers recommandés";
   }
 
-  return "Risque élevé";
+  return "Ajustements prioritaires recommandés";
 }
 
-function getRiskMessage(score: number) {
-  if (score < 30) {
-    return "Votre risque semble plutôt faible. Continuez à maintenir de bonnes habitudes et à varier vos positions.";
+function getMessage(score: number) {
+  if (score >= 80) {
+    return "Votre poste semble globalement bien ajusté. Continuez à varier vos positions et à prendre des pauses.";
   }
 
-  if (score < 60) {
-    return "Votre risque semble modéré. Des ajustements simples, des pauses et des exercices réguliers peuvent être utiles.";
+  if (score >= 60) {
+    return "Votre poste semble acceptable, mais certains ajustements pourraient améliorer votre confort.";
   }
 
-  return "Votre risque semble élevé. Il serait pertinent de prioriser les pauses, les ajustements du poste et de consulter un professionnel si les douleurs persistent.";
+  return "Plusieurs éléments du poste pourraient être améliorés. Priorisez les ajustements simples : écran, appuis, souris, clavier et pauses.";
 }
 
 function getPriorities(answers: Record<string, number>) {
-  const categoryScores: Record<Priority, number> = {
-    Cou: 0,
-    Dos: 0,
-    Épaules: 0,
-    Poignets: 0,
-    Jambes: 0,
-    Habitudes: 0,
+  const categoryTotals: Record<Priority, { score: number; count: number }> = {
+    Écran: { score: 0, count: 0 },
+    Chaise: { score: 0, count: 0 },
+    Souris: { score: 0, count: 0 },
+    Clavier: { score: 0, count: 0 },
+    "Ordinateur portable": { score: 0, count: 0 },
+    Mouvement: { score: 0, count: 0 },
   };
 
   questions.forEach((question) => {
-    categoryScores[question.category] += answers[question.id] ?? 0;
+    categoryTotals[question.category].score += answers[question.id] ?? 0;
+    categoryTotals[question.category].count += 1;
   });
 
-  return Object.entries(categoryScores)
-    .filter(([, score]) => score >= 2)
-    .sort((a, b) => b[1] - a[1])
-    .map(([category]) => category as Priority);
-}
-
-function NeckIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.34,
-          top: size * 0.08,
-          width: size * 0.32,
-          height: size * 0.32,
-          borderRadius: size,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.42,
-          top: size * 0.37,
-          width: strokeWidth,
-          height: size * 0.18,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.54,
-          top: size * 0.37,
-          width: strokeWidth,
-          height: size * 0.18,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.24,
-          top: size * 0.58,
-          width: size * 0.52,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-    </View>
-  );
-}
-
-function HeadPositionIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          right: size * 0.1,
-          top: size * 0.16,
-          width: size * 0.18,
-          height: size * 0.46,
-          borderRadius: 4,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.18,
-          top: size * 0.12,
-          width: size * 0.27,
-          height: size * 0.27,
-          borderRadius: size,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.37,
-          top: size * 0.36,
-          width: strokeWidth,
-          height: size * 0.2,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "25deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.3,
-          top: size * 0.57,
-          width: size * 0.24,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.5,
-          top: size * 0.28,
-          width: size * 0.18,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-    </View>
-  );
+  return Object.entries(categoryTotals)
+    .map(([category, result]) => {
+      return {
+        category: category as Priority,
+        average: result.score / result.count,
+      };
+    })
+    .filter((item) => item.average < 1.5)
+    .sort((a, b) => a.average - b.average)
+    .map((item) => item.category);
 }
 
 function BackIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: AuditIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
@@ -382,89 +262,11 @@ function BackIcon({
   );
 }
 
-function SittingIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.14,
-          top: size * 0.16,
-          width: strokeWidth,
-          height: size * 0.54,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.14,
-          top: size * 0.62,
-          width: size * 0.24,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.42,
-          top: size * 0.12,
-          width: size * 0.18,
-          height: size * 0.18,
-          borderRadius: size,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.5,
-          top: size * 0.28,
-          width: strokeWidth,
-          height: size * 0.19,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.49,
-          top: size * 0.45,
-          width: size * 0.22,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.67,
-          top: size * 0.45,
-          width: strokeWidth,
-          height: size * 0.2,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-    </View>
-  );
-}
-
 function ShoulderIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: AuditIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
@@ -522,7 +324,7 @@ function MouseArmIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: AuditIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
@@ -568,7 +370,7 @@ function WristIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: AuditIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
@@ -633,137 +435,11 @@ function WristIcon({
   );
 }
 
-function KeyboardMouseIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.08,
-          bottom: size * 0.22,
-          width: size * 0.52,
-          height: size * 0.18,
-          borderRadius: 4,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          right: size * 0.12,
-          bottom: size * 0.2,
-          width: size * 0.18,
-          height: size * 0.26,
-          borderRadius: 999,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.22,
-          top: size * 0.14,
-          width: size * 0.18,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "18deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.37,
-          top: size * 0.22,
-          width: strokeWidth,
-          height: size * 0.12,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-    </View>
-  );
-}
-
-function LegsIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.36,
-          top: size * 0.12,
-          width: size * 0.28,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.4,
-          top: size * 0.18,
-          width: strokeWidth,
-          height: size * 0.28,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.56,
-          top: size * 0.18,
-          width: strokeWidth,
-          height: size * 0.28,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.34,
-          top: size * 0.44,
-          width: size * 0.16,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "30deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.52,
-          top: size * 0.44,
-          width: size * 0.16,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "-30deg" }],
-        }}
-      />
-    </View>
-  );
-}
-
 function MovementIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: AuditIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
@@ -841,53 +517,493 @@ function MovementIcon({
   );
 }
 
-function getQuestionIcon(questionId: string): BodyIcon {
+function ScreenHeightIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: AuditIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.16,
+          top: size * 0.18,
+          width: size * 0.46,
+          height: size * 0.32,
+          borderRadius: 4,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.36,
+          top: size * 0.52,
+          width: strokeWidth,
+          height: size * 0.12,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.25,
+          top: size * 0.66,
+          width: size * 0.26,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.1,
+          top: size * 0.16,
+          width: size * 0.17,
+          height: size * 0.17,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.07,
+          top: size * 0.35,
+          width: size * 0.24,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
+function ScreenPositionIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: AuditIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.08,
+          top: size * 0.18,
+          width: size * 0.32,
+          height: size * 0.32,
+          borderRadius: 4,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.15,
+          top: size * 0.18,
+          width: size * 0.2,
+          height: size * 0.2,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.24,
+          top: size * 0.39,
+          width: strokeWidth,
+          height: size * 0.22,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.41,
+          top: size * 0.31,
+          width: size * 0.16,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
+function ChairFeetIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: AuditIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.16,
+          top: size * 0.16,
+          width: strokeWidth,
+          height: size * 0.44,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.16,
+          top: size * 0.55,
+          width: size * 0.28,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.44,
+          top: size * 0.55,
+          width: strokeWidth,
+          height: size * 0.22,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.28,
+          bottom: size * 0.12,
+          width: size * 0.2,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.12,
+          bottom: size * 0.12,
+          width: size * 0.24,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
+function ChairBackIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: AuditIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.12,
+          top: size * 0.12,
+          width: strokeWidth,
+          height: size * 0.62,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.12,
+          top: size * 0.54,
+          width: size * 0.28,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.46,
+          top: size * 0.16,
+          width: size * 0.18,
+          height: size * 0.18,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.53,
+          top: size * 0.34,
+          width: strokeWidth,
+          height: size * 0.28,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.5,
+          top: size * 0.6,
+          width: size * 0.18,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "24deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function MouseIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: AuditIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.12,
+          top: size * 0.2,
+          width: size * 0.23,
+          height: size * 0.36,
+          borderRadius: 999,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.235,
+          top: size * 0.22,
+          width: strokeWidth,
+          height: size * 0.09,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.12,
+          top: size * 0.43,
+          width: size * 0.42,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.12,
+          top: size * 0.5,
+          width: size * 0.18,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "28deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function KeyboardIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: AuditIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.1,
+          top: size * 0.34,
+          width: size * 0.66,
+          height: size * 0.28,
+          borderRadius: 5,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.22,
+          top: size * 0.43,
+          width: strokeWidth,
+          height: strokeWidth,
+          borderRadius: 999,
+          backgroundColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.35,
+          top: size * 0.43,
+          width: strokeWidth,
+          height: strokeWidth,
+          borderRadius: 999,
+          backgroundColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.48,
+          top: size * 0.43,
+          width: strokeWidth,
+          height: strokeWidth,
+          borderRadius: 999,
+          backgroundColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.25,
+          top: size * 0.52,
+          width: size * 0.28,
+          height: strokeWidth,
+          borderRadius: 999,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
+function LaptopIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: AuditIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.22,
+          top: size * 0.18,
+          width: size * 0.5,
+          height: size * 0.32,
+          borderRadius: 4,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.12,
+          top: size * 0.58,
+          width: size * 0.7,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.24,
+          top: size * 0.68,
+          width: size * 0.22,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.2,
+          top: size * 0.67,
+          width: size * 0.16,
+          height: size * 0.2,
+          borderRadius: 999,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
+function getQuestionIcon(questionId: string): AuditIcon {
   switch (questionId) {
-    case "neck-pain":
-      return NeckIcon;
-    case "neck-position":
-      return HeadPositionIcon;
-    case "back-pain":
-      return BackIcon;
-    case "sitting-long":
-      return SittingIcon;
-    case "shoulder-tension":
+    case "screen-height":
+      return ScreenHeightIcon;
+    case "screen-position":
+      return ScreenPositionIcon;
+    case "chair-feet":
+      return ChairFeetIcon;
+    case "chair-back":
+      return ChairBackIcon;
+    case "mouse-close":
+      return MouseIcon;
+    case "mouse-shoulder":
       return ShoulderIcon;
-    case "mouse-far":
-      return MouseArmIcon;
-    case "wrist-pain":
+    case "keyboard-close":
+      return KeyboardIcon;
+    case "keyboard-wrists":
       return WristIcon;
-    case "keyboard-mouse":
-      return KeyboardMouseIcon;
-    case "legs-discomfort":
-      return LegsIcon;
-    case "movement-low":
+    case "laptop-setup":
+      return LaptopIcon;
+    case "movement-breaks":
       return MovementIcon;
     default:
       return PostureIcon;
   }
 }
 
-function getPriorityIcon(priority: Priority): BodyIcon {
+function getPriorityIcon(priority: Priority): AuditIcon {
   switch (priority) {
-    case "Cou":
-      return NeckIcon;
-    case "Dos":
+    case "Écran":
+      return ScreenHeightIcon;
+    case "Chaise":
       return BackIcon;
-    case "Épaules":
-      return ShoulderIcon;
-    case "Poignets":
-      return WristIcon;
-    case "Jambes":
-      return LegsIcon;
-    case "Habitudes":
+    case "Souris":
+      return MouseArmIcon;
+    case "Clavier":
+      return KeyboardIcon;
+    case "Ordinateur portable":
+      return LaptopIcon;
+    case "Mouvement":
       return MovementIcon;
     default:
       return PostureIcon;
   }
 }
 
-export default function QuestionnaireScreen() {
+export default function WorkstationAuditScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [answers, setAnswers] = useState<Record<string, number>>({});
   const [showResult, setShowResult] = useState(false);
@@ -931,10 +1047,10 @@ export default function QuestionnaireScreen() {
   const allQuestionsCompleted = completedQuestions === totalQuestions;
 
   const score = calculateScore(answers);
-  const level = getRiskLevel(score);
+  const level = getLevel(score);
   const priorities = getPriorities(answers);
 
-  const previousResult = stats.questionnaireResult ?? null;
+  const previousResult = stats.workstationAuditResult ?? null;
   const progressPercent = Math.round(
     (completedQuestions / totalQuestions) * 100
   );
@@ -956,42 +1072,41 @@ export default function QuestionnaireScreen() {
       completedAt: new Date().toISOString(),
     };
 
-    const updatedStats = saveQuestionnaireResult(result);
+    const updatedStats = saveWorkstationAuditResult(result);
 
     setStats(updatedStats);
     setShowResult(true);
-    setSavedMessage("Questionnaire sauvegardé");
+    setSavedMessage("Audit sauvegardé");
   }
 
-  function handleResetQuestionnaire() {
+  function handleResetAudit() {
     setAnswers({});
     setShowResult(false);
     setSavedMessage("");
   }
 
   return (
-    <AnimatedScreen>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.pageHeader}>
           <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Évaluation TMS</Text>
+            <Text style={styles.pagePillText}>Évaluation du poste</Text>
           </View>
 
-          <Text style={styles.pageTitle}>Questionnaire</Text>
+          <Text style={styles.pageTitle}>Audit du poste</Text>
 
           <Text style={styles.subtitle}>
-            Évaluez rapidement vos symptômes et habitudes pour repérer les zones
-            à prioriser.
+            Analysez rapidement votre environnement de travail pour repérer les
+            ajustements ergonomiques prioritaires.
           </Text>
         </View>
 
         <View style={styles.heroCard}>
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
-              <Text style={styles.heroLabel}>Évaluation</Text>
+              <Text style={styles.heroLabel}>Ergonomie</Text>
               <Text style={styles.heroTitle}>
-                Repérer les signaux importants.
+                Observer votre poste simplement.
               </Text>
             </View>
 
@@ -1002,8 +1117,8 @@ export default function QuestionnaireScreen() {
           </View>
 
           <Text style={styles.heroText}>
-            Ce questionnaire ne pose pas de diagnostic. Il sert à orienter vos
-            prochaines actions de prévention.
+            Cet audit aide à identifier les éléments qui peuvent influencer le
+            confort : écran, chaise, clavier, souris et mouvement.
           </Text>
         </View>
 
@@ -1019,7 +1134,7 @@ export default function QuestionnaireScreen() {
               </IconBadge>
 
               <View style={styles.previousTextBlock}>
-                <Text style={styles.previousLabel}>Dernier résultat</Text>
+                <Text style={styles.previousLabel}>Dernier audit</Text>
                 <Text style={styles.previousLevel}>{previousResult.level}</Text>
               </View>
 
@@ -1065,7 +1180,7 @@ export default function QuestionnaireScreen() {
           <View>
             <Text style={styles.sectionTitle}>Questions</Text>
             <Text style={styles.sectionSubtitle}>
-              Choisissez la réponse qui correspond le mieux à votre situation.
+              Vérifiez chaque élément de votre poste.
             </Text>
           </View>
         </View>
@@ -1128,7 +1243,7 @@ export default function QuestionnaireScreen() {
           <View style={styles.infoBox}>
             <Text style={styles.infoTitle}>À compléter</Text>
             <Text style={styles.infoText}>
-              Répondez à toutes les questions pour calculer votre score.
+              Répondez à toutes les questions pour calculer votre score de poste.
             </Text>
           </View>
         )}
@@ -1141,7 +1256,7 @@ export default function QuestionnaireScreen() {
           onPress={handleSubmit}
           disabled={!allQuestionsCompleted}
         >
-          <Text style={styles.primaryButtonText}>Calculer mon résultat</Text>
+          <Text style={styles.primaryButtonText}>Calculer mon audit</Text>
           <Text style={styles.primaryButtonArrow}>→</Text>
         </Pressable>
 
@@ -1154,7 +1269,7 @@ export default function QuestionnaireScreen() {
 
             <Text style={styles.resultLevel}>{level}</Text>
 
-            <Text style={styles.resultText}>{getRiskMessage(score)}</Text>
+            <Text style={styles.resultText}>{getMessage(score)}</Text>
 
             {priorities.length > 0 ? (
               <>
@@ -1188,7 +1303,7 @@ export default function QuestionnaireScreen() {
               </>
             ) : (
               <Text style={styles.resultText}>
-                Aucune priorité majeure détectée pour le moment.
+                Aucun ajustement majeur détecté pour le moment.
               </Text>
             )}
 
@@ -1207,20 +1322,15 @@ export default function QuestionnaireScreen() {
           </View>
         )}
 
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={handleResetQuestionnaire}
-        >
-          <Text style={styles.secondaryButtonText}>
-            Recommencer le questionnaire
-          </Text>
+        <Pressable style={styles.secondaryButton} onPress={handleResetAudit}>
+          <Text style={styles.secondaryButtonText}>Recommencer l’audit</Text>
         </Pressable>
 
         <View style={styles.warningBox}>
           <Text style={styles.warningTitle}>À retenir</Text>
           <Text style={styles.warningText}>
-            Ce questionnaire est un outil éducatif. Il ne remplace pas une
-            consultation médicale ou une évaluation ergonomique personnalisée.
+            Cet audit est un outil éducatif. Il ne remplace pas une évaluation
+            ergonomique complète par un professionnel.
           </Text>
         </View>
 
@@ -1228,7 +1338,7 @@ export default function QuestionnaireScreen() {
           <View>
             <Text style={styles.sectionTitle}>Étapes suivantes</Text>
             <Text style={styles.sectionSubtitle}>
-              Continuez avec votre poste ou votre tableau de bord.
+              Continuez avec le questionnaire ou le tableau de bord.
             </Text>
           </View>
 
@@ -1240,7 +1350,7 @@ export default function QuestionnaireScreen() {
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.quickActionsRow}
         >
-          <Link href="/workstation-audit" asChild>
+          <Link href="/questionnaire" asChild>
             <Pressable style={styles.quickCard}>
               <IconBadge
                 size={44}
@@ -1250,10 +1360,10 @@ export default function QuestionnaireScreen() {
                 <PostureIcon size={21} color={colors.text} />
               </IconBadge>
 
-              <Text style={styles.quickLabel}>Poste</Text>
-              <Text style={styles.quickTitle}>Audit du poste</Text>
+              <Text style={styles.quickLabel}>TMS</Text>
+              <Text style={styles.quickTitle}>Questionnaire</Text>
               <Text style={styles.quickText}>
-                Analysez votre environnement de travail.
+                Évaluez vos symptômes et habitudes.
               </Text>
 
               <View style={styles.quickArrowCircle}>
@@ -1288,7 +1398,6 @@ export default function QuestionnaireScreen() {
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
-    </AnimatedScreen>
   );
 }
 

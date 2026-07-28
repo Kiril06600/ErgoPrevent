@@ -10,16 +10,20 @@ import {
 import { Link } from "expo-router";
 import BottomNav from "../components/BottomNav";
 import AppLogo from "../components/AppLogo";
+import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
 import { useAppTheme } from "../theme/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 import { APP_STATS_UPDATED_EVENT, getAppStats } from "../lib/storage";
 import {
   AppNotification,
   deleteNotification,
+  getNotificationSettings,
   getNotifications,
   getUnreadNotificationCount,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  NOTIFICATION_SETTINGS_UPDATED_EVENT,
   NOTIFICATIONS_UPDATED_EVENT,
   seedInitialNotificationsIfNeeded,
 } from "../lib/notifications";
@@ -170,6 +174,9 @@ export default function HomeScreen() {
   const [stats, setStats] = useState(() => getAppStats());
   const [notifications, setNotifications] = useState<AppNotification[]>([]);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [areNotificationsEnabled, setAreNotificationsEnabled] = useState(() =>
+    getNotificationSettings().enabled
+  );
 
   useEffect(() => {
     function refreshStats() {
@@ -195,6 +202,16 @@ export default function HomeScreen() {
 
   useEffect(() => {
     function refreshNotifications() {
+      const settings = getNotificationSettings();
+
+      setAreNotificationsEnabled(settings.enabled);
+
+      if (!settings.enabled) {
+        setIsNotificationsOpen(false);
+        setNotifications(getNotifications());
+        return;
+      }
+
       seedInitialNotificationsIfNeeded();
       setNotifications(getNotifications());
     }
@@ -206,12 +223,20 @@ export default function HomeScreen() {
     }
 
     window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
+    window.addEventListener(
+      NOTIFICATION_SETTINGS_UPDATED_EVENT,
+      refreshNotifications
+    );
     window.addEventListener("focus", refreshNotifications);
     window.addEventListener("storage", refreshNotifications);
 
     return () => {
       window.removeEventListener(
         NOTIFICATIONS_UPDATED_EVENT,
+        refreshNotifications
+      );
+      window.removeEventListener(
+        NOTIFICATION_SETTINGS_UPDATED_EVENT,
         refreshNotifications
       );
       window.removeEventListener("focus", refreshNotifications);
@@ -240,238 +265,255 @@ export default function HomeScreen() {
 
   const firstName = stats.profile?.firstName?.trim() || "Alex";
   const points = stats.points;
-  const notificationCount = getUnreadNotificationCount();
+  const notificationCount = areNotificationsEnabled
+    ? getUnreadNotificationCount()
+    : 0;
 
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.topBar}>
-          <AppLogo height={100} />
+    <AnimatedScreen>
+      <SafeAreaView style={styles.safeArea}>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.topBar}>
+            <AppLogo height={100} />
 
-          <Pressable
-            style={styles.notificationButton}
-            onPress={handleToggleNotifications}
-          >
-            <BellIcon size={23} color={colors.primary} />
+            <PressableScale
+              style={styles.notificationButton}
+              onPress={handleToggleNotifications}
+            >
+              <BellIcon size={23} color={colors.primary} />
 
-            {notificationCount > 0 && (
-              <View style={styles.notificationBadge}>
-                <Text style={styles.notificationBadgeText}>
-                  {notificationCount > 9 ? "9+" : notificationCount}
-                </Text>
-              </View>
-            )}
-          </Pressable>
-
-          {isNotificationsOpen && (
-            <View style={styles.notificationsPanel}>
-              <View style={styles.notificationsPanelHeader}>
-                <View>
-                  <Text style={styles.notificationsPanelTitle}>
-                    Notifications
-                  </Text>
-                  <Text style={styles.notificationsPanelSubtitle}>
-                    {notificationCount} non lue
-                    {notificationCount > 1 ? "s" : ""}
+              {notificationCount > 0 && (
+                <View style={styles.notificationBadge}>
+                  <Text style={styles.notificationBadgeText}>
+                    {notificationCount > 9 ? "9+" : notificationCount}
                   </Text>
                 </View>
+              )}
+            </PressableScale>
 
-                {notificationCount > 0 && (
-                  <Pressable
-                    style={styles.markAllSmallButton}
-                    onPress={handleMarkAllNotificationsAsRead}
-                  >
-                    <Text style={styles.markAllSmallText}>Tout lire</Text>
-                  </Pressable>
-                )}
-              </View>
-
-              <ScrollView
-                style={styles.notificationsPanelScroll}
-                contentContainerStyle={styles.notificationsPanelContent}
-                showsVerticalScrollIndicator={false}
-              >
-                {notifications.length === 0 ? (
-                  <View style={styles.emptyNotificationBox}>
-                    <Text style={styles.emptyNotificationTitle}>
-                      Aucune notification
+            {isNotificationsOpen && (
+              <View style={styles.notificationsPanel}>
+                <View style={styles.notificationsPanelHeader}>
+                  <View>
+                    <Text style={styles.notificationsPanelTitle}>
+                      Notifications
                     </Text>
-                    <Text style={styles.emptyNotificationText}>
-                      Vos rappels apparaîtront ici.
+
+                    <Text style={styles.notificationsPanelSubtitle}>
+                      {areNotificationsEnabled
+                        ? `${notificationCount} non lue${
+                            notificationCount > 1 ? "s" : ""
+                          }`
+                        : "désactivées"}
                     </Text>
                   </View>
-                ) : (
-                  notifications.map((notification) => (
-                    <View
-                      key={notification.id}
-                      style={[
-                        styles.notificationMiniCard,
-                        !notification.read
-                          ? styles.notificationMiniCardUnread
-                          : null,
-                      ]}
+
+                  {areNotificationsEnabled && notificationCount > 0 && (
+                    <PressableScale
+                      style={styles.markAllSmallButton}
+                      onPress={handleMarkAllNotificationsAsRead}
                     >
-                      <Pressable
-                        style={styles.notificationMiniContent}
-                        onPress={() =>
-                          handleMarkNotificationAsRead(notification.id)
-                        }
-                      >
-                        <View style={styles.notificationMiniTitleRow}>
-                          {!notification.read && (
-                            <View style={styles.unreadDot} />
-                          )}
+                      <Text style={styles.markAllSmallText}>Tout lire</Text>
+                    </PressableScale>
+                  )}
+                </View>
 
-                          <Text style={styles.notificationMiniTitle}>
-                            {notification.title}
-                          </Text>
-                        </View>
-
-                        <Text style={styles.notificationMiniDate}>
-                          {formatNotificationDate(notification.createdAt)}
-                        </Text>
-
-                        <Text style={styles.notificationMiniMessage}>
-                          {notification.message}
-                        </Text>
-                      </Pressable>
-
-                      <Pressable
-                        style={styles.deleteNotificationButton}
-                        onPress={() =>
-                          handleDeleteNotification(notification.id)
-                        }
-                      >
-                        <Text style={styles.deleteNotificationText}>×</Text>
-                      </Pressable>
+                <ScrollView
+                  style={styles.notificationsPanelScroll}
+                  contentContainerStyle={styles.notificationsPanelContent}
+                  showsVerticalScrollIndicator={false}
+                >
+                  {!areNotificationsEnabled ? (
+                    <View style={styles.emptyNotificationBox}>
+                      <Text style={styles.emptyNotificationTitle}>
+                        Notifications désactivées
+                      </Text>
+                      <Text style={styles.emptyNotificationText}>
+                        Vous pouvez les réactiver dans la page Profil.
+                      </Text>
                     </View>
-                  ))
-                )}
-              </ScrollView>
-            </View>
-          )}
-        </View>
+                  ) : notifications.length === 0 ? (
+                    <View style={styles.emptyNotificationBox}>
+                      <Text style={styles.emptyNotificationTitle}>
+                        Aucune notification
+                      </Text>
+                      <Text style={styles.emptyNotificationText}>
+                        Vos rappels apparaîtront ici.
+                      </Text>
+                    </View>
+                  ) : (
+                    notifications.map((notification) => (
+                      <View
+                        key={notification.id}
+                        style={[
+                          styles.notificationMiniCard,
+                          !notification.read
+                            ? styles.notificationMiniCardUnread
+                            : null,
+                        ]}
+                      >
+                        <Pressable
+                          style={styles.notificationMiniContent}
+                          onPress={() =>
+                            handleMarkNotificationAsRead(notification.id)
+                          }
+                        >
+                          <View style={styles.notificationMiniTitleRow}>
+                            {!notification.read && (
+                              <View style={styles.unreadDot} />
+                            )}
 
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.greeting}>Bonjour, {firstName}</Text>
+                            <Text style={styles.notificationMiniTitle}>
+                              {notification.title}
+                            </Text>
+                          </View>
 
-              <Text style={styles.heroTitle}>
-                De petits pas aujourd’hui,{"\n"}plus fort demain.
-              </Text>
+                          <Text style={styles.notificationMiniDate}>
+                            {formatNotificationDate(notification.createdAt)}
+                          </Text>
 
-              <Text style={styles.heroSubtitle}>
-                Restez constant, restez sans douleur.
-              </Text>
-            </View>
+                          <Text style={styles.notificationMiniMessage}>
+                            {notification.message}
+                          </Text>
+                        </Pressable>
 
-            <View style={styles.pointsBadge}>
-              <Text style={styles.pointsNumber}>{points}</Text>
-              <Text style={styles.pointsText}>points</Text>
-            </View>
+                        <PressableScale
+                          style={styles.deleteNotificationButton}
+                          onPress={() =>
+                            handleDeleteNotification(notification.id)
+                          }
+                        >
+                          <Text style={styles.deleteNotificationText}>×</Text>
+                        </PressableScale>
+                      </View>
+                    ))
+                  )}
+                </ScrollView>
+              </View>
+            )}
           </View>
 
-          <Link href="/daily-checkin" asChild>
-            <Pressable style={styles.heroButton}>
-              <Text style={styles.heroButtonText}>
-                Commencer le bilan du jour
-              </Text>
-              <Text style={styles.heroButtonArrow}>›</Text>
-            </Pressable>
-          </Link>
-        </View>
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroTextBlock}>
+                <Text style={styles.greeting}>Bonjour, {firstName}</Text>
 
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Vos essentiels</Text>
+                <Text style={styles.heroTitle}>
+                  De petits pas aujourd’hui,{"\n"}plus fort demain.
+                </Text>
 
-          <Link href="/explore" asChild>
-            <Pressable style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>Voir tout</Text>
-              <Text style={styles.viewAllArrow}>›</Text>
-            </Pressable>
-          </Link>
-        </View>
+                <Text style={styles.heroSubtitle}>
+                  Restez constant, restez sans douleur.
+                </Text>
+              </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.cardsRow}
-        >
-          {essentialItems.map((item) => {
-            const ItemIcon = item.Icon;
+              <View style={styles.pointsBadge}>
+                <Text style={styles.pointsNumber}>{points}</Text>
+                <Text style={styles.pointsText}>points</Text>
+              </View>
+            </View>
 
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.featureCard}>
-                  <IconBadge
-                    size={70}
-                    backgroundColor="rgba(0, 48, 38, 0.26)"
-                    borderColor="rgba(245, 238, 223, 0.18)"
-                  >
-                    <ItemIcon size={32} color={colors.primary} />
-                  </IconBadge>
+            <Link href="/daily-checkin" asChild>
+              <PressableScale style={styles.heroButton}>
+                <Text style={styles.heroButtonText}>
+                  Commencer le bilan du jour
+                </Text>
+                <Text style={styles.heroButtonArrow}>›</Text>
+              </PressableScale>
+            </Link>
+          </View>
 
-                  <Text style={styles.featureTitle}>{item.title}</Text>
-                  <Text style={styles.featureText}>{item.text}</Text>
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Vos essentiels</Text>
 
-                  <View style={styles.arrowCircle}>
-                    <Text style={styles.arrowText}>›</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
+            <Link href="/explore" asChild>
+              <PressableScale style={styles.viewAllButton}>
+                <Text style={styles.viewAllText}>Voir tout</Text>
+                <Text style={styles.viewAllArrow}>›</Text>
+              </PressableScale>
+            </Link>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cardsRow}
+          >
+            {essentialItems.map((item) => {
+              const ItemIcon = item.Icon;
+
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.featureCard}>
+                    <IconBadge
+                      size={70}
+                      backgroundColor="rgba(0, 48, 38, 0.26)"
+                      borderColor="rgba(245, 238, 223, 0.18)"
+                    >
+                      <ItemIcon size={32} color={colors.primary} />
+                    </IconBadge>
+
+                    <Text style={styles.featureTitle}>{item.title}</Text>
+                    <Text style={styles.featureText}>{item.text}</Text>
+
+                    <View style={styles.arrowCircle}>
+                      <Text style={styles.arrowText}>›</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Outils</Text>
+
+            <Link href="/explore" asChild>
+              <PressableScale style={styles.viewAllButton}>
+                <Text style={styles.viewAllText}>Voir tout</Text>
+                <Text style={styles.viewAllArrow}>›</Text>
+              </PressableScale>
+            </Link>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.cardsRow}
+          >
+            {toolItems.map((item) => {
+              const ItemIcon = item.Icon;
+
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.featureCard}>
+                    <IconBadge
+                      size={70}
+                      backgroundColor="rgba(0, 48, 38, 0.26)"
+                      borderColor="rgba(245, 238, 223, 0.18)"
+                    >
+                      <ItemIcon size={32} color={colors.primary} />
+                    </IconBadge>
+
+                    <Text style={styles.featureTitle}>{item.title}</Text>
+                    <Text style={styles.featureText}>{item.text}</Text>
+
+                    <View style={styles.arrowCircle}>
+                      <Text style={styles.arrowText}>›</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
+
+          <BottomNav />
         </ScrollView>
-
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Outils</Text>
-
-          <Link href="/explore" asChild>
-            <Pressable style={styles.viewAllButton}>
-              <Text style={styles.viewAllText}>Voir tout</Text>
-              <Text style={styles.viewAllArrow}>›</Text>
-            </Pressable>
-          </Link>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.cardsRow}
-        >
-          {toolItems.map((item) => {
-            const ItemIcon = item.Icon;
-
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.featureCard}>
-                  <IconBadge
-                    size={70}
-                    backgroundColor="rgba(0, 48, 38, 0.26)"
-                    borderColor="rgba(245, 238, 223, 0.18)"
-                  >
-                    <ItemIcon size={32} color={colors.primary} />
-                  </IconBadge>
-
-                  <Text style={styles.featureTitle}>{item.title}</Text>
-                  <Text style={styles.featureText}>{item.text}</Text>
-
-                  <View style={styles.arrowCircle}>
-                    <Text style={styles.arrowText}>›</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
-        </ScrollView>
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </AnimatedScreen>
   );
 }
 
@@ -486,16 +528,16 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       paddingBottom: 42,
     },
     topBar: {
-  paddingHorizontal: 24,
-  marginBottom: 28,
-  flexDirection: "row",
-  alignItems: "flex-start",
-  justifyContent: "space-between",
-  position: "relative",
-  minHeight: 105,
-  zIndex: 1000,
-  overflow: "visible",
-},
+      paddingHorizontal: 24,
+      marginBottom: 28,
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      position: "relative",
+      minHeight: 105,
+      zIndex: 1000,
+      overflow: "visible",
+    },
     notificationButton: {
       position: "absolute",
       top: 12,
@@ -535,22 +577,22 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       lineHeight: 13,
     },
     notificationsPanel: {
-  position: "absolute",
-  top: 68,
-  right: 24,
-  zIndex: 2000,
-  width: 310,
-  maxHeight: 250,
-  borderRadius: 26,
-  backgroundColor: mode === "dark" ? "#243E37" : "#F7F1E7",
-  borderWidth: 1,
-  borderColor: colors.border,
-  overflow: "hidden",
-  boxShadow:
-    mode === "dark"
-      ? "0px 24px 48px rgba(0,0,0,0.42)"
-      : "0px 24px 48px rgba(8,45,36,0.18)",
-},
+      position: "absolute",
+      top: 68,
+      right: 24,
+      zIndex: 2000,
+      width: 310,
+      maxHeight: 250,
+      borderRadius: 26,
+      backgroundColor: mode === "dark" ? "#243E37" : "#F7F1E7",
+      borderWidth: 1,
+      borderColor: colors.border,
+      overflow: "hidden",
+      boxShadow:
+        mode === "dark"
+          ? "0px 24px 48px rgba(0,0,0,0.42)"
+          : "0px 24px 48px rgba(8,45,36,0.18)",
+    },
     notificationsPanelHeader: {
       padding: 18,
       borderBottomWidth: 1,
@@ -611,18 +653,18 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       lineHeight: 18,
     },
     notificationMiniCard: {
-  position: "relative",
-  borderRadius: 18,
-  padding: 13,
-  paddingRight: 40,
-  backgroundColor: mode === "dark" ? "#314C44" : "#EFE6D8",
-  borderWidth: 1,
-  borderColor: colors.border,
-},
+      position: "relative",
+      borderRadius: 18,
+      padding: 13,
+      paddingRight: 40,
+      backgroundColor: mode === "dark" ? "#314C44" : "#EFE6D8",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
     notificationMiniCardUnread: {
-  borderColor: colors.primary,
-  backgroundColor: mode === "dark" ? "#3A554D" : "#E7DCCB",
-},
+      borderColor: colors.primary,
+      backgroundColor: mode === "dark" ? "#3A554D" : "#E7DCCB",
+    },
     notificationMiniContent: {
       gap: 4,
     },

@@ -11,43 +11,44 @@ import { Link } from "expo-router";
 import {
   APP_STATS_UPDATED_EVENT,
   AppStats,
-  addCompletedExercise,
+  addCompletedCapsule,
   getAppStats,
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
-import AnimatedScreen from "../components/AnimatedScreen";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
   IconBadge,
   BreakIcon,
-  RoutineIcon,
-  ProgressIcon,
+  EducationIcon,
   PlanIcon,
+  PostureIcon,
+  ProgressIcon,
+  RoutineIcon,
 } from "../components/ErgoIcons";
 
-type BodyCategory = "Cou" | "Dos" | "Épaules" | "Poignets" | "Jambes";
-type ExerciseCategory = "Tous" | BodyCategory;
+type CapsuleTopic = "Posture" | "Pauses" | "Écran" | "Douleur" | "Habitudes";
+type CapsuleCategory = "Toutes" | CapsuleTopic;
 
-type Exercise = {
+type Capsule = {
   id: string;
-  category: BodyCategory;
+  category: CapsuleTopic;
   title: string;
-  duration: string;
-  level: string;
-  description: string;
-  steps: string[];
+  readingTime: string;
+  intro: string;
+  keyPoints: string[];
+  practicalTip: string;
 };
 
-type BodyIconProps = {
+type CapsuleIconProps = {
   size?: number;
   color?: string;
   strokeWidth?: number;
 };
 
-type BodyIcon = React.ComponentType<BodyIconProps>;
+type CapsuleIcon = React.ComponentType<CapsuleIconProps>;
 
-type AppRoute = "/routine" | "/timer" | "/progress" | "/dashboard";
+type AppRoute = "/routine" | "/personal-plan" | "/timer" | "/dashboard";
 
 type QuickAction = {
   label: string;
@@ -61,13 +62,13 @@ type QuickAction = {
   }>;
 };
 
-const categories: ExerciseCategory[] = [
-  "Tous",
-  "Cou",
-  "Dos",
-  "Épaules",
-  "Poignets",
-  "Jambes",
+const categories: CapsuleCategory[] = [
+  "Toutes",
+  "Posture",
+  "Pauses",
+  "Écran",
+  "Douleur",
+  "Habitudes",
 ];
 
 const quickActions: QuickAction[] = [
@@ -81,247 +82,163 @@ const quickActions: QuickAction[] = [
   {
     label: "Pause",
     title: "Minuterie",
-    text: "Démarrer une pause active.",
+    text: "Faire une pause active.",
     href: "/timer",
     Icon: BreakIcon,
   },
   {
-    label: "Suivi",
-    title: "Évolution",
-    text: "Voir vos exercices complétés.",
-    href: "/progress",
-    Icon: ProgressIcon,
+    label: "Objectifs",
+    title: "Plan",
+    text: "Voir les priorités personnalisées.",
+    href: "/personal-plan",
+    Icon: PlanIcon,
   },
   {
     label: "Résumé",
     title: "Dashboard",
     text: "Consulter vos points.",
     href: "/dashboard",
-    Icon: PlanIcon,
+    Icon: ProgressIcon,
   },
 ];
 
-const exercises: Exercise[] = [
+const capsules: Capsule[] = [
   {
-    id: "neck-mobility",
-    category: "Cou",
-    title: "Mobilité douce du cou",
-    duration: "1 min",
-    level: "Facile",
-    description:
-      "Un mouvement simple pour relâcher la tension cervicale après une période assise.",
-    steps: [
-      "Asseyez-vous droit, épaules détendues.",
-      "Inclinez doucement la tête vers la droite, puis vers la gauche.",
-      "Gardez le mouvement lent, sans forcer.",
-      "Répétez 5 fois de chaque côté.",
+    id: "posture-perfect",
+    category: "Posture",
+    title: "La posture parfaite n’existe pas",
+    readingTime: "2 min",
+    intro:
+      "En ergonomie, l’objectif n’est pas de rester dans une posture parfaite toute la journée. Le plus important est de varier les positions.",
+    keyPoints: [
+      "Une posture peut devenir inconfortable si elle est maintenue trop longtemps.",
+      "Changer de position régulièrement réduit les contraintes répétées.",
+      "Le confort dépend aussi du poste, des pauses, de la fatigue et des habitudes.",
     ],
+    practicalTip:
+      "Au lieu de chercher une posture parfaite, essayez de changer légèrement de position toutes les 20 à 30 minutes.",
   },
   {
-    id: "chin-tuck",
-    category: "Cou",
-    title: "Rétraction cervicale",
-    duration: "1 min",
-    level: "Facile",
-    description:
-      "Un exercice utile pour contrebalancer la posture tête avancée devant l’écran.",
-    steps: [
-      "Regardez droit devant vous.",
-      "Rentrez doucement le menton vers l’arrière.",
-      "Gardez la nuque longue, sans baisser la tête.",
-      "Maintenez 3 secondes, puis relâchez.",
+    id: "microbreaks",
+    category: "Pauses",
+    title: "Les micro-pauses sont utiles",
+    readingTime: "2 min",
+    intro:
+      "Une pause n’a pas besoin d’être longue pour être utile. Même une pause de 1 à 2 minutes peut aider à relâcher les tensions.",
+    keyPoints: [
+      "Les micro-pauses interrompent l’immobilité prolongée.",
+      "Elles peuvent être utilisées pour marcher, respirer ou mobiliser doucement une zone.",
+      "Elles sont plus faciles à intégrer qu’une longue pause occasionnelle.",
     ],
+    practicalTip:
+      "Essayez la règle 25/2 : 25 minutes de travail, puis 2 minutes de pause active.",
   },
   {
-    id: "thoracic-extension",
-    category: "Dos",
-    title: "Extension du haut du dos",
-    duration: "2 min",
-    level: "Facile",
-    description:
-      "Un exercice pour ouvrir le haut du dos et réduire la raideur liée à la position assise.",
-    steps: [
-      "Asseyez-vous au bord de votre chaise.",
-      "Placez les mains derrière la tête.",
-      "Ouvrez doucement la poitrine vers le haut.",
-      "Revenez lentement et répétez 6 à 8 fois.",
+    id: "screen-height",
+    category: "Écran",
+    title: "La hauteur de l’écran compte",
+    readingTime: "2 min",
+    intro:
+      "Un écran trop bas peut favoriser une flexion prolongée du cou, surtout lors des longues périodes de travail.",
+    keyPoints: [
+      "L’écran devrait être placé devant vous, pas trop décalé sur le côté.",
+      "Un écran trop bas peut augmenter les contraintes au cou.",
+      "Avec un ordinateur portable, un support peut être utile pour les longues sessions.",
     ],
+    practicalTip:
+      "Si vous travaillez longtemps sur portable, utilisez idéalement un support, un clavier externe et une souris externe.",
   },
   {
-    id: "standing-reset",
-    category: "Dos",
-    title: "Reset debout",
-    duration: "2 min",
-    level: "Très facile",
-    description:
-      "Une mini-pause pour quitter la position assise et relancer le mouvement.",
-    steps: [
-      "Levez-vous doucement.",
-      "Marchez sur place ou dans la pièce.",
-      "Relâchez les épaules.",
-      "Respirez lentement pendant 30 secondes.",
+    id: "pain-signal",
+    category: "Douleur",
+    title: "La douleur est un signal à écouter",
+    readingTime: "2 min",
+    intro:
+      "Une douleur légère et temporaire peut arriver, mais une douleur persistante, forte ou inhabituelle doit être prise au sérieux.",
+    keyPoints: [
+      "Le suivi de la douleur aide à repérer les tendances.",
+      "Une augmentation progressive mérite d’être surveillée.",
+      "Il faut éviter de forcer un mouvement douloureux.",
     ],
+    practicalTip:
+      "Utilisez le check-in pour noter la douleur, la fatigue et la zone concernée. Consultez un professionnel si la douleur vous inquiète.",
   },
   {
-    id: "shoulder-rolls",
-    category: "Épaules",
-    title: "Cercles d’épaules",
-    duration: "1 min",
-    level: "Facile",
-    description: "Un exercice rapide pour relâcher les trapèzes et les épaules.",
-    steps: [
-      "Gardez les bras détendus le long du corps.",
-      "Faites 8 cercles d’épaules vers l’arrière.",
-      "Faites ensuite 8 cercles vers l’avant.",
-      "Gardez le mouvement lent et confortable.",
+    id: "mouse-position",
+    category: "Posture",
+    title: "La souris doit rester proche",
+    readingTime: "1 min",
+    intro:
+      "Une souris placée trop loin peut augmenter la tension dans l’épaule, le bras et le haut du dos.",
+    keyPoints: [
+      "Gardez le coude près du corps autant que possible.",
+      "Évitez de travailler longtemps avec le bras tendu.",
+      "Rapprocher la souris peut réduire les tensions à l’épaule.",
     ],
+    practicalTip:
+      "Placez la souris à côté du clavier, proche de vous, et relâchez régulièrement l’épaule.",
   },
   {
-    id: "scapular-squeeze",
-    category: "Épaules",
-    title: "Rétraction des omoplates",
-    duration: "1 min",
-    level: "Facile",
-    description:
-      "Un exercice simple pour activer le haut du dos et relâcher la posture arrondie.",
-    steps: [
-      "Asseyez-vous ou tenez-vous debout.",
-      "Rapprochez doucement les omoplates.",
-      "Gardez les épaules basses.",
-      "Maintenez 3 secondes, puis relâchez.",
+    id: "habits-small",
+    category: "Habitudes",
+    title: "Commencer petit fonctionne mieux",
+    readingTime: "2 min",
+    intro:
+      "Les changements durables commencent souvent par de petites actions faciles à répéter.",
+    keyPoints: [
+      "Une routine trop ambitieuse est difficile à maintenir.",
+      "Deux ou trois petites actions par jour peuvent déjà aider.",
+      "La régularité compte plus que la perfection.",
     ],
+    practicalTip:
+      "Choisissez une seule action simple aujourd’hui : un check-in, une pause ou un exercice court.",
   },
   {
-    id: "wrist-mobility",
-    category: "Poignets",
-    title: "Mobilité des poignets",
-    duration: "1 min",
-    level: "Facile",
-    description:
-      "Une courte routine pour relâcher les poignets après clavier ou souris.",
-    steps: [
-      "Tendez les bras devant vous.",
-      "Faites des cercles lents avec les poignets.",
-      "Changez de direction après 10 secondes.",
-      "Secouez doucement les mains pour relâcher.",
+    id: "movement-variety",
+    category: "Habitudes",
+    title: "Le mouvement est une stratégie clé",
+    readingTime: "2 min",
+    intro:
+      "Le corps tolère mieux les efforts lorsqu’il peut alterner entre différentes positions et mouvements.",
+    keyPoints: [
+      "Rester immobile longtemps peut favoriser l’inconfort.",
+      "Bouger régulièrement aide à varier les contraintes.",
+      "La marche, les étirements doux et les changements de posture sont utiles.",
     ],
+    practicalTip:
+      "Programmez une courte pause active dans votre journée, même si elle ne dure que 2 minutes.",
   },
   {
-    id: "finger-stretch",
-    category: "Poignets",
-    title: "Étirement des doigts",
-    duration: "1 min",
-    level: "Facile",
-    description:
-      "Un exercice très simple pour réduire la tension dans les mains et les doigts.",
-    steps: [
-      "Ouvrez les mains largement.",
-      "Écartez doucement les doigts.",
-      "Fermez les mains sans serrer fort.",
-      "Répétez 8 à 10 fois.",
+    id: "fatigue-role",
+    category: "Douleur",
+    title: "La fatigue influence les tensions",
+    readingTime: "2 min",
+    intro:
+      "La fatigue peut modifier la posture, réduire l’attention portée au confort et augmenter la perception des tensions.",
+    keyPoints: [
+      "Une journée fatiguante peut augmenter les inconforts.",
+      "Le stress et le manque de sommeil peuvent aussi jouer un rôle.",
+      "Suivre la fatigue aide à mieux comprendre les variations de douleur.",
     ],
-  },
-  {
-    id: "calf-raises",
-    category: "Jambes",
-    title: "Montées sur pointes",
-    duration: "1 min",
-    level: "Facile",
-    description:
-      "Un mouvement debout pour stimuler les jambes pendant une pause courte.",
-    steps: [
-      "Tenez-vous debout près d’un support si besoin.",
-      "Montez doucement sur la pointe des pieds.",
-      "Redescendez lentement.",
-      "Répétez 10 à 15 fois.",
-    ],
-  },
-  {
-    id: "seated-leg-extension",
-    category: "Jambes",
-    title: "Extension des jambes assis",
-    duration: "1 min",
-    level: "Facile",
-    description: "Un exercice discret à faire assis pour bouger les jambes.",
-    steps: [
-      "Asseyez-vous avec les pieds au sol.",
-      "Tendez une jambe devant vous.",
-      "Maintenez 2 secondes.",
-      "Alternez avec l’autre jambe.",
-    ],
+    practicalTip:
+      "Dans votre check-in, notez aussi la fatigue. Cela peut aider à repérer des liens avec les douleurs.",
   },
 ];
 
-function NeckIcon({
+function ScreenIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: CapsuleIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
         style={{
           position: "absolute",
-          left: size * 0.34,
-          top: size * 0.08,
-          width: size * 0.32,
-          height: size * 0.32,
-          borderRadius: size,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.42,
-          top: size * 0.37,
-          width: strokeWidth,
-          height: size * 0.18,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.54,
-          top: size * 0.37,
-          width: strokeWidth,
-          height: size * 0.18,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.24,
-          top: size * 0.58,
-          width: size * 0.52,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-    </View>
-  );
-}
-
-function HeadPositionIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          right: size * 0.1,
+          left: size * 0.16,
           top: size * 0.16,
-          width: size * 0.18,
-          height: size * 0.46,
+          width: size * 0.58,
+          height: size * 0.36,
           borderRadius: 4,
           borderWidth: strokeWidth,
           borderColor: color,
@@ -330,33 +247,20 @@ function HeadPositionIcon({
       <View
         style={{
           position: "absolute",
-          left: size * 0.18,
-          top: size * 0.12,
-          width: size * 0.27,
-          height: size * 0.27,
-          borderRadius: size,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.37,
-          top: size * 0.36,
+          left: size * 0.42,
+          top: size * 0.55,
           width: strokeWidth,
-          height: size * 0.2,
+          height: size * 0.12,
           backgroundColor: color,
           borderRadius: 999,
-          transform: [{ rotate: "25deg" }],
         }}
       />
       <View
         style={{
           position: "absolute",
-          left: size * 0.5,
-          top: size * 0.28,
-          width: size * 0.18,
+          left: size * 0.3,
+          top: size * 0.7,
+          width: size * 0.32,
           height: strokeWidth,
           backgroundColor: color,
           borderRadius: 999,
@@ -366,20 +270,32 @@ function HeadPositionIcon({
   );
 }
 
-function BackIcon({
+function PainIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: CapsuleIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
         style={{
           position: "absolute",
-          left: size * 0.39,
-          top: size * 0.06,
-          width: size * 0.22,
-          height: size * 0.22,
+          left: size * 0.4,
+          top: size * 0.12,
+          width: size * 0.2,
+          height: size * 0.44,
+          borderRadius: 999,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.35,
+          top: size * 0.52,
+          width: size * 0.3,
+          height: size * 0.3,
           borderRadius: size,
           borderWidth: strokeWidth,
           borderColor: color,
@@ -388,21 +304,45 @@ function BackIcon({
       <View
         style={{
           position: "absolute",
-          left: size * 0.22,
-          top: size * 0.32,
-          width: size * 0.56,
+          right: size * 0.08,
+          top: size * 0.18,
+          width: size * 0.16,
           height: strokeWidth,
           backgroundColor: color,
           borderRadius: 999,
+          transform: [{ rotate: "35deg" }],
         }}
       />
       <View
         style={{
           position: "absolute",
-          left: size * 0.49,
+          right: size * 0.08,
+          top: size * 0.38,
+          width: size * 0.16,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-35deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function HabitIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: CapsuleIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.47,
           top: size * 0.34,
           width: strokeWidth,
-          height: size * 0.44,
+          height: size * 0.42,
           backgroundColor: color,
           borderRadius: 999,
         }}
@@ -410,32 +350,34 @@ function BackIcon({
       <View
         style={{
           position: "absolute",
-          left: size * 0.34,
-          top: size * 0.42,
-          width: strokeWidth,
-          height: size * 0.28,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "16deg" }],
+          left: size * 0.22,
+          top: size * 0.22,
+          width: size * 0.28,
+          height: size * 0.18,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+          transform: [{ rotate: "-25deg" }],
         }}
       />
       <View
         style={{
           position: "absolute",
-          right: size * 0.34,
-          top: size * 0.42,
-          width: strokeWidth,
-          height: size * 0.28,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "-16deg" }],
+          right: size * 0.18,
+          top: size * 0.14,
+          width: size * 0.28,
+          height: size * 0.18,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+          transform: [{ rotate: "25deg" }],
         }}
       />
       <View
         style={{
           position: "absolute",
           left: size * 0.32,
-          top: size * 0.78,
+          bottom: size * 0.12,
           width: size * 0.36,
           height: strokeWidth,
           backgroundColor: color,
@@ -446,21 +388,21 @@ function BackIcon({
   );
 }
 
-function ShoulderIcon({
+function MouseNearIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: CapsuleIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
         style={{
           position: "absolute",
-          left: size * 0.36,
-          top: size * 0.1,
-          width: size * 0.28,
-          height: size * 0.28,
-          borderRadius: size,
+          left: size * 0.12,
+          top: size * 0.36,
+          width: size * 0.36,
+          height: size * 0.18,
+          borderRadius: 4,
           borderWidth: strokeWidth,
           borderColor: color,
         }}
@@ -468,55 +410,55 @@ function ShoulderIcon({
       <View
         style={{
           position: "absolute",
-          left: size * 0.47,
-          top: size * 0.34,
-          width: strokeWidth,
-          height: size * 0.12,
-          backgroundColor: color,
+          right: size * 0.12,
+          top: size * 0.3,
+          width: size * 0.2,
+          height: size * 0.32,
           borderRadius: 999,
+          borderWidth: strokeWidth,
+          borderColor: color,
         }}
       />
       <View
         style={{
           position: "absolute",
-          left: size * 0.16,
-          top: size * 0.5,
-          width: size * 0.28,
+          left: size * 0.5,
+          top: size * 0.42,
+          width: size * 0.12,
           height: strokeWidth,
           backgroundColor: color,
           borderRadius: 999,
-          transform: [{ rotate: "-18deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          right: size * 0.16,
-          top: size * 0.5,
-          width: size * 0.28,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "18deg" }],
         }}
       />
     </View>
   );
 }
 
-function WristIcon({
+function FatigueIcon({
   size = 22,
   color = "#163028",
   strokeWidth = 2,
-}: BodyIconProps) {
+}: CapsuleIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <View
         style={{
           position: "absolute",
-          left: size * 0.18,
-          top: size * 0.44,
-          width: size * 0.28,
+          left: size * 0.24,
+          top: size * 0.18,
+          width: size * 0.52,
+          height: size * 0.36,
+          borderRadius: size * 0.18,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.32,
+          top: size * 0.33,
+          width: size * 0.12,
           height: strokeWidth,
           backgroundColor: color,
           borderRadius: 999,
@@ -525,90 +467,10 @@ function WristIcon({
       <View
         style={{
           position: "absolute",
-          left: size * 0.42,
-          top: size * 0.38,
-          width: strokeWidth,
-          height: size * 0.16,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.48,
-          top: size * 0.34,
-          width: strokeWidth,
-          height: size * 0.12,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "-22deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.54,
-          top: size * 0.34,
-          width: strokeWidth,
-          height: size * 0.12,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "-6deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.6,
-          top: size * 0.36,
-          width: strokeWidth,
-          height: size * 0.1,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "10deg" }],
-        }}
-      />
-    </View>
-  );
-}
-
-function LegsIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.36,
-          top: size * 0.12,
-          width: size * 0.28,
+          right: size * 0.32,
+          top: size * 0.33,
+          width: size * 0.12,
           height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.4,
-          top: size * 0.18,
-          width: strokeWidth,
-          height: size * 0.28,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.56,
-          top: size * 0.18,
-          width: strokeWidth,
-          height: size * 0.28,
           backgroundColor: color,
           borderRadius: 999,
         }}
@@ -617,143 +479,49 @@ function LegsIcon({
         style={{
           position: "absolute",
           left: size * 0.34,
-          top: size * 0.44,
-          width: size * 0.16,
+          top: size * 0.66,
+          width: size * 0.32,
           height: strokeWidth,
           backgroundColor: color,
           borderRadius: 999,
-          transform: [{ rotate: "30deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.52,
-          top: size * 0.44,
-          width: size * 0.16,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "-30deg" }],
         }}
       />
     </View>
   );
 }
 
-function MovementIcon({
-  size = 22,
-  color = "#163028",
-  strokeWidth = 2,
-}: BodyIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.38,
-          top: size * 0.08,
-          width: size * 0.22,
-          height: size * 0.22,
-          borderRadius: size,
-          borderWidth: strokeWidth,
-          borderColor: color,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.48,
-          top: size * 0.28,
-          width: strokeWidth,
-          height: size * 0.18,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.33,
-          top: size * 0.42,
-          width: size * 0.16,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "-25deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.5,
-          top: size * 0.42,
-          width: size * 0.16,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "25deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.42,
-          top: size * 0.5,
-          width: size * 0.12,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "28deg" }],
-        }}
-      />
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.52,
-          top: size * 0.5,
-          width: size * 0.12,
-          height: strokeWidth,
-          backgroundColor: color,
-          borderRadius: 999,
-          transform: [{ rotate: "-28deg" }],
-        }}
-      />
-    </View>
-  );
-}
-
-function getExerciseIcon(exerciseId: string): BodyIcon {
-  switch (exerciseId) {
-    case "neck-mobility":
-      return NeckIcon;
-    case "chin-tuck":
-      return HeadPositionIcon;
-    case "thoracic-extension":
-      return BackIcon;
-    case "standing-reset":
-      return MovementIcon;
-    case "shoulder-rolls":
-      return ShoulderIcon;
-    case "scapular-squeeze":
-      return ShoulderIcon;
-    case "wrist-mobility":
-      return WristIcon;
-    case "finger-stretch":
-      return WristIcon;
-    case "calf-raises":
-      return LegsIcon;
-    case "seated-leg-extension":
-      return LegsIcon;
-    default:
-      return MovementIcon;
+function getCapsuleIcon(capsuleId: string, category: CapsuleTopic): CapsuleIcon {
+  if (capsuleId === "mouse-position") {
+    return MouseNearIcon;
   }
+
+  if (capsuleId === "fatigue-role") {
+    return FatigueIcon;
+  }
+
+  if (category === "Posture") {
+    return PostureIcon;
+  }
+
+  if (category === "Pauses") {
+    return BreakIcon;
+  }
+
+  if (category === "Écran") {
+    return ScreenIcon;
+  }
+
+  if (category === "Douleur") {
+    return PainIcon;
+  }
+
+  return HabitIcon;
 }
 
-export default function ExercisesScreen() {
+export default function EducationScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [selectedCategory, setSelectedCategory] =
-    useState<ExerciseCategory>("Tous");
+    useState<CapsuleCategory>("Toutes");
 
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
@@ -788,42 +556,43 @@ export default function ExercisesScreen() {
     };
   }, []);
 
-  const completedExerciseIds = stats.completedExerciseIds ?? [];
-  const completedExercises = stats.completedExercises ?? 0;
+  const completedCapsuleIds = stats.completedCapsuleIds ?? [];
+  const completedCapsules = stats.completedCapsules ?? 0;
   const points = stats.points ?? 0;
 
-  const filteredExercises =
-    selectedCategory === "Tous"
-      ? exercises
-      : exercises.filter((exercise) => exercise.category === selectedCategory);
+  const filteredCapsules =
+    selectedCategory === "Toutes"
+      ? capsules
+      : capsules.filter((capsule) => capsule.category === selectedCategory);
 
-  function handleCompleteExercise(exerciseId: string) {
-    const updatedStats = addCompletedExercise(exerciseId);
+  function handleCompleteCapsule(capsuleId: string) {
+    const updatedStats = addCompletedCapsule(capsuleId);
     setStats(updatedStats);
   }
 
   return (
-    <AnimatedScreen>
-      <SafeAreaView style={styles.safeArea}>
+    <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.pageHeader}>
           <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Mobilité</Text>
+            <Text style={styles.pagePillText}>Apprentissage</Text>
           </View>
 
-          <Text style={styles.pageTitle}>Exercices</Text>
+          <Text style={styles.pageTitle}>Formation</Text>
 
           <Text style={styles.subtitle}>
-            Des mouvements courts et simples pour intégrer plus de mobilité dans
-            votre journée.
+            Des capsules courtes pour mieux comprendre la prévention,
+            l’ergonomie et les habitudes protectrices.
           </Text>
         </View>
 
         <View style={styles.heroCard}>
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
-              <Text style={styles.heroLabel}>Mouvement</Text>
-              <Text style={styles.heroTitle}>Bouger un peu, souvent.</Text>
+              <Text style={styles.heroLabel}>Apprendre</Text>
+              <Text style={styles.heroTitle}>
+                Comprendre pour mieux prévenir.
+              </Text>
             </View>
 
             <View style={styles.pointsCircle}>
@@ -833,15 +602,15 @@ export default function ExercisesScreen() {
           </View>
 
           <Text style={styles.heroText}>
-            Choisissez un exercice court selon la zone que vous souhaitez
-            mobiliser. L’objectif est la régularité, pas la performance.
+            L’objectif n’est pas de tout lire d’un coup, mais d’intégrer une
+            notion simple à la fois.
           </Text>
         </View>
 
         <View style={styles.statsPanel}>
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{completedExercises}</Text>
-            <Text style={styles.statLabel}>exercices</Text>
+            <Text style={styles.statNumber}>{completedCapsules}</Text>
+            <Text style={styles.statLabel}>capsules</Text>
           </View>
 
           <View style={styles.statDivider} />
@@ -854,8 +623,8 @@ export default function ExercisesScreen() {
           <View style={styles.statDivider} />
 
           <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{filteredExercises.length}</Text>
-            <Text style={styles.statLabel}>proposés</Text>
+            <Text style={styles.statNumber}>{filteredCapsules.length}</Text>
+            <Text style={styles.statLabel}>à lire</Text>
           </View>
         </View>
 
@@ -863,7 +632,7 @@ export default function ExercisesScreen() {
           <View>
             <Text style={styles.sectionTitle}>Catégories</Text>
             <Text style={styles.sectionSubtitle}>
-              Filtrez les exercices par zone.
+              Filtrez les capsules par thème.
             </Text>
           </View>
         </View>
@@ -900,77 +669,79 @@ export default function ExercisesScreen() {
 
         <View style={styles.sectionHeaderRow}>
           <View>
-            <Text style={styles.sectionTitle}>Exercices proposés</Text>
+            <Text style={styles.sectionTitle}>Capsules</Text>
             <Text style={styles.sectionSubtitle}>
-              Suivez les étapes lentement et sans douleur.
+              Lisez une notion courte, puis marquez-la comme lue.
             </Text>
           </View>
         </View>
 
-        {filteredExercises.map((exercise) => {
-          const completed = completedExerciseIds.includes(exercise.id);
-          const ExerciseIcon = getExerciseIcon(exercise.id);
+        {filteredCapsules.map((capsule) => {
+          const completed = completedCapsuleIds.includes(capsule.id);
+          const CapsuleIcon = getCapsuleIcon(capsule.id, capsule.category);
 
           return (
-            <View key={exercise.id} style={styles.exerciseCard}>
-              <View style={styles.exerciseHeader}>
+            <View key={capsule.id} style={styles.capsuleCard}>
+              <View style={styles.capsuleHeader}>
                 <IconBadge
                   size={52}
                   backgroundColor={colors.backgroundSoft}
                   borderColor={colors.border}
                 >
-                  <ExerciseIcon size={25} color={colors.text} />
+                  <CapsuleIcon size={25} color={colors.text} />
                 </IconBadge>
 
-                <View style={styles.exerciseHeaderText}>
-                  <Text style={styles.exerciseCategory}>
-                    {exercise.category} · {exercise.duration} · {exercise.level}
+                <View style={styles.capsuleHeaderText}>
+                  <Text style={styles.capsuleCategory}>
+                    {capsule.category} · {capsule.readingTime}
                   </Text>
-                  <Text style={styles.exerciseTitle}>{exercise.title}</Text>
+                  <Text style={styles.capsuleTitle}>{capsule.title}</Text>
                 </View>
               </View>
 
-              <Text style={styles.exerciseDescription}>
-                {exercise.description}
-              </Text>
+              <Text style={styles.capsuleIntro}>{capsule.intro}</Text>
 
-              <View style={styles.stepsBox}>
-                {exercise.steps.map((step, index) => (
-                  <View key={`${exercise.id}-${index}`} style={styles.stepRow}>
-                    <View style={styles.stepNumber}>
-                      <Text style={styles.stepNumberText}>{index + 1}</Text>
+              <View style={styles.keyPointsBox}>
+                <Text style={styles.keyPointsTitle}>Points clés</Text>
+
+                {capsule.keyPoints.map((point, index) => (
+                  <View key={`${capsule.id}-${index}`} style={styles.pointRow}>
+                    <View style={styles.pointNumber}>
+                      <Text style={styles.pointNumberText}>{index + 1}</Text>
                     </View>
 
-                    <Text style={styles.stepText}>{step}</Text>
+                    <Text style={styles.pointText}>{point}</Text>
                   </View>
                 ))}
+              </View>
+
+              <View style={styles.tipBoxSmall}>
+                <Text style={styles.tipSmallTitle}>Astuce pratique</Text>
+                <Text style={styles.tipSmallText}>{capsule.practicalTip}</Text>
               </View>
 
               {!completed ? (
                 <Pressable
                   style={styles.primaryButton}
-                  onPress={() => handleCompleteExercise(exercise.id)}
+                  onPress={() => handleCompleteCapsule(capsule.id)}
                 >
-                  <Text style={styles.primaryButtonText}>
-                    Marquer comme complété
-                  </Text>
+                  <Text style={styles.primaryButtonText}>Marquer comme lu</Text>
                   <Text style={styles.primaryButtonArrow}>→</Text>
                 </Pressable>
               ) : (
                 <View style={styles.completedBox}>
-                  <Text style={styles.completedText}>Complété</Text>
+                  <Text style={styles.completedText}>Capsule lue</Text>
                 </View>
               )}
             </View>
           );
         })}
 
-        <View style={styles.tipBox}>
-          <Text style={styles.tipTitle}>Conseil</Text>
-          <Text style={styles.tipText}>
-            Les exercices doivent rester confortables. Ne forcez pas un mouvement
-            douloureux. En cas de douleur importante ou persistante, consultez un
-            professionnel.
+        <View style={styles.warningBox}>
+          <Text style={styles.warningTitle}>À retenir</Text>
+          <Text style={styles.warningText}>
+            Ces capsules sont éducatives. Elles ne remplacent pas une évaluation
+            personnalisée par un professionnel de la santé ou de l’ergonomie.
           </Text>
         </View>
 
@@ -978,7 +749,7 @@ export default function ExercisesScreen() {
           <View>
             <Text style={styles.sectionTitle}>Actions rapides</Text>
             <Text style={styles.sectionSubtitle}>
-              Continuez avec une pause ou votre routine.
+              Continuez avec votre routine ou votre plan.
             </Text>
           </View>
 
@@ -1020,7 +791,6 @@ export default function ExercisesScreen() {
         <BottomNav />
       </ScrollView>
     </SafeAreaView>
-    </AnimatedScreen>
   );
 }
 
@@ -1232,7 +1002,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     categoryButtonTextSelected: {
       color: colors.black,
     },
-    exerciseCard: {
+    capsuleCard: {
       marginHorizontal: 24,
       backgroundColor: colors.card,
       borderRadius: 30,
@@ -1241,16 +1011,16 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderWidth: 1,
       borderColor: colors.border,
     },
-    exerciseHeader: {
+    capsuleHeader: {
       flexDirection: "row",
       alignItems: "center",
       marginBottom: 14,
       gap: 14,
     },
-    exerciseHeaderText: {
+    capsuleHeaderText: {
       flex: 1,
     },
-    exerciseCategory: {
+    capsuleCategory: {
       fontSize: 11,
       fontWeight: "900",
       color: colors.primary,
@@ -1258,36 +1028,43 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       letterSpacing: 0.7,
       marginBottom: 5,
     },
-    exerciseTitle: {
+    capsuleTitle: {
       fontFamily: "Georgia",
       fontSize: 23,
       lineHeight: 29,
       color: colors.primary,
     },
-    exerciseDescription: {
+    capsuleIntro: {
       fontSize: 15,
       lineHeight: 22,
       color: colors.textSoft,
       marginBottom: 16,
     },
-    stepsBox: {
+    keyPointsBox: {
       backgroundColor: colors.cardWarm,
       borderRadius: 22,
       padding: 14,
-      marginBottom: 16,
+      marginBottom: 14,
       borderWidth: 1,
       borderColor: colors.border,
     },
-    stepRow: {
+    keyPointsTitle: {
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
+      color: colors.primary,
+      marginBottom: 12,
+    },
+    pointRow: {
       flexDirection: "row",
       alignItems: "flex-start",
       marginBottom: 10,
       gap: 10,
     },
-    stepNumber: {
-      width: 28,
-      height: 28,
-      borderRadius: 14,
+    pointNumber: {
+      width: 26,
+      height: 26,
+      borderRadius: 13,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -1295,17 +1072,37 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
       marginTop: 1,
     },
-    stepNumberText: {
+    pointNumberText: {
       color: colors.black,
       fontWeight: "900",
-      fontSize: 12,
+      fontSize: 11,
     },
-    stepText: {
+    pointText: {
       flex: 1,
       fontSize: 14,
       lineHeight: 20,
       color: colors.text,
       fontWeight: "700",
+    },
+    tipBoxSmall: {
+      backgroundColor: colors.warning,
+      borderRadius: 18,
+      padding: 14,
+      borderWidth: 1,
+      borderColor: colors.warningBorder,
+      marginBottom: 16,
+    },
+    tipSmallTitle: {
+      fontFamily: "Georgia",
+      fontSize: 17,
+      lineHeight: 22,
+      color: colors.warningText,
+      marginBottom: 6,
+    },
+    tipSmallText: {
+      fontSize: 13,
+      lineHeight: 19,
+      color: colors.warningText,
     },
     primaryButton: {
       backgroundColor: colors.primary,
@@ -1343,7 +1140,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontSize: 15,
       fontWeight: "900",
     },
-    tipBox: {
+    warningBox: {
       marginHorizontal: 24,
       backgroundColor: colors.warning,
       borderRadius: 22,
@@ -1352,14 +1149,14 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.warningBorder,
       marginBottom: 26,
     },
-    tipTitle: {
+    warningTitle: {
       fontFamily: "Georgia",
       fontSize: 18,
       lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
-    tipText: {
+    warningText: {
       fontSize: 13,
       lineHeight: 20,
       color: colors.warningText,
