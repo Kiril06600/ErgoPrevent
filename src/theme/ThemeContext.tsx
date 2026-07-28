@@ -20,7 +20,37 @@ const THEME_STORAGE_KEY = "ergoprevent_theme_mode";
 
 const ThemeContext = createContext<ThemeContextValue | null>(null);
 
-function getBaseBackground() {
+function getBaseBackground(mode: ThemeMode) {
+  if (mode === "light") {
+    return `
+      radial-gradient(
+        circle at 50% 12%,
+        rgba(8, 45, 36, 0.10) 0%,
+        rgba(8, 45, 36, 0.045) 16%,
+        rgba(8, 45, 36, 0) 32%
+      ),
+      radial-gradient(
+        circle at 90% 30%,
+        rgba(47, 111, 99, 0.14) 0%,
+        rgba(47, 111, 99, 0.045) 14%,
+        rgba(47, 111, 99, 0) 28%
+      ),
+      radial-gradient(
+        circle at 6% 78%,
+        rgba(8, 45, 36, 0.08) 0%,
+        rgba(8, 45, 36, 0.03) 14%,
+        rgba(8, 45, 36, 0) 28%
+      ),
+      linear-gradient(
+        145deg,
+        #F4EDE1 0%,
+        #E9E1D4 36%,
+        #D8CEC0 72%,
+        #C9CDBD 100%
+      )
+    `;
+  }
+
   return `
     radial-gradient(
       circle at 52% 12%,
@@ -62,12 +92,70 @@ function getBaseBackground() {
   `;
 }
 
-function applyGlobalWebBackground() {
+function getOverlayBackground(mode: ThemeMode) {
+  if (mode === "light") {
+    return `
+      radial-gradient(
+        circle at 50% 15%,
+        rgba(8,45,36,0.08) 0%,
+        rgba(8,45,36,0.028) 13%,
+        rgba(8,45,36,0) 27%
+      ),
+      radial-gradient(
+        circle at 84% 33%,
+        rgba(47,111,99,0.11) 0%,
+        rgba(47,111,99,0.032) 12%,
+        rgba(47,111,99,0) 24%
+      )
+    `;
+  }
+
+  return `
+    radial-gradient(
+      circle at 50% 16%,
+      rgba(255,255,255,0.08) 0%,
+      rgba(255,255,255,0.035) 13%,
+      rgba(255,255,255,0) 27%
+    ),
+    radial-gradient(
+      circle at 86% 31%,
+      rgba(255,255,255,0.07) 0%,
+      rgba(255,255,255,0.03) 12%,
+      rgba(255,255,255,0) 24%
+    ),
+    radial-gradient(
+      circle at 70% 61%,
+      rgba(255,255,255,0.065) 0%,
+      rgba(255,255,255,0.028) 15%,
+      rgba(255,255,255,0) 31%
+    ),
+    radial-gradient(
+      circle at 5% 39%,
+      rgba(255,255,255,0.06) 0%,
+      rgba(255,255,255,0.027) 11%,
+      rgba(255,255,255,0) 23%
+    ),
+    radial-gradient(
+      circle at 7% 84%,
+      rgba(255,255,255,0.055) 0%,
+      rgba(255,255,255,0.024) 12%,
+      rgba(255,255,255,0) 25%
+    )
+  `;
+}
+
+function applyGlobalWebBackground(mode: ThemeMode) {
   if (typeof document === "undefined") {
     return;
   }
 
-  const baseBackground = getBaseBackground().trim();
+  const baseBackground = getBaseBackground(mode).trim();
+  const overlayBackground = getOverlayBackground(mode).trim();
+  const textColor = mode === "dark" ? "#F6F1E8" : "#082D24";
+
+  document.documentElement.style.background = baseBackground;
+  document.body.style.background = baseBackground;
+  document.body.style.color = textColor;
 
   let styleTag = document.getElementById(
     "ergoprevent-global-background"
@@ -88,7 +176,7 @@ function applyGlobalWebBackground() {
       background-repeat: no-repeat !important;
       background-size: cover !important;
       background-attachment: fixed !important;
-      color: #F6F1E8 !important;
+      color: ${textColor} !important;
       font-family:
         -apple-system,
         BlinkMacSystemFont,
@@ -114,37 +202,7 @@ function applyGlobalWebBackground() {
       inset: 0;
       z-index: 0;
       pointer-events: none;
-      background:
-        radial-gradient(
-          circle at 50% 16%,
-          rgba(255,255,255,0.08) 0%,
-          rgba(255,255,255,0.035) 13%,
-          rgba(255,255,255,0) 27%
-        ),
-        radial-gradient(
-          circle at 86% 31%,
-          rgba(255,255,255,0.07) 0%,
-          rgba(255,255,255,0.03) 12%,
-          rgba(255,255,255,0) 24%
-        ),
-        radial-gradient(
-          circle at 70% 61%,
-          rgba(255,255,255,0.065) 0%,
-          rgba(255,255,255,0.028) 15%,
-          rgba(255,255,255,0) 31%
-        ),
-        radial-gradient(
-          circle at 5% 39%,
-          rgba(255,255,255,0.06) 0%,
-          rgba(255,255,255,0.027) 11%,
-          rgba(255,255,255,0) 23%
-        ),
-        radial-gradient(
-          circle at 7% 84%,
-          rgba(255,255,255,0.055) 0%,
-          rgba(255,255,255,0.024) 12%,
-          rgba(255,255,255,0) 25%
-        );
+      background: ${overlayBackground};
       opacity: 1;
     }
 
@@ -184,13 +242,15 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
 
     if (savedMode === "light" || savedMode === "dark") {
       setMode(savedMode);
+      applyGlobalWebBackground(savedMode);
+      return;
     }
 
-    applyGlobalWebBackground();
+    applyGlobalWebBackground("dark");
   }, []);
 
   useEffect(() => {
-    applyGlobalWebBackground();
+    applyGlobalWebBackground(mode);
   }, [mode]);
 
   function setThemeMode(nextMode: ThemeMode) {
@@ -200,7 +260,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       window.localStorage.setItem(THEME_STORAGE_KEY, nextMode);
     }
 
-    applyGlobalWebBackground();
+    applyGlobalWebBackground(nextMode);
   }
 
   function toggleTheme() {
@@ -216,7 +276,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       toggleTheme,
       setThemeMode,
     }),
-    [mode]
+    [mode, colors]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;
