@@ -115,7 +115,7 @@ const points = stats.points;
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
         <View style={styles.topBar}>
-          <AppLogo height={54} />
+          <AppLogo height={100} />
 
           <View style={styles.notificationButton}>
             <Text style={styles.notificationIcon}>⌾</Text>
