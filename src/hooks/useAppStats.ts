@@ -13,6 +13,8 @@ export function useAppStats() {
   }
 
   useEffect(() => {
+    refreshStats();
+
     if (typeof window === "undefined") {
       return;
     }
@@ -28,24 +30,24 @@ export function useAppStats() {
       refreshStats();
     }
 
-    refreshStats();
+    const statsUpdateListener = handleStatsUpdate as EventListener;
 
-    window.addEventListener(
-      APP_STATS_UPDATED_EVENT,
-      handleStatsUpdate as EventListener
-    );
-
+    window.addEventListener(APP_STATS_UPDATED_EVENT, statsUpdateListener);
     window.addEventListener("storage", refreshStats);
     window.addEventListener("focus", refreshStats);
 
-    return () => {
-      window.removeEventListener(
-        APP_STATS_UPDATED_EVENT,
-        handleStatsUpdate as EventListener
-      );
+    if (typeof document !== "undefined") {
+      document.addEventListener("visibilitychange", refreshStats);
+    }
 
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, statsUpdateListener);
       window.removeEventListener("storage", refreshStats);
       window.removeEventListener("focus", refreshStats);
+
+      if (typeof document !== "undefined") {
+        document.removeEventListener("visibilitychange", refreshStats);
+      }
     };
   }, []);
 

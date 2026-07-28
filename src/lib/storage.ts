@@ -141,10 +141,12 @@ export function saveQuestionnaireResult(result: QuestionnaireResult) {
 export function saveWorkstationAuditResult(result: WorkstationAuditResult) {
   const currentStats = getAppStats();
 
+  const isFirstAudit = currentStats.workstationAuditResult === null;
+
   const updatedStats: AppStats = {
     ...currentStats,
     workstationAuditResult: result,
-    points: currentStats.points + 30,
+    points: isFirstAudit ? currentStats.points + 30 : currentStats.points,
   };
 
   saveAppStats(updatedStats);
