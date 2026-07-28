@@ -22,7 +22,6 @@ import {
   NOTIFICATION_SETTINGS_UPDATED_EVENT,
   setDailyCheckinReminderEnabled,
   setNotificationsEnabled,
-  setPositiveMessagesEnabled,
 } from "../lib/notifications";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
@@ -286,22 +285,6 @@ export default function ProfileScreen() {
     );
   }
 
-  function handleTogglePositiveMessages() {
-    if (!notificationSettings.enabled) {
-      return;
-    }
-
-    const nextValue = !notificationSettings.positiveMessages;
-    const updatedSettings = setPositiveMessagesEnabled(nextValue);
-
-    setNotificationSettings(updatedSettings);
-    setSavedMessage(
-      nextValue
-        ? "Messages positifs activés"
-        : "Messages positifs désactivés"
-    );
-  }
-
   return (
     <SafeAreaView style={styles.safeArea}>
       <ScrollView contentContainerStyle={styles.container}>
@@ -472,8 +455,8 @@ export default function ProfileScreen() {
                   Rappel du bilan quotidien
                 </Text>
                 <Text style={styles.settingDescription}>
-                  Ajoute un rappel positif pour noter vos douleurs et votre
-                  confort chaque jour.
+                  Ajoute un rappel pour noter vos douleurs et votre confort
+                  chaque jour.
                 </Text>
               </View>
 
@@ -491,41 +474,6 @@ export default function ProfileScreen() {
                     styles.switchKnob,
                     notificationSettings.enabled &&
                     notificationSettings.dailyCheckinReminder
-                      ? styles.switchKnobSelected
-                      : null,
-                  ]}
-                />
-              </View>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.settingRow,
-                !notificationSettings.enabled ? styles.settingRowDisabled : null,
-              ]}
-              onPress={handleTogglePositiveMessages}
-            >
-              <View style={styles.settingTextBlock}>
-                <Text style={styles.settingTitle}>Messages positifs</Text>
-                <Text style={styles.settingDescription}>
-                  Affiche des encouragements courts pour renforcer la constance.
-                </Text>
-              </View>
-
-              <View
-                style={[
-                  styles.switchTrack,
-                  notificationSettings.enabled &&
-                  notificationSettings.positiveMessages
-                    ? styles.switchTrackSelected
-                    : null,
-                ]}
-              >
-                <View
-                  style={[
-                    styles.switchKnob,
-                    notificationSettings.enabled &&
-                    notificationSettings.positiveMessages
                       ? styles.switchKnobSelected
                       : null,
                   ]}
