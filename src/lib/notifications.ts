@@ -10,10 +10,25 @@ export type AppNotification = {
   dateKey?: string;
 };
 
+export type NotificationSettings = {
+  enabled: boolean;
+  dailyCheckinReminder: boolean;
+  positiveMessages: boolean;
+};
+
 const NOTIFICATIONS_STORAGE_KEY = "ergoprevent_notifications";
 const GENERATED_NOTIFICATIONS_KEY = "ergoprevent_generated_notifications";
+const NOTIFICATION_SETTINGS_KEY = "ergoprevent_notification_settings";
 
 export const NOTIFICATIONS_UPDATED_EVENT = "ergoprevent_notifications_updated";
+export const NOTIFICATION_SETTINGS_UPDATED_EVENT =
+  "ergoprevent_notification_settings_updated";
+
+const defaultNotificationSettings: NotificationSettings = {
+  enabled: true,
+  dailyCheckinReminder: true,
+  positiveMessages: true,
+};
 
 const legacyDemoTitles = ["Bilan du jour disponible", "Rappel de posture"];
 
@@ -35,6 +50,18 @@ function notifyNotificationsUpdated(notifications: AppNotification[]) {
   window.dispatchEvent(
     new CustomEvent(NOTIFICATIONS_UPDATED_EVENT, {
       detail: notifications,
+    })
+  );
+}
+
+function notifyNotificationSettingsUpdated(settings: NotificationSettings) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  window.dispatchEvent(
+    new CustomEvent(NOTIFICATION_SETTINGS_UPDATED_EVENT, {
+      detail: settings,
     })
   );
 }
@@ -116,6 +143,84 @@ function createAutomaticNotification({
   };
 }
 
+export function getNotificationSettings(): NotificationSettings {
+  if (typeof window === "undefined") {
+    return defaultNotificationSettings;
+  }
+
+  const savedData = window.localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+
+  if (!savedData) {
+    return defaultNotificationSettings;
+  }
+
+  try {
+    const parsedData = JSON.parse(savedData);
+
+    return {
+      ...defaultNotificationSettings,
+      ...parsedData,
+    };
+  } catch {
+    window.localStorage.removeItem(NOTIFICATION_SETTINGS_KEY);
+    return defaultNotificationSettings;
+  }
+}
+
+export function saveNotificationSettings(settings: NotificationSettings) {
+  if (typeof window === "undefined") {
+    return defaultNotificationSettings;
+  }
+
+  window.localStorage.setItem(
+    NOTIFICATION_SETTINGS_KEY,
+    JSON.stringify(settings)
+  );
+
+  notifyNotificationSettingsUpdated(settings);
+
+  return settings;
+}
+
+export function setNotificationsEnabled(enabled: boolean) {
+  const currentSettings = getNotificationSettings();
+
+  const updatedSettings: NotificationSettings = {
+    ...currentSettings,
+    enabled,
+  };
+
+  saveNotificationSettings(updatedSettings);
+
+  if (!enabled) {
+    markAllNotificationsAsRead();
+  }
+
+  return updatedSettings;
+}
+
+export function setDailyCheckinReminderEnabled(enabled: boolean) {
+  const currentSettings = getNotificationSettings();
+
+  const updatedSettings: NotificationSettings = {
+    ...currentSettings,
+    dailyCheckinReminder: enabled,
+  };
+
+  return saveNotificationSettings(updatedSettings);
+}
+
+export function setPositiveMessagesEnabled(enabled: boolean) {
+  const currentSettings = getNotificationSettings();
+
+  const updatedSettings: NotificationSettings = {
+    ...currentSettings,
+    positiveMessages: enabled,
+  };
+
+  return saveNotificationSettings(updatedSettings);
+}
+
 export function getNotifications(): AppNotification[] {
   if (typeof window === "undefined") {
     return [];
@@ -155,10 +260,22 @@ export function saveNotifications(notifications: AppNotification[]) {
 }
 
 export function getUnreadNotificationCount() {
+  const settings = getNotificationSettings();
+
+  if (!settings.enabled) {
+    return 0;
+  }
+
   return getNotifications().filter((notification) => !notification.read).length;
 }
 
 export function addNotification(title: string, message: string) {
+  const settings = getNotificationSettings();
+
+  if (!settings.enabled) {
+    return getNotifications();
+  }
+
   const currentNotifications = getNotifications();
 
   const newNotification: AppNotification = {
@@ -235,6 +352,12 @@ export function seedInitialNotificationsIfNeeded() {
     return [];
   }
 
+  const settings = getNotificationSettings();
+
+  if (!settings.enabled) {
+    return getNotifications();
+  }
+
   const now = new Date();
   const todayKey = getTodayKey(now);
 
@@ -252,7 +375,10 @@ export function seedInitialNotificationsIfNeeded() {
 
   const newNotifications: AppNotification[] = [];
 
-  if (!generatedKeys.includes(dailyPainKey)) {
+  if (
+    settings.dailyCheckinReminder &&
+    !generatedKeys.includes(dailyPainKey)
+  ) {
     newNotifications.push(
       createAutomaticNotification({
         category: "daily-pain",
@@ -266,7 +392,7 @@ export function seedInitialNotificationsIfNeeded() {
     newGeneratedKeys.push(dailyPainKey);
   }
 
-  if (!generatedKeys.includes(positiveKey)) {
+  if (settings.positiveMessages && !generatedKeys.includes(positiveKey)) {
     newNotifications.push(
       createAutomaticNotification({
         category: "positive",
@@ -317,6 +443,12 @@ export function markTodaysDailyPainNotificationsAsRead() {
 }
 
 export function addDailyCheckinCompletedNotificationIfNeeded() {
+  const settings = getNotificationSettings();
+
+  if (!settings.enabled || !settings.positiveMessages) {
+    return getNotifications();
+  }
+
   const now = new Date();
   const todayKey = getTodayKey(now);
   const generatedKeys = getGeneratedNotificationKeys();

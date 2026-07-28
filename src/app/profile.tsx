@@ -16,6 +16,14 @@ import {
   saveUserProfile,
   resetAppStats,
 } from "../lib/storage";
+import {
+  getNotificationSettings,
+  NotificationSettings,
+  NOTIFICATION_SETTINGS_UPDATED_EVENT,
+  setDailyCheckinReminderEnabled,
+  setNotificationsEnabled,
+  setPositiveMessagesEnabled,
+} from "../lib/notifications";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { ThemeMode, useAppTheme } from "../theme/ThemeContext";
@@ -132,6 +140,9 @@ export default function ProfileScreen() {
     savedProfile?.mainGoal ?? "Prévenir les douleurs"
   );
 
+  const [notificationSettings, setNotificationSettings] =
+    useState<NotificationSettings>(() => getNotificationSettings());
+
   const [savedMessage, setSavedMessage] = useState("");
   const [showData, setShowData] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
@@ -144,7 +155,12 @@ export default function ProfileScreen() {
       setStats(getAppStats());
     }
 
+    function refreshNotificationSettings() {
+      setNotificationSettings(getNotificationSettings());
+    }
+
     refreshStats();
+    refreshNotificationSettings();
 
     if (typeof window === "undefined") {
       return;
@@ -153,22 +169,39 @@ export default function ProfileScreen() {
     window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
     window.addEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
     window.addEventListener(ROUTINE_UPDATED_EVENT, refreshStats);
+    window.addEventListener(
+      NOTIFICATION_SETTINGS_UPDATED_EVENT,
+      refreshNotificationSettings
+    );
     window.addEventListener("focus", refreshStats);
+    window.addEventListener("focus", refreshNotificationSettings);
     window.addEventListener("storage", refreshStats);
+    window.addEventListener("storage", refreshNotificationSettings);
 
     if (typeof document !== "undefined") {
       document.addEventListener("visibilitychange", refreshStats);
+      document.addEventListener("visibilitychange", refreshNotificationSettings);
     }
 
     return () => {
       window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
       window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
       window.removeEventListener(ROUTINE_UPDATED_EVENT, refreshStats);
+      window.removeEventListener(
+        NOTIFICATION_SETTINGS_UPDATED_EVENT,
+        refreshNotificationSettings
+      );
       window.removeEventListener("focus", refreshStats);
+      window.removeEventListener("focus", refreshNotificationSettings);
       window.removeEventListener("storage", refreshStats);
+      window.removeEventListener("storage", refreshNotificationSettings);
 
       if (typeof document !== "undefined") {
         document.removeEventListener("visibilitychange", refreshStats);
+        document.removeEventListener(
+          "visibilitychange",
+          refreshNotificationSettings
+        );
       }
     };
   }, []);
@@ -186,6 +219,7 @@ export default function ProfileScreen() {
       checkins: readLocalStorageValue(CHECKIN_STORAGE_KEY),
       routine: readLocalStorageValue(ROUTINE_STORAGE_KEY),
       themeMode: mode,
+      notificationSettings,
     },
     null,
     2
@@ -223,6 +257,48 @@ export default function ProfileScreen() {
     setThemeMode(nextMode);
     setSavedMessage(
       nextMode === "dark" ? "Mode sombre activé" : "Mode clair activé"
+    );
+  }
+
+  function handleToggleNotifications() {
+    const nextValue = !notificationSettings.enabled;
+    const updatedSettings = setNotificationsEnabled(nextValue);
+
+    setNotificationSettings(updatedSettings);
+    setSavedMessage(
+      nextValue ? "Notifications activées" : "Notifications désactivées"
+    );
+  }
+
+  function handleToggleDailyCheckinReminder() {
+    if (!notificationSettings.enabled) {
+      return;
+    }
+
+    const nextValue = !notificationSettings.dailyCheckinReminder;
+    const updatedSettings = setDailyCheckinReminderEnabled(nextValue);
+
+    setNotificationSettings(updatedSettings);
+    setSavedMessage(
+      nextValue
+        ? "Rappel quotidien activé"
+        : "Rappel quotidien désactivé"
+    );
+  }
+
+  function handleTogglePositiveMessages() {
+    if (!notificationSettings.enabled) {
+      return;
+    }
+
+    const nextValue = !notificationSettings.positiveMessages;
+    const updatedSettings = setPositiveMessagesEnabled(nextValue);
+
+    setNotificationSettings(updatedSettings);
+    setSavedMessage(
+      nextValue
+        ? "Messages positifs activés"
+        : "Messages positifs désactivés"
     );
   }
 
@@ -330,6 +406,131 @@ export default function ProfileScreen() {
               >
                 Mode sombre
               </Text>
+            </Pressable>
+          </View>
+        </View>
+
+        <View style={styles.card}>
+          <View style={styles.cardHeader}>
+            <IconBadge
+              size={46}
+              backgroundColor={colors.backgroundSoft}
+              borderColor={colors.border}
+            >
+              <RoutineIcon size={22} color={colors.text} />
+            </IconBadge>
+
+            <View style={styles.cardHeaderText}>
+              <Text style={styles.sectionTitle}>Notifications</Text>
+              <Text style={styles.sectionSubtitle}>
+                Choisissez les rappels que vous souhaitez recevoir dans
+                l’application.
+              </Text>
+            </View>
+          </View>
+
+          <View style={styles.settingsList}>
+            <Pressable
+              style={styles.settingRow}
+              onPress={handleToggleNotifications}
+            >
+              <View style={styles.settingTextBlock}>
+                <Text style={styles.settingTitle}>Notifications activées</Text>
+                <Text style={styles.settingDescription}>
+                  Active ou désactive tous les rappels internes de l’application.
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.switchTrack,
+                  notificationSettings.enabled
+                    ? styles.switchTrackSelected
+                    : null,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.switchKnob,
+                    notificationSettings.enabled
+                      ? styles.switchKnobSelected
+                      : null,
+                  ]}
+                />
+              </View>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.settingRow,
+                !notificationSettings.enabled ? styles.settingRowDisabled : null,
+              ]}
+              onPress={handleToggleDailyCheckinReminder}
+            >
+              <View style={styles.settingTextBlock}>
+                <Text style={styles.settingTitle}>
+                  Rappel du bilan quotidien
+                </Text>
+                <Text style={styles.settingDescription}>
+                  Ajoute un rappel positif pour noter vos douleurs et votre
+                  confort chaque jour.
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.switchTrack,
+                  notificationSettings.enabled &&
+                  notificationSettings.dailyCheckinReminder
+                    ? styles.switchTrackSelected
+                    : null,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.switchKnob,
+                    notificationSettings.enabled &&
+                    notificationSettings.dailyCheckinReminder
+                      ? styles.switchKnobSelected
+                      : null,
+                  ]}
+                />
+              </View>
+            </Pressable>
+
+            <Pressable
+              style={[
+                styles.settingRow,
+                !notificationSettings.enabled ? styles.settingRowDisabled : null,
+              ]}
+              onPress={handleTogglePositiveMessages}
+            >
+              <View style={styles.settingTextBlock}>
+                <Text style={styles.settingTitle}>Messages positifs</Text>
+                <Text style={styles.settingDescription}>
+                  Affiche des encouragements courts pour renforcer la constance.
+                </Text>
+              </View>
+
+              <View
+                style={[
+                  styles.switchTrack,
+                  notificationSettings.enabled &&
+                  notificationSettings.positiveMessages
+                    ? styles.switchTrackSelected
+                    : null,
+                ]}
+              >
+                <View
+                  style={[
+                    styles.switchKnob,
+                    notificationSettings.enabled &&
+                    notificationSettings.positiveMessages
+                      ? styles.switchKnobSelected
+                      : null,
+                  ]}
+                />
+              </View>
             </Pressable>
           </View>
         </View>
@@ -807,6 +1008,66 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontSize: 14,
       lineHeight: 20,
       color: colors.textSoft,
+    },
+    settingsList: {
+      gap: 10,
+    },
+    settingRow: {
+      minHeight: 82,
+      borderRadius: 22,
+      paddingVertical: 14,
+      paddingHorizontal: 14,
+      backgroundColor: colors.cardWarm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 14,
+    },
+    settingRowDisabled: {
+      opacity: 0.45,
+    },
+    settingTextBlock: {
+      flex: 1,
+    },
+    settingTitle: {
+      color: colors.text,
+      fontSize: 15,
+      lineHeight: 20,
+      fontWeight: "900",
+      marginBottom: 4,
+    },
+    settingDescription: {
+      color: colors.textSoft,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: "600",
+    },
+    switchTrack: {
+      width: 50,
+      height: 28,
+      borderRadius: 14,
+      padding: 3,
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "flex-start",
+      justifyContent: "center",
+    },
+    switchTrackSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primaryDark,
+      alignItems: "flex-end",
+    },
+    switchKnob: {
+      width: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.textMuted,
+    },
+    switchKnobSelected: {
+      backgroundColor: colors.black,
     },
     label: {
       fontSize: 13,
