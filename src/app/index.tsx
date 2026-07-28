@@ -12,10 +12,17 @@ import BottomNav from "../components/BottomNav";
 import AppLogo from "../components/AppLogo";
 import { useAppTheme } from "../theme/ThemeContext";
 import { ThemeColors } from "../theme/colors";
+import { APP_STATS_UPDATED_EVENT, getAppStats } from "../lib/storage";
 import {
-  APP_STATS_UPDATED_EVENT,
-  getAppStats,
-} from "../lib/storage";
+  AppNotification,
+  deleteNotification,
+  getNotifications,
+  getUnreadNotificationCount,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+  NOTIFICATIONS_UPDATED_EVENT,
+  seedInitialNotificationsIfNeeded,
+} from "../lib/notifications";
 import {
   IconBadge,
   RoutineIcon,
@@ -26,6 +33,84 @@ import {
   BreakIcon,
   ExerciseIcon,
 } from "../components/ErgoIcons";
+
+type BellIconProps = {
+  size?: number;
+  color?: string;
+};
+
+function BellIcon({ size = 22, color = "#F5EEDF" }: BellIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.28,
+          top: size * 0.22,
+          width: size * 0.44,
+          height: size * 0.5,
+          borderTopLeftRadius: size * 0.24,
+          borderTopRightRadius: size * 0.24,
+          borderBottomLeftRadius: size * 0.1,
+          borderBottomRightRadius: size * 0.1,
+          borderWidth: 2,
+          borderColor: color,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.21,
+          top: size * 0.68,
+          width: size * 0.58,
+          height: 2,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.44,
+          top: size * 0.1,
+          width: size * 0.12,
+          height: size * 0.12,
+          borderRadius: size,
+          backgroundColor: color,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.42,
+          top: size * 0.78,
+          width: size * 0.16,
+          height: size * 0.16,
+          borderRadius: size,
+          backgroundColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
+function formatNotificationDate(dateString: string) {
+  const date = new Date(dateString);
+
+  if (Number.isNaN(date.getTime())) {
+    return "Date inconnue";
+  }
+
+  return date.toLocaleDateString("fr-CA", {
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
 
 const essentialItems = [
   {
@@ -83,31 +168,80 @@ const toolItems = [
 
 export default function HomeScreen() {
   const [stats, setStats] = useState(() => getAppStats());
+  const [notifications, setNotifications] = useState<AppNotification[]>([]);
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
 
-useEffect(() => {
-  function refreshStats() {
-    setStats(getAppStats());
+  useEffect(() => {
+    function refreshStats() {
+      setStats(getAppStats());
+    }
+
+    refreshStats();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener("focus", refreshStats);
+    window.addEventListener("storage", refreshStats);
+
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener("focus", refreshStats);
+      window.removeEventListener("storage", refreshStats);
+    };
+  }, []);
+
+  useEffect(() => {
+    function refreshNotifications() {
+      seedInitialNotificationsIfNeeded();
+      setNotifications(getNotifications());
+    }
+
+    refreshNotifications();
+
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
+    window.addEventListener("focus", refreshNotifications);
+    window.addEventListener("storage", refreshNotifications);
+
+    return () => {
+      window.removeEventListener(
+        NOTIFICATIONS_UPDATED_EVENT,
+        refreshNotifications
+      );
+      window.removeEventListener("focus", refreshNotifications);
+      window.removeEventListener("storage", refreshNotifications);
+    };
+  }, []);
+
+  function handleToggleNotifications() {
+    setIsNotificationsOpen((currentValue) => !currentValue);
   }
 
-  refreshStats();
-
-  if (typeof window === "undefined") {
-    return;
+  function handleMarkNotificationAsRead(notificationId: string) {
+    const updatedNotifications = markNotificationAsRead(notificationId);
+    setNotifications(updatedNotifications);
   }
 
-  window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-  window.addEventListener("focus", refreshStats);
-  window.addEventListener("storage", refreshStats);
+  function handleMarkAllNotificationsAsRead() {
+    const updatedNotifications = markAllNotificationsAsRead();
+    setNotifications(updatedNotifications);
+  }
 
-  return () => {
-    window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-    window.removeEventListener("focus", refreshStats);
-    window.removeEventListener("storage", refreshStats);
-  };
-}, []);
+  function handleDeleteNotification(notificationId: string) {
+    const updatedNotifications = deleteNotification(notificationId);
+    setNotifications(updatedNotifications);
+  }
 
-const firstName = stats.profile?.firstName?.trim() || "Alex";
-const points = stats.points;
+  const firstName = stats.profile?.firstName?.trim() || "Alex";
+  const points = stats.points;
+  const notificationCount = getUnreadNotificationCount();
+
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
 
@@ -117,9 +251,108 @@ const points = stats.points;
         <View style={styles.topBar}>
           <AppLogo height={100} />
 
-          <View style={styles.notificationButton}>
-            <Text style={styles.notificationIcon}>⌾</Text>
-          </View>
+          <Pressable
+            style={styles.notificationButton}
+            onPress={handleToggleNotifications}
+          >
+            <BellIcon size={23} color={colors.primary} />
+
+            {notificationCount > 0 && (
+              <View style={styles.notificationBadge}>
+                <Text style={styles.notificationBadgeText}>
+                  {notificationCount > 9 ? "9+" : notificationCount}
+                </Text>
+              </View>
+            )}
+          </Pressable>
+
+          {isNotificationsOpen && (
+            <View style={styles.notificationsPanel}>
+              <View style={styles.notificationsPanelHeader}>
+                <View>
+                  <Text style={styles.notificationsPanelTitle}>
+                    Notifications
+                  </Text>
+                  <Text style={styles.notificationsPanelSubtitle}>
+                    {notificationCount} non lue
+                    {notificationCount > 1 ? "s" : ""}
+                  </Text>
+                </View>
+
+                {notificationCount > 0 && (
+                  <Pressable
+                    style={styles.markAllSmallButton}
+                    onPress={handleMarkAllNotificationsAsRead}
+                  >
+                    <Text style={styles.markAllSmallText}>Tout lire</Text>
+                  </Pressable>
+                )}
+              </View>
+
+              <ScrollView
+                style={styles.notificationsPanelScroll}
+                contentContainerStyle={styles.notificationsPanelContent}
+                showsVerticalScrollIndicator={false}
+              >
+                {notifications.length === 0 ? (
+                  <View style={styles.emptyNotificationBox}>
+                    <Text style={styles.emptyNotificationTitle}>
+                      Aucune notification
+                    </Text>
+                    <Text style={styles.emptyNotificationText}>
+                      Vos rappels apparaîtront ici.
+                    </Text>
+                  </View>
+                ) : (
+                  notifications.map((notification) => (
+                    <View
+                      key={notification.id}
+                      style={[
+                        styles.notificationMiniCard,
+                        !notification.read
+                          ? styles.notificationMiniCardUnread
+                          : null,
+                      ]}
+                    >
+                      <Pressable
+                        style={styles.notificationMiniContent}
+                        onPress={() =>
+                          handleMarkNotificationAsRead(notification.id)
+                        }
+                      >
+                        <View style={styles.notificationMiniTitleRow}>
+                          {!notification.read && (
+                            <View style={styles.unreadDot} />
+                          )}
+
+                          <Text style={styles.notificationMiniTitle}>
+                            {notification.title}
+                          </Text>
+                        </View>
+
+                        <Text style={styles.notificationMiniDate}>
+                          {formatNotificationDate(notification.createdAt)}
+                        </Text>
+
+                        <Text style={styles.notificationMiniMessage}>
+                          {notification.message}
+                        </Text>
+                      </Pressable>
+
+                      <Pressable
+                        style={styles.deleteNotificationButton}
+                        onPress={() =>
+                          handleDeleteNotification(notification.id)
+                        }
+                      >
+                        <Text style={styles.deleteNotificationText}>×</Text>
+                      </Pressable>
+                    </View>
+                  ))
+                )}
+              </ScrollView>
+            </View>
+          )}
         </View>
 
         <View style={styles.heroCard}>
@@ -253,26 +486,198 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       paddingBottom: 42,
     },
     topBar: {
-      paddingHorizontal: 24,
-      marginBottom: 28,
+  paddingHorizontal: 24,
+  marginBottom: 28,
+  flexDirection: "row",
+  alignItems: "flex-start",
+  justifyContent: "space-between",
+  position: "relative",
+  minHeight: 105,
+  zIndex: 1000,
+  overflow: "visible",
+},
+    notificationButton: {
+      position: "absolute",
+      top: 12,
+      right: 24,
+      zIndex: 70,
+      width: 48,
+      height: 48,
+      borderRadius: 24,
+      backgroundColor: colors.cardWarm,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      boxShadow:
+        mode === "dark"
+          ? "0px 12px 26px rgba(0,0,0,0.22)"
+          : "0px 12px 26px rgba(8,45,36,0.12)",
+    },
+    notificationBadge: {
+      position: "absolute",
+      top: -4,
+      right: -4,
+      minWidth: 20,
+      height: 20,
+      borderRadius: 10,
+      backgroundColor: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.card,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 5,
+    },
+    notificationBadgeText: {
+      color: colors.black,
+      fontSize: 10,
+      fontWeight: "900",
+      lineHeight: 13,
+    },
+    notificationsPanel: {
+  position: "absolute",
+  top: 68,
+  right: 24,
+  zIndex: 2000,
+  width: 310,
+  maxHeight: 250,
+  borderRadius: 26,
+  backgroundColor: mode === "dark" ? "#243E37" : "#F7F1E7",
+  borderWidth: 1,
+  borderColor: colors.border,
+  overflow: "hidden",
+  boxShadow:
+    mode === "dark"
+      ? "0px 24px 48px rgba(0,0,0,0.42)"
+      : "0px 24px 48px rgba(8,45,36,0.18)",
+},
+    notificationsPanelHeader: {
+      padding: 18,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      gap: 12,
     },
-    notificationButton: {
-      width: 46,
-      height: 46,
-      borderRadius: 23,
+    notificationsPanelTitle: {
+      fontFamily: "Georgia",
+      color: colors.primary,
+      fontSize: 23,
+      lineHeight: 28,
+    },
+    notificationsPanelSubtitle: {
+      marginTop: 3,
+      color: colors.textMuted,
+      fontSize: 12,
+      fontWeight: "800",
+    },
+    markAllSmallButton: {
+      borderRadius: 999,
+      backgroundColor: colors.primary,
+      paddingVertical: 8,
+      paddingHorizontal: 11,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+    },
+    markAllSmallText: {
+      color: colors.black,
+      fontSize: 11,
+      fontWeight: "900",
+    },
+    notificationsPanelScroll: {
+      maxHeight: 165,
+    },
+    notificationsPanelContent: {
+      padding: 12,
+      gap: 10,
+    },
+    emptyNotificationBox: {
+      padding: 16,
+      borderRadius: 18,
+      backgroundColor: colors.cardWarm,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    emptyNotificationTitle: {
+      color: colors.primary,
+      fontSize: 15,
+      fontWeight: "900",
+      marginBottom: 5,
+    },
+    emptyNotificationText: {
+      color: colors.textSoft,
+      fontSize: 13,
+      lineHeight: 18,
+    },
+    notificationMiniCard: {
+  position: "relative",
+  borderRadius: 18,
+  padding: 13,
+  paddingRight: 40,
+  backgroundColor: mode === "dark" ? "#314C44" : "#EFE6D8",
+  borderWidth: 1,
+  borderColor: colors.border,
+},
+    notificationMiniCardUnread: {
+  borderColor: colors.primary,
+  backgroundColor: mode === "dark" ? "#3A554D" : "#E7DCCB",
+},
+    notificationMiniContent: {
+      gap: 4,
+    },
+    notificationMiniTitleRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+    },
+    unreadDot: {
+      width: 7,
+      height: 7,
+      borderRadius: 4,
+      backgroundColor: colors.primary,
+    },
+    notificationMiniTitle: {
+      flex: 1,
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 19,
+      fontWeight: "900",
+    },
+    notificationMiniDate: {
+      color: colors.textMuted,
+      fontSize: 11,
+      lineHeight: 16,
+      fontWeight: "700",
+    },
+    notificationMiniMessage: {
+      color: colors.textSoft,
+      fontSize: 13,
+      lineHeight: 18,
+      marginTop: 3,
+    },
+    deleteNotificationButton: {
+      position: "absolute",
+      top: 10,
+      right: 10,
+      width: 24,
+      height: 24,
+      borderRadius: 12,
       alignItems: "center",
       justifyContent: "center",
+      backgroundColor: colors.backgroundSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
-    notificationIcon: {
-      color: colors.primary,
-      fontSize: 34,
-      fontWeight: "300",
-      lineHeight: 34,
+    deleteNotificationText: {
+      color: colors.textSoft,
+      fontSize: 18,
+      lineHeight: 20,
+      fontWeight: "700",
+      marginTop: -2,
     },
     heroCard: {
+      zIndex: 1,
       marginHorizontal: 24,
       marginBottom: 28,
       minHeight: 320,
