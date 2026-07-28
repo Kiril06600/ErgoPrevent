@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -16,6 +15,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -894,7 +895,8 @@ export default function QuestionnaireScreen() {
   const [savedMessage, setSavedMessage] = useState("");
 
   const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshStats() {
@@ -972,400 +974,431 @@ export default function QuestionnaireScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Évaluation TMS</Text>
-          </View>
-
-          <Text style={styles.pageTitle}>Questionnaire</Text>
-
-          <Text style={styles.subtitle}>
-            Évaluez rapidement vos symptômes et habitudes pour repérer les zones
-            à prioriser.
-          </Text>
-        </View>
-
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.heroLabel}>Évaluation</Text>
-              <Text style={styles.heroTitle}>
-                Repérer les signaux importants.
-              </Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Évaluation TMS</Text>
             </View>
 
-            <View style={styles.progressCircle}>
-              <Text style={styles.progressNumber}>{completedQuestions}</Text>
-              <Text style={styles.progressLabel}>/{totalQuestions}</Text>
-            </View>
-          </View>
+            <Text style={styles.pageTitle}>Questionnaire</Text>
 
-          <Text style={styles.heroText}>
-            Ce questionnaire ne pose pas de diagnostic. Il sert à orienter vos
-            prochaines actions de prévention.
-          </Text>
-        </View>
-
-        {previousResult && !showResult && (
-          <View style={styles.previousCard}>
-            <View style={styles.previousTopRow}>
-              <IconBadge
-                size={48}
-                backgroundColor={colors.turquoiseSoft}
-                borderColor={colors.border}
-              >
-                <ProgressIcon size={23} color={colors.text} />
-              </IconBadge>
-
-              <View style={styles.previousTextBlock}>
-                <Text style={styles.previousLabel}>Dernier résultat</Text>
-                <Text style={styles.previousLevel}>{previousResult.level}</Text>
-              </View>
-
-              <View style={styles.previousScoreBadge}>
-                <Text style={styles.previousScore}>{previousResult.score}</Text>
-                <Text style={styles.previousScoreSmall}>/100</Text>
-              </View>
-            </View>
-
-            {previousResult.priorities.length > 0 ? (
-              <Text style={styles.previousText}>
-                Priorités : {previousResult.priorities.join(", ")}
-              </Text>
-            ) : (
-              <Text style={styles.previousText}>
-                Aucune priorité majeure détectée.
-              </Text>
-            )}
-          </View>
-        )}
-
-        <View style={styles.progressCard}>
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Progression</Text>
-            <Text style={styles.progressValue}>
-              {completedQuestions}/{totalQuestions}
+            <Text style={styles.subtitle}>
+              Évaluez rapidement vos symptômes et habitudes pour repérer les
+              zones à prioriser.
             </Text>
           </View>
 
-          <View style={styles.progressBarBackground}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: `${progressPercent}%`,
-                },
-              ]}
-            />
-          </View>
-        </View>
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroTextBlock}>
+                <Text style={styles.heroLabel}>Évaluation</Text>
+                <Text style={styles.heroTitle}>
+                  Repérer les signaux importants.
+                </Text>
+              </View>
 
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Questions</Text>
-            <Text style={styles.sectionSubtitle}>
-              Choisissez la réponse qui correspond le mieux à votre situation.
+              <View style={styles.progressCircle}>
+                <Text style={styles.progressNumber}>{completedQuestions}</Text>
+                <Text style={styles.progressLabel}>/{totalQuestions}</Text>
+              </View>
+            </View>
+
+            <Text style={styles.heroText}>
+              Ce questionnaire ne pose pas de diagnostic. Il sert à orienter vos
+              prochaines actions de prévention.
             </Text>
           </View>
-        </View>
 
-        {questions.map((question, index) => {
-          const selectedAnswer = answers[question.id];
-          const QuestionIcon = getQuestionIcon(question.id);
-
-          return (
-            <View key={question.id} style={styles.questionCard}>
-              <View style={styles.questionHeader}>
+          {previousResult && !showResult && (
+            <View style={styles.previousCard}>
+              <View style={styles.previousTopRow}>
                 <IconBadge
-                  size={48}
-                  backgroundColor={colors.backgroundSoft}
+                  size={layout.isMobile ? 43 : 48}
+                  backgroundColor={colors.turquoiseSoft}
                   borderColor={colors.border}
                 >
-                  <QuestionIcon size={23} color={colors.text} />
+                  <ProgressIcon
+                    size={layout.isMobile ? 20 : 23}
+                    color={colors.text}
+                  />
                 </IconBadge>
 
-                <View style={styles.questionTitleContainer}>
-                  <Text style={styles.questionCategory}>
-                    Question {index + 1} · {question.category}
+                <View style={styles.previousTextBlock}>
+                  <Text style={styles.previousLabel}>Dernier résultat</Text>
+                  <Text style={styles.previousLevel}>
+                    {previousResult.level}
                   </Text>
-                  <Text style={styles.questionTitle}>{question.title}</Text>
+                </View>
+
+                <View style={styles.previousScoreBadge}>
+                  <Text style={styles.previousScore}>
+                    {previousResult.score}
+                  </Text>
+                  <Text style={styles.previousScoreSmall}>/100</Text>
                 </View>
               </View>
 
-              <Text style={styles.questionText}>{question.text}</Text>
-
-              <View style={styles.optionsContainer}>
-                {answerOptions.map((option) => {
-                  const selected = selectedAnswer === option.value;
-
-                  return (
-                    <Pressable
-                      key={`${question.id}-${option.value}`}
-                      style={[
-                        styles.optionButton,
-                        selected ? styles.optionButtonSelected : null,
-                      ]}
-                      onPress={() => handleAnswer(question.id, option.value)}
-                    >
-                      <Text
-                        style={[
-                          styles.optionText,
-                          selected ? styles.optionTextSelected : null,
-                        ]}
-                      >
-                        {option.label}
-                      </Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
+              {previousResult.priorities.length > 0 ? (
+                <Text style={styles.previousText}>
+                  Priorités : {previousResult.priorities.join(", ")}
+                </Text>
+              ) : (
+                <Text style={styles.previousText}>
+                  Aucune priorité majeure détectée.
+                </Text>
+              )}
             </View>
-          );
-        })}
+          )}
 
-        {!allQuestionsCompleted && (
-          <View style={styles.infoBox}>
-            <Text style={styles.infoTitle}>À compléter</Text>
-            <Text style={styles.infoText}>
-              Répondez à toutes les questions pour calculer votre score.
-            </Text>
+          <View style={styles.progressCard}>
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressTitle}>Progression</Text>
+              <Text style={styles.progressValue}>
+                {completedQuestions}/{totalQuestions}
+              </Text>
+            </View>
+
+            <View style={styles.progressBarBackground}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: `${progressPercent}%`,
+                  },
+                ]}
+              />
+            </View>
           </View>
-        )}
 
-        <Pressable
-          style={[
-            styles.primaryButton,
-            !allQuestionsCompleted ? styles.disabledButton : null,
-          ]}
-          onPress={handleSubmit}
-          disabled={!allQuestionsCompleted}
-        >
-          <Text style={styles.primaryButtonText}>Calculer mon résultat</Text>
-          <Text style={styles.primaryButtonArrow}>→</Text>
-        </Pressable>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Questions</Text>
+              <Text style={styles.sectionSubtitle}>
+                Choisissez la réponse qui correspond le mieux à votre situation.
+              </Text>
+            </View>
+          </View>
 
-        {showResult && (
-          <View style={styles.resultCard}>
-            <Text style={styles.resultLabel}>Résultat</Text>
+          {questions.map((question, index) => {
+            const selectedAnswer = answers[question.id];
+            const QuestionIcon = getQuestionIcon(question.id);
 
-            <Text style={styles.resultScore}>{score}</Text>
-            <Text style={styles.resultScoreSmall}>/100</Text>
+            return (
+              <View key={question.id} style={styles.questionCard}>
+                <View style={styles.questionHeader}>
+                  <IconBadge
+                    size={layout.isMobile ? 43 : 48}
+                    backgroundColor={colors.backgroundSoft}
+                    borderColor={colors.border}
+                  >
+                    <QuestionIcon
+                      size={layout.isMobile ? 20 : 23}
+                      color={colors.text}
+                    />
+                  </IconBadge>
 
-            <Text style={styles.resultLevel}>{level}</Text>
+                  <View style={styles.questionTitleContainer}>
+                    <Text style={styles.questionCategory}>
+                      Question {index + 1} · {question.category}
+                    </Text>
+                    <Text style={styles.questionTitle}>{question.title}</Text>
+                  </View>
+                </View>
 
-            <Text style={styles.resultText}>{getRiskMessage(score)}</Text>
+                <Text style={styles.questionText}>{question.text}</Text>
 
-            {priorities.length > 0 ? (
-              <>
-                <Text style={styles.resultSectionTitle}>
-                  Priorités détectées
-                </Text>
+                <View style={styles.optionsContainer}>
+                  {answerOptions.map((option) => {
+                    const selected = selectedAnswer === option.value;
 
-                {priorities.map((priority, index) => {
-                  const PriorityIcon = getPriorityIcon(priority);
-
-                  return (
-                    <View key={priority} style={styles.priorityRow}>
-                      <IconBadge
-                        size={40}
-                        backgroundColor={colors.backgroundSoft}
-                        borderColor={colors.border}
+                    return (
+                      <PressableScale
+                        key={`${question.id}-${option.value}`}
+                        style={[
+                          styles.optionButton,
+                          selected ? styles.optionButtonSelected : null,
+                        ]}
+                        onPress={() => handleAnswer(question.id, option.value)}
                       >
-                        <PriorityIcon size={19} color={colors.text} />
-                      </IconBadge>
-
-                      <View style={styles.priorityNumber}>
-                        <Text style={styles.priorityNumberText}>
-                          {index + 1}
+                        <Text
+                          style={[
+                            styles.optionText,
+                            selected ? styles.optionTextSelected : null,
+                          ]}
+                        >
+                          {option.label}
                         </Text>
-                      </View>
+                      </PressableScale>
+                    );
+                  })}
+                </View>
+              </View>
+            );
+          })}
 
-                      <Text style={styles.priorityText}>{priority}</Text>
-                    </View>
-                  );
-                })}
-              </>
-            ) : (
-              <Text style={styles.resultText}>
-                Aucune priorité majeure détectée pour le moment.
+          {!allQuestionsCompleted && (
+            <View style={styles.infoBox}>
+              <Text style={styles.infoTitle}>À compléter</Text>
+              <Text style={styles.infoText}>
+                Répondez à toutes les questions pour calculer votre score.
               </Text>
-            )}
+            </View>
+          )}
 
-            {savedMessage.length > 0 && (
-              <Text style={styles.savedMessage}>{savedMessage}</Text>
-            )}
+          <PressableScale
+            style={[
+              styles.primaryButton,
+              !allQuestionsCompleted ? styles.disabledButton : null,
+            ]}
+            onPress={handleSubmit}
+            disabled={!allQuestionsCompleted}
+          >
+            <Text style={styles.primaryButtonText}>Calculer mon résultat</Text>
+            <Text style={styles.primaryButtonArrow}>→</Text>
+          </PressableScale>
 
-            <Link href="/personal-plan" asChild>
-              <Pressable style={styles.primaryButtonCompact}>
-                <Text style={styles.primaryButtonText}>
-                  Voir mon plan personnalisé
+          {showResult && (
+            <View style={styles.resultCard}>
+              <Text style={styles.resultLabel}>Résultat</Text>
+
+              <Text style={styles.resultScore}>{score}</Text>
+              <Text style={styles.resultScoreSmall}>/100</Text>
+
+              <Text style={styles.resultLevel}>{level}</Text>
+
+              <Text style={styles.resultText}>{getRiskMessage(score)}</Text>
+
+              {priorities.length > 0 ? (
+                <>
+                  <Text style={styles.resultSectionTitle}>
+                    Priorités détectées
+                  </Text>
+
+                  {priorities.map((priority, index) => {
+                    const PriorityIcon = getPriorityIcon(priority);
+
+                    return (
+                      <View key={priority} style={styles.priorityRow}>
+                        <IconBadge
+                          size={layout.isMobile ? 38 : 40}
+                          backgroundColor={colors.backgroundSoft}
+                          borderColor={colors.border}
+                        >
+                          <PriorityIcon
+                            size={layout.isMobile ? 18 : 19}
+                            color={colors.text}
+                          />
+                        </IconBadge>
+
+                        <View style={styles.priorityNumber}>
+                          <Text style={styles.priorityNumberText}>
+                            {index + 1}
+                          </Text>
+                        </View>
+
+                        <Text style={styles.priorityText}>{priority}</Text>
+                      </View>
+                    );
+                  })}
+                </>
+              ) : (
+                <Text style={styles.resultText}>
+                  Aucune priorité majeure détectée pour le moment.
                 </Text>
-                <Text style={styles.primaryButtonArrow}>→</Text>
-              </Pressable>
-            </Link>
-          </View>
-        )}
+              )}
 
-        <Pressable
-          style={styles.secondaryButton}
-          onPress={handleResetQuestionnaire}
-        >
-          <Text style={styles.secondaryButtonText}>
-            Recommencer le questionnaire
-          </Text>
-        </Pressable>
+              {savedMessage.length > 0 && (
+                <Text style={styles.savedMessage}>{savedMessage}</Text>
+              )}
 
-        <View style={styles.warningBox}>
-          <Text style={styles.warningTitle}>À retenir</Text>
-          <Text style={styles.warningText}>
-            Ce questionnaire est un outil éducatif. Il ne remplace pas une
-            consultation médicale ou une évaluation ergonomique personnalisée.
-          </Text>
-        </View>
+              <Link href="/personal-plan" asChild>
+                <PressableScale style={styles.primaryButtonCompact}>
+                  <Text style={styles.primaryButtonText}>
+                    Voir mon plan personnalisé
+                  </Text>
+                  <Text style={styles.primaryButtonArrow}>→</Text>
+                </PressableScale>
+              </Link>
+            </View>
+          )}
 
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Étapes suivantes</Text>
-            <Text style={styles.sectionSubtitle}>
-              Continuez avec votre poste ou votre tableau de bord.
+          <PressableScale
+            style={styles.secondaryButton}
+            onPress={handleResetQuestionnaire}
+          >
+            <Text style={styles.secondaryButtonText}>
+              Recommencer le questionnaire
+            </Text>
+          </PressableScale>
+
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>À retenir</Text>
+            <Text style={styles.warningText}>
+              Ce questionnaire est un outil éducatif. Il ne remplace pas une
+              consultation médicale ou une évaluation ergonomique personnalisée.
             </Text>
           </View>
 
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickActionsRow}
-        >
-          <Link href="/workstation-audit" asChild>
-            <Pressable style={styles.quickCard}>
-              <IconBadge
-                size={44}
-                backgroundColor={colors.backgroundSoft}
-                borderColor={colors.border}
-              >
-                <PostureIcon size={21} color={colors.text} />
-              </IconBadge>
-
-              <Text style={styles.quickLabel}>Poste</Text>
-              <Text style={styles.quickTitle}>Audit du poste</Text>
-              <Text style={styles.quickText}>
-                Analysez votre environnement de travail.
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Étapes suivantes</Text>
+              <Text style={styles.sectionSubtitle}>
+                Continuez avec votre poste ou votre tableau de bord.
               </Text>
+            </View>
 
-              <View style={styles.quickArrowCircle}>
-                <Text style={styles.quickArrowText}>→</Text>
-              </View>
-            </Pressable>
-          </Link>
+            <Text style={styles.sectionAction}>Défilez →</Text>
+          </View>
 
-          <Link href="/dashboard" asChild>
-            <Pressable style={styles.quickCard}>
-              <IconBadge
-                size={44}
-                backgroundColor={colors.backgroundSoft}
-                borderColor={colors.border}
-              >
-                <PlanIcon size={21} color={colors.text} />
-              </IconBadge>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsRow}
+          >
+            <Link href="/workstation-audit" asChild>
+              <PressableScale style={styles.quickCard}>
+                <IconBadge
+                  size={layout.isMobile ? 40 : 44}
+                  backgroundColor={colors.backgroundSoft}
+                  borderColor={colors.border}
+                >
+                  <PostureIcon
+                    size={layout.isMobile ? 19 : 21}
+                    color={colors.text}
+                  />
+                </IconBadge>
 
-              <Text style={styles.quickLabel}>Résumé</Text>
-              <Text style={styles.quickTitle}>Dashboard</Text>
-              <Text style={styles.quickText}>
-                Consultez vos scores et votre progression.
-              </Text>
+                <Text style={styles.quickLabel}>Poste</Text>
+                <Text style={styles.quickTitle}>Audit du poste</Text>
+                <Text style={styles.quickText}>
+                  Analysez votre environnement de travail.
+                </Text>
 
-              <View style={styles.quickArrowCircle}>
-                <Text style={styles.quickArrowText}>→</Text>
-              </View>
-            </Pressable>
-          </Link>
+                <View style={styles.quickArrowCircle}>
+                  <Text style={styles.quickArrowText}>→</Text>
+                </View>
+              </PressableScale>
+            </Link>
+
+            <Link href="/dashboard" asChild>
+              <PressableScale style={styles.quickCard}>
+                <IconBadge
+                  size={layout.isMobile ? 40 : 44}
+                  backgroundColor={colors.backgroundSoft}
+                  borderColor={colors.border}
+                >
+                  <PlanIcon
+                    size={layout.isMobile ? 19 : 21}
+                    color={colors.text}
+                  />
+                </IconBadge>
+
+                <Text style={styles.quickLabel}>Résumé</Text>
+                <Text style={styles.quickTitle}>Dashboard</Text>
+                <Text style={styles.quickText}>
+                  Consultez vos scores et votre progression.
+                </Text>
+
+                <View style={styles.quickArrowCircle}>
+                  <Text style={styles.quickArrowText}>→</Text>
+                </View>
+              </PressableScale>
+            </Link>
+          </ScrollView>
+
+          <BottomNav />
         </ScrollView>
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: 38,
-      lineHeight: 45,
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: 10,
+      marginBottom: isMobile ? 8 : 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 245,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 220 : 245,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
     heroTextBlock: {
       flex: 1,
     },
     heroLabel: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -1374,27 +1407,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 34,
-      lineHeight: 41,
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
       color: colors.primary,
       letterSpacing: -0.7,
-      maxWidth: 360,
+      maxWidth: isMobile ? 235 : 360,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 460,
       zIndex: 2,
-      marginTop: 22,
+      marginTop: isMobile ? 18 : 22,
     },
     progressCircle: {
-      width: 74,
-      height: 74,
-      borderRadius: 37,
+      width: isMobile ? 64 : 74,
+      height: isMobile ? 64 : 74,
+      borderRadius: isMobile ? 32 : 37,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -1403,8 +1436,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     progressNumber: {
       fontFamily: "Georgia",
-      fontSize: 26,
-      lineHeight: 30,
+      fontSize: isMobile ? 24 : 26,
+      lineHeight: isMobile ? 28 : 30,
       color: colors.black,
     },
     progressLabel: {
@@ -1413,18 +1446,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.black,
     },
     previousCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 28,
-      padding: 20,
-      marginBottom: 18,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 16 : 20,
+      marginBottom: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
     },
     previousTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 14,
+      gap: isMobile ? 12 : 14,
       marginBottom: 14,
     },
     previousTextBlock: {
@@ -1440,13 +1473,13 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     previousLevel: {
       fontFamily: "Georgia",
-      fontSize: 22,
-      lineHeight: 28,
+      fontSize: isMobile ? 20 : 22,
+      lineHeight: isMobile ? 26 : 28,
       color: colors.primary,
     },
     previousScoreBadge: {
-      minWidth: 62,
-      height: 48,
+      minWidth: isMobile ? 56 : 62,
+      height: isMobile ? 44 : 48,
       borderRadius: 24,
       backgroundColor: colors.primary,
       borderWidth: 1,
@@ -1458,7 +1491,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     previousScore: {
       fontFamily: "Georgia",
-      fontSize: 21,
+      fontSize: isMobile ? 19 : 21,
       color: colors.black,
     },
     previousScoreSmall: {
@@ -1468,16 +1501,16 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginTop: 5,
     },
     previousText: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     progressCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 24,
-      padding: 16,
-      marginBottom: 26,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 15 : 16,
+      marginBottom: isMobile ? 24 : 26,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1487,19 +1520,19 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 10,
     },
     progressTitle: {
-      fontSize: 14,
+      fontSize: isMobile ? 12 : 14,
       fontWeight: "900",
       color: colors.textSoft,
       textTransform: "uppercase",
       letterSpacing: 0.6,
     },
     progressValue: {
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
       color: colors.primary,
     },
     progressBarBackground: {
-      height: 12,
+      height: isMobile ? 11 : 12,
       backgroundColor: colors.cardWarm,
       borderRadius: 20,
       overflow: "hidden",
@@ -1512,24 +1545,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderRadius: 20,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
     },
+    sectionHeaderTextBlock: {
+      flex: 1,
+    },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     sectionAction: {
@@ -1539,19 +1575,23 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 4,
     },
     questionCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 20,
-      marginBottom: 14,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 12 : 14,
       borderWidth: 1,
       borderColor: colors.border,
+      boxShadow:
+        mode === "dark"
+          ? "0px 18px 36px rgba(0,0,0,0.12)"
+          : "0px 18px 36px rgba(0,0,0,0.08)",
     },
     questionHeader: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 14,
-      gap: 14,
+      marginBottom: isMobile ? 13 : 14,
+      gap: isMobile ? 12 : 14,
     },
     questionTitleContainer: {
       flex: 1,
@@ -1566,27 +1606,28 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     questionTitle: {
       fontFamily: "Georgia",
-      fontSize: 23,
-      lineHeight: 29,
+      fontSize: isMobile ? 21 : 23,
+      lineHeight: isMobile ? 26 : 29,
       color: colors.primary,
     },
     questionText: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 22,
       color: colors.textSoft,
-      marginBottom: 16,
+      marginBottom: isMobile ? 14 : 16,
     },
     optionsContainer: {
       gap: 8,
     },
     optionButton: {
-      paddingVertical: 13,
+      paddingVertical: isMobile ? 12 : 13,
       paddingHorizontal: 14,
       borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.cardWarm,
       alignItems: "center",
+      justifyContent: "center",
     },
     optionButtonSelected: {
       backgroundColor: colors.primary,
@@ -1594,25 +1635,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     optionText: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
+      textAlign: "center",
     },
     optionTextSelected: {
       color: colors.black,
     },
     infoBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 14,
     },
     infoTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.primary,
       marginBottom: 5,
     },
@@ -1622,9 +1664,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textSoft,
     },
     primaryButton: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.primary,
-      paddingVertical: 15,
+      paddingVertical: isMobile ? 14 : 15,
       paddingHorizontal: 18,
       borderRadius: 999,
       alignItems: "center",
@@ -1637,7 +1679,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     primaryButtonCompact: {
       backgroundColor: colors.primary,
-      paddingVertical: 15,
+      paddingVertical: isMobile ? 14 : 15,
       paddingHorizontal: 18,
       borderRadius: 999,
       alignItems: "center",
@@ -1647,11 +1689,13 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       flexDirection: "row",
       gap: 10,
       marginTop: 4,
+      alignSelf: "stretch",
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,
@@ -1663,12 +1707,12 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       opacity: 0.45,
     },
     secondaryButton: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
       gap: 8,
-      paddingVertical: 13,
+      paddingVertical: isMobile ? 12 : 13,
       paddingHorizontal: 16,
       borderRadius: 999,
       borderWidth: 1,
@@ -1678,23 +1722,28 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     secondaryButtonText: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
+      textAlign: "center",
     },
     resultCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 34,
-      padding: 24,
-      marginBottom: 18,
+      borderRadius: isMobile ? 28 : 34,
+      padding: isMobile ? 20 : 24,
+      marginBottom: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
       overflow: "hidden",
       position: "relative",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     resultLabel: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -1704,8 +1753,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     resultScore: {
       fontFamily: "Georgia",
-      fontSize: 62,
-      lineHeight: 68,
+      fontSize: isMobile ? 54 : 62,
+      lineHeight: isMobile ? 60 : 68,
       color: colors.primary,
       zIndex: 2,
     },
@@ -1718,16 +1767,16 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     resultLevel: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 34,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 34,
       color: colors.primary,
       marginBottom: 12,
       textAlign: "center",
       zIndex: 2,
     },
     resultText: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 22,
       color: colors.textSoft,
       textAlign: "center",
       marginBottom: 18,
@@ -1736,8 +1785,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     resultSectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 24,
-      lineHeight: 30,
+      fontSize: isMobile ? 21 : 24,
+      lineHeight: isMobile ? 26 : 30,
       color: colors.primary,
       marginBottom: 14,
       alignSelf: "stretch",
@@ -1747,8 +1796,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       flexDirection: "row",
       alignItems: "center",
       backgroundColor: colors.cardWarm,
-      borderRadius: 20,
-      padding: 12,
+      borderRadius: isMobile ? 18 : 20,
+      padding: isMobile ? 11 : 12,
       marginBottom: 10,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1757,8 +1806,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       zIndex: 2,
     },
     priorityNumber: {
-      width: 31,
-      height: 31,
+      width: isMobile ? 29 : 31,
+      height: isMobile ? 29 : 31,
       borderRadius: 16,
       backgroundColor: colors.primary,
       alignItems: "center",
@@ -1773,8 +1822,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     priorityText: {
       flex: 1,
-      fontSize: 15,
-      lineHeight: 20,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 19 : 20,
       fontWeight: "900",
       color: colors.text,
     },
@@ -1787,18 +1836,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       zIndex: 2,
     },
     warningBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      marginBottom: 26,
+      marginBottom: isMobile ? 24 : 26,
     },
     warningTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1808,17 +1857,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.warningText,
     },
     quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 175,
-      minHeight: 205,
+      width: isSmallMobile ? 160 : isMobile ? 170 : 175,
+      minHeight: isMobile ? 190 : 205,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -1829,26 +1878,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: 19,
-      lineHeight: 24,
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,

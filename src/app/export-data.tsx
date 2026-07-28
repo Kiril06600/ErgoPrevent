@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -15,6 +14,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -514,6 +515,7 @@ function LockIcon({
           borderColor: color,
         }}
       />
+
       <View
         style={{
           position: "absolute",
@@ -550,6 +552,7 @@ function CsvIcon({
           borderColor: color,
         }}
       />
+
       {[0.32, 0.48, 0.64].map((top) => (
         <View
           key={top}
@@ -568,10 +571,7 @@ function CsvIcon({
   );
 }
 
-function JsonIcon({
-  size = 22,
-  color = "#163028",
-}: ExportIconProps) {
+function JsonIcon({ size = 22, color = "#163028" }: ExportIconProps) {
   return (
     <View style={{ width: size, height: size, position: "relative" }}>
       <Text
@@ -610,6 +610,7 @@ function PdfIcon({
           borderColor: color,
         }}
       />
+
       <View
         style={{
           position: "absolute",
@@ -623,6 +624,7 @@ function PdfIcon({
           transform: [{ rotate: "45deg" }],
         }}
       />
+
       <View
         style={{
           position: "absolute",
@@ -656,6 +658,7 @@ function DownloadIcon({
           borderRadius: 999,
         }}
       />
+
       <View
         style={{
           position: "absolute",
@@ -668,6 +671,7 @@ function DownloadIcon({
           transform: [{ rotate: "38deg" }],
         }}
       />
+
       <View
         style={{
           position: "absolute",
@@ -680,6 +684,7 @@ function DownloadIcon({
           transform: [{ rotate: "-38deg" }],
         }}
       />
+
       <View
         style={{
           position: "absolute",
@@ -703,7 +708,8 @@ export default function ExportDataScreen() {
   const [message, setMessage] = useState("");
 
   const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshData() {
@@ -823,400 +829,439 @@ export default function ExportDataScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Données locales</Text>
-          </View>
-
-          <Text style={styles.pageTitle}>Exporter</Text>
-
-          <Text style={styles.subtitle}>
-            Téléchargez vos données en CSV, en JSON ou générez un rapport
-            imprimable en PDF.
-          </Text>
-        </View>
-
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.heroLabel}>Confidentialité</Text>
-              <Text style={styles.heroTitle}>Vos données restent locales.</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Données locales</Text>
             </View>
 
-            <IconBadge
-              size={58}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <LockIcon size={28} color={colors.text} />
-            </IconBadge>
-          </View>
+            <Text style={styles.pageTitle}>Exporter</Text>
 
-          <Text style={styles.heroText}>
-            Les exports sont générés directement dans votre navigateur. Les
-            données ne sont pas envoyées vers un serveur externe.
-          </Text>
-        </View>
-
-        <View style={styles.statsPanel}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{checkins.length}</Text>
-            <Text style={styles.statLabel}>check-ins</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{averagePain}</Text>
-            <Text style={styles.statLabel}>douleur</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{appStats.points}</Text>
-            <Text style={styles.statLabel}>points</Text>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <DownloadIcon size={22} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>Formats disponibles</Text>
-              <Text style={styles.sectionSubtitle}>
-                Choisissez le type de fichier à générer.
-              </Text>
-            </View>
-          </View>
-
-          <Pressable
-            style={styles.exportButtonPrimary}
-            onPress={handleDownloadCheckinsCsv}
-          >
-            <IconBadge
-              size={38}
-              backgroundColor={colors.primaryLight}
-              borderColor={colors.border}
-            >
-              <CsvIcon size={18} color={colors.black} />
-            </IconBadge>
-
-            <View style={styles.exportButtonTextBlock}>
-              <Text style={styles.exportButtonTitlePrimary}>
-                Exporter les check-ins
-              </Text>
-              <Text style={styles.exportButtonSubtitlePrimary}>CSV</Text>
-            </View>
-
-            <Text style={styles.exportArrowPrimary}>→</Text>
-          </Pressable>
-
-          <Pressable
-            style={styles.exportButton}
-            onPress={handleDownloadSummaryCsv}
-          >
-            <IconBadge
-              size={38}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <CsvIcon size={18} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.exportButtonTextBlock}>
-              <Text style={styles.exportButtonTitle}>Résumé global</Text>
-              <Text style={styles.exportButtonSubtitle}>CSV</Text>
-            </View>
-
-            <Text style={styles.exportArrow}>→</Text>
-          </Pressable>
-
-          <Pressable style={styles.exportButton} onPress={handleDownloadJson}>
-            <IconBadge
-              size={38}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <JsonIcon size={18} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.exportButtonTextBlock}>
-              <Text style={styles.exportButtonTitle}>Données complètes</Text>
-              <Text style={styles.exportButtonSubtitle}>JSON</Text>
-            </View>
-
-            <Text style={styles.exportArrow}>→</Text>
-          </Pressable>
-
-          <Pressable style={styles.exportButton} onPress={handlePrintPdfReport}>
-            <IconBadge
-              size={38}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <PdfIcon size={18} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.exportButtonTextBlock}>
-              <Text style={styles.exportButtonTitle}>Rapport imprimable</Text>
-              <Text style={styles.exportButtonSubtitle}>PDF</Text>
-            </View>
-
-            <Text style={styles.exportArrow}>→</Text>
-          </Pressable>
-
-          {message.length > 0 && (
-            <View style={styles.messageBox}>
-              <Text style={styles.savedMessage}>{message}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.turquoiseSoft}
-              borderColor={colors.border}
-            >
-              <ProgressIcon size={22} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>Résumé exportable</Text>
-              <Text style={styles.sectionSubtitle}>
-                Aperçu des principales données.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryMiniCard}>
-              <Text style={styles.summaryMiniNumber}>{checkins.length}</Text>
-              <Text style={styles.summaryMiniLabel}>Check-ins</Text>
-            </View>
-
-            <View style={styles.summaryMiniCard}>
-              <Text style={styles.summaryMiniNumber}>{averagePain}</Text>
-              <Text style={styles.summaryMiniLabel}>Douleur</Text>
-            </View>
-
-            <View style={styles.summaryMiniCard}>
-              <Text style={styles.summaryMiniNumber}>{appStats.points}</Text>
-              <Text style={styles.summaryMiniLabel}>Points</Text>
-            </View>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Prénom</Text>
-            <Text style={styles.summaryValue}>
-              {appStats.profile?.firstName || "-"}
+            <Text style={styles.subtitle}>
+              Téléchargez vos données en CSV, en JSON ou générez un rapport
+              imprimable en PDF.
             </Text>
           </View>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Score TMS</Text>
-            <Text style={styles.summaryValue}>
-              {appStats.questionnaireResult
-                ? `${appStats.questionnaireResult.score}/100`
-                : "-"}
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroTextBlock}>
+                <Text style={styles.heroLabel}>Confidentialité</Text>
+                <Text style={styles.heroTitle}>Vos données restent locales.</Text>
+              </View>
+
+              <IconBadge
+                size={layout.isMobile ? 50 : 58}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <LockIcon
+                  size={layout.isMobile ? 24 : 28}
+                  color={colors.text}
+                />
+              </IconBadge>
+            </View>
+
+            <Text style={styles.heroText}>
+              Les exports sont générés directement dans votre navigateur. Les
+              données ne sont pas envoyées vers un serveur externe.
             </Text>
           </View>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Score poste</Text>
-            <Text style={styles.summaryValue}>
-              {appStats.workstationAuditResult
-                ? `${appStats.workstationAuditResult.score}/100`
-                : "-"}
-            </Text>
-          </View>
+          <View style={styles.statsPanel}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{checkins.length}</Text>
+              <Text style={styles.statLabel}>check-ins</Text>
+            </View>
 
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Zone fréquente</Text>
-            <Text style={styles.summaryValueSmall}>{mostFrequentZone}</Text>
-          </View>
-        </View>
+            <View style={styles.statDivider} />
 
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <JsonIcon size={22} color={colors.text} />
-            </IconBadge>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{averagePain}</Text>
+              <Text style={styles.statLabel}>douleur</Text>
+            </View>
 
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>Aperçu complet</Text>
-              <Text style={styles.sectionSubtitle}>
-                Vérifiez les données avant export.
-              </Text>
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{appStats.points}</Text>
+              <Text style={styles.statLabel}>points</Text>
             </View>
           </View>
 
-          <Text style={styles.dataText}>
-            Cet aperçu montre les données locales qui peuvent être exportées.
-          </Text>
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <DownloadIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={colors.text}
+                />
+              </IconBadge>
 
-          <View style={styles.dataBox}>
-            <ScrollView
-              style={styles.dataScroll}
-              nestedScrollEnabled
-              showsVerticalScrollIndicator
-            >
-              <ScrollView horizontal showsHorizontalScrollIndicator>
-                <Text selectable style={styles.dataCode}>
-                  {JSON.stringify(fullExportData, null, 2)}
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>Formats disponibles</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Choisissez le type de fichier à générer.
                 </Text>
-              </ScrollView>
-            </ScrollView>
+              </View>
+            </View>
+
+            <PressableScale
+              style={styles.exportButtonPrimary}
+              onPress={handleDownloadCheckinsCsv}
+            >
+              <IconBadge
+                size={layout.isMobile ? 36 : 38}
+                backgroundColor={colors.primaryLight}
+                borderColor={colors.border}
+              >
+                <CsvIcon
+                  size={layout.isMobile ? 17 : 18}
+                  color={colors.black}
+                />
+              </IconBadge>
+
+              <View style={styles.exportButtonTextBlock}>
+                <Text style={styles.exportButtonTitlePrimary}>
+                  Exporter les check-ins
+                </Text>
+                <Text style={styles.exportButtonSubtitlePrimary}>CSV</Text>
+              </View>
+
+              <Text style={styles.exportArrowPrimary}>→</Text>
+            </PressableScale>
+
+            <PressableScale
+              style={styles.exportButton}
+              onPress={handleDownloadSummaryCsv}
+            >
+              <IconBadge
+                size={layout.isMobile ? 36 : 38}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <CsvIcon
+                  size={layout.isMobile ? 17 : 18}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <View style={styles.exportButtonTextBlock}>
+                <Text style={styles.exportButtonTitle}>Résumé global</Text>
+                <Text style={styles.exportButtonSubtitle}>CSV</Text>
+              </View>
+
+              <Text style={styles.exportArrow}>→</Text>
+            </PressableScale>
+
+            <PressableScale style={styles.exportButton} onPress={handleDownloadJson}>
+              <IconBadge
+                size={layout.isMobile ? 36 : 38}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <JsonIcon
+                  size={layout.isMobile ? 17 : 18}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <View style={styles.exportButtonTextBlock}>
+                <Text style={styles.exportButtonTitle}>Données complètes</Text>
+                <Text style={styles.exportButtonSubtitle}>JSON</Text>
+              </View>
+
+              <Text style={styles.exportArrow}>→</Text>
+            </PressableScale>
+
+            <PressableScale style={styles.exportButton} onPress={handlePrintPdfReport}>
+              <IconBadge
+                size={layout.isMobile ? 36 : 38}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <PdfIcon
+                  size={layout.isMobile ? 17 : 18}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <View style={styles.exportButtonTextBlock}>
+                <Text style={styles.exportButtonTitle}>Rapport imprimable</Text>
+                <Text style={styles.exportButtonSubtitle}>PDF</Text>
+              </View>
+
+              <Text style={styles.exportArrow}>→</Text>
+            </PressableScale>
+
+            {message.length > 0 && (
+              <View style={styles.messageBox}>
+                <Text style={styles.savedMessage}>{message}</Text>
+              </View>
+            )}
           </View>
-        </View>
 
-        <View style={styles.warningBox}>
-          <Text style={styles.warningTitle}>À retenir</Text>
-          <Text style={styles.warningText}>
-            Après export, le fichier téléchargé est sous votre responsabilité.
-            Évitez de partager ces fichiers s’ils contiennent des informations
-            personnelles ou de santé.
-          </Text>
-        </View>
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.turquoiseSoft}
+                borderColor={colors.border}
+              >
+                <ProgressIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={colors.text}
+                />
+              </IconBadge>
 
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitleLarge}>Actions rapides</Text>
-            <Text style={styles.sectionSubtitle}>
-              Retournez au profil ou au tableau de bord.
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>Résumé exportable</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Aperçu des principales données.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.summaryGrid}>
+              <View style={styles.summaryMiniCard}>
+                <Text style={styles.summaryMiniNumber}>{checkins.length}</Text>
+                <Text style={styles.summaryMiniLabel}>Check-ins</Text>
+              </View>
+
+              <View style={styles.summaryMiniCard}>
+                <Text style={styles.summaryMiniNumber}>{averagePain}</Text>
+                <Text style={styles.summaryMiniLabel}>Douleur</Text>
+              </View>
+
+              <View style={styles.summaryMiniCard}>
+                <Text style={styles.summaryMiniNumber}>{appStats.points}</Text>
+                <Text style={styles.summaryMiniLabel}>Points</Text>
+              </View>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Prénom</Text>
+              <Text style={styles.summaryValue}>
+                {appStats.profile?.firstName || "-"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Score TMS</Text>
+              <Text style={styles.summaryValue}>
+                {appStats.questionnaireResult
+                  ? `${appStats.questionnaireResult.score}/100`
+                  : "-"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Score poste</Text>
+              <Text style={styles.summaryValue}>
+                {appStats.workstationAuditResult
+                  ? `${appStats.workstationAuditResult.score}/100`
+                  : "-"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Zone fréquente</Text>
+              <Text style={styles.summaryValueSmall}>{mostFrequentZone}</Text>
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <JsonIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>Aperçu complet</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Vérifiez les données avant export.
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.dataText}>
+              Cet aperçu montre les données locales qui peuvent être exportées.
+            </Text>
+
+            <View style={styles.dataBox}>
+              <ScrollView
+                style={styles.dataScroll}
+                nestedScrollEnabled
+                showsVerticalScrollIndicator
+              >
+                <ScrollView horizontal showsHorizontalScrollIndicator>
+                  <Text selectable style={styles.dataCode}>
+                    {JSON.stringify(fullExportData, null, 2)}
+                  </Text>
+                </ScrollView>
+              </ScrollView>
+            </View>
+          </View>
+
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>À retenir</Text>
+            <Text style={styles.warningText}>
+              Après export, le fichier téléchargé est sous votre responsabilité.
+              Évitez de partager ces fichiers s’ils contiennent des informations
+              personnelles ou de santé.
             </Text>
           </View>
 
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitleLarge}>Actions rapides</Text>
+              <Text style={styles.sectionSubtitle}>
+                Retournez au profil ou au tableau de bord.
+              </Text>
+            </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickActionsRow}
-        >
-          {quickActions.map((item) => {
-            const QuickIcon = item.Icon;
+            <Text style={styles.sectionAction}>Défilez →</Text>
+          </View>
 
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.quickCard}>
-                  <IconBadge
-                    size={44}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <QuickIcon size={21} color={colors.text} />
-                  </IconBadge>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsRow}
+          >
+            {quickActions.map((item) => {
+              const QuickIcon = item.Icon;
 
-                  <Text style={styles.quickLabel}>{item.label}</Text>
-                  <Text style={styles.quickTitle}>{item.title}</Text>
-                  <Text style={styles.quickText}>{item.text}</Text>
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.quickCard}>
+                    <IconBadge
+                      size={layout.isMobile ? 40 : 44}
+                      backgroundColor={colors.backgroundSoft}
+                      borderColor={colors.border}
+                    >
+                      <QuickIcon
+                        size={layout.isMobile ? 19 : 21}
+                        color={colors.text}
+                      />
+                    </IconBadge>
 
-                  <View style={styles.quickArrowCircle}>
-                    <Text style={styles.quickArrowText}>→</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
+                    <Text style={styles.quickLabel}>{item.label}</Text>
+                    <Text style={styles.quickTitle}>{item.title}</Text>
+                    <Text style={styles.quickText}>{item.text}</Text>
+
+                    <View style={styles.quickArrowCircle}>
+                      <Text style={styles.quickArrowText}>→</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
+
+          <BottomNav />
         </ScrollView>
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: 38,
-      lineHeight: 45,
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: 10,
+      marginBottom: isMobile ? 8 : 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 245,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 220 : 245,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
     heroTextBlock: {
       flex: 1,
     },
     heroLabel: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -1225,29 +1270,29 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 34,
-      lineHeight: 41,
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
       color: colors.primary,
       letterSpacing: -0.7,
-      maxWidth: 360,
+      maxWidth: isMobile ? 235 : 360,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 500,
       zIndex: 2,
-      marginTop: 22,
+      marginTop: isMobile ? 18 : 22,
     },
     statsPanel: {
-      marginHorizontal: 24,
-      marginBottom: 18,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 16,
+      borderRadius: isMobile ? 22 : 26,
+      padding: isMobile ? 13 : 16,
       borderWidth: 1,
       borderColor: colors.border,
       flexDirection: "row",
@@ -1259,18 +1304,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     statDivider: {
       width: 1,
-      height: 38,
+      height: isMobile ? 34 : 38,
       backgroundColor: colors.border,
     },
     statNumber: {
-      fontSize: 23,
+      fontSize: isMobile ? 19 : 23,
       fontWeight: "900",
       color: colors.primary,
-      lineHeight: 27,
+      lineHeight: isMobile ? 23 : 27,
     },
     statLabel: {
       marginTop: 4,
-      fontSize: 10,
+      fontSize: isMobile ? 8 : 10,
       color: colors.textMuted,
       fontWeight: "900",
       textAlign: "center",
@@ -1278,71 +1323,75 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       letterSpacing: 0.4,
     },
     card: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 20,
-      marginBottom: 16,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 14 : 16,
       borderWidth: 1,
       borderColor: colors.border,
+      boxShadow:
+        mode === "dark"
+          ? "0px 18px 36px rgba(0,0,0,0.12)"
+          : "0px 18px 36px rgba(0,0,0,0.08)",
     },
     cardHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 14,
-      marginBottom: 16,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 14 : 16,
     },
     cardHeaderText: {
       flex: 1,
     },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 24,
-      lineHeight: 30,
+      fontSize: isMobile ? 21 : 24,
+      lineHeight: isMobile ? 26 : 30,
       color: colors.primary,
       letterSpacing: -0.3,
       marginBottom: 4,
     },
     sectionTitleLarge: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     exportButtonPrimary: {
       backgroundColor: colors.primary,
-      borderRadius: 24,
-      padding: 15,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 13 : 15,
       borderWidth: 1,
       borderColor: colors.primaryDark,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: isMobile ? 10 : 12,
       marginBottom: 10,
     },
     exportButton: {
       backgroundColor: colors.cardWarm,
-      borderRadius: 24,
-      padding: 15,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 13 : 15,
       borderWidth: 1,
       borderColor: colors.border,
       flexDirection: "row",
       alignItems: "center",
-      gap: 12,
+      gap: isMobile ? 10 : 12,
       marginBottom: 10,
     },
     exportButtonTextBlock: {
       flex: 1,
     },
     exportButtonTitlePrimary: {
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
       color: colors.black,
       marginBottom: 2,
@@ -1357,8 +1406,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     exportButtonTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.primary,
       marginBottom: 2,
     },
@@ -1396,43 +1445,43 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       textAlign: "center",
     },
     summaryCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 30,
-      padding: 20,
-      marginBottom: 16,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 14 : 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
     summaryHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 14,
-      marginBottom: 16,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 14 : 16,
     },
     summaryGrid: {
       flexDirection: "row",
-      gap: 10,
+      gap: isMobile ? 8 : 10,
       marginBottom: 14,
     },
     summaryMiniCard: {
       flex: 1,
       backgroundColor: colors.cardWarm,
-      borderRadius: 20,
-      padding: 13,
+      borderRadius: isMobile ? 18 : 20,
+      padding: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
     },
     summaryMiniNumber: {
-      fontSize: 24,
+      fontSize: isMobile ? 20 : 24,
       fontWeight: "900",
       color: colors.primary,
-      lineHeight: 28,
+      lineHeight: isMobile ? 24 : 28,
     },
     summaryMiniLabel: {
       marginTop: 5,
-      fontSize: 10,
+      fontSize: isMobile ? 8 : 10,
       color: colors.textMuted,
       fontWeight: "900",
       textAlign: "center",
@@ -1442,34 +1491,34 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     summaryRow: {
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      paddingVertical: 12,
+      paddingVertical: isMobile ? 11 : 12,
       flexDirection: "row",
       justifyContent: "space-between",
       gap: 14,
     },
     summaryLabel: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.textSoft,
       flex: 1,
     },
     summaryValue: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
       textAlign: "right",
       flex: 1,
     },
     summaryValueSmall: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
       textAlign: "right",
       flex: 1,
     },
     dataText: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 20 : 21,
       color: colors.textSoft,
       marginBottom: 14,
     },
@@ -1479,30 +1528,30 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       padding: 14,
       borderWidth: 1,
       borderColor: colors.border,
-      height: 320,
+      height: isMobile ? 260 : 320,
       overflow: "hidden",
     },
     dataScroll: {
-      maxHeight: 292,
+      maxHeight: isMobile ? 232 : 292,
     },
     dataCode: {
-      fontSize: 12,
-      lineHeight: 18,
+      fontSize: isMobile ? 11 : 12,
+      lineHeight: isMobile ? 17 : 18,
       color: colors.text,
     },
     warningBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      marginBottom: 26,
+      marginBottom: isMobile ? 24 : 26,
     },
     warningTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1512,12 +1561,15 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.warningText,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
+    },
+    sectionHeaderTextBlock: {
+      flex: 1,
     },
     sectionAction: {
       fontSize: 12,
@@ -1526,17 +1578,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 4,
     },
     quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 165,
-      minHeight: 200,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
+      minHeight: isMobile ? 185 : 200,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -1547,26 +1599,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: 19,
-      lineHeight: 24,
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,

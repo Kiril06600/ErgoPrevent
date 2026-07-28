@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -16,6 +15,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -756,7 +757,8 @@ export default function ExercisesScreen() {
     useState<ExerciseCategory>("Tous");
 
   const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshStats() {
@@ -805,299 +807,321 @@ export default function ExercisesScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Mobilité</Text>
-          </View>
-
-          <Text style={styles.pageTitle}>Exercices</Text>
-
-          <Text style={styles.subtitle}>
-            Des mouvements courts et simples pour intégrer plus de mobilité dans
-            votre journée.
-          </Text>
-        </View>
-
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.heroLabel}>Mouvement</Text>
-              <Text style={styles.heroTitle}>Bouger un peu, souvent.</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Mobilité</Text>
             </View>
 
-            <View style={styles.pointsCircle}>
-              <Text style={styles.pointsNumber}>{points}</Text>
-              <Text style={styles.pointsLabel}>points</Text>
-            </View>
-          </View>
+            <Text style={styles.pageTitle}>Exercices</Text>
 
-          <Text style={styles.heroText}>
-            Choisissez un exercice court selon la zone que vous souhaitez
-            mobiliser. L’objectif est la régularité, pas la performance.
-          </Text>
-        </View>
-
-        <View style={styles.statsPanel}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{completedExercises}</Text>
-            <Text style={styles.statLabel}>exercices</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{points}</Text>
-            <Text style={styles.statLabel}>points</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{filteredExercises.length}</Text>
-            <Text style={styles.statLabel}>proposés</Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Catégories</Text>
-            <Text style={styles.sectionSubtitle}>
-              Filtrez les exercices par zone.
+            <Text style={styles.subtitle}>
+              Des mouvements courts et simples pour intégrer plus de mobilité
+              dans votre journée.
             </Text>
           </View>
-        </View>
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.categoryRow}
-        >
-          {categories.map((category) => {
-            const selected = selectedCategory === category;
-
-            return (
-              <Pressable
-                key={category}
-                style={[
-                  styles.categoryButton,
-                  selected ? styles.categoryButtonSelected : null,
-                ]}
-                onPress={() => setSelectedCategory(category)}
-              >
-                <Text
-                  style={[
-                    styles.categoryButtonText,
-                    selected ? styles.categoryButtonTextSelected : null,
-                  ]}
-                >
-                  {category}
-                </Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Exercices proposés</Text>
-            <Text style={styles.sectionSubtitle}>
-              Suivez les étapes lentement et sans douleur.
-            </Text>
-          </View>
-        </View>
-
-        {filteredExercises.map((exercise) => {
-          const completed = completedExerciseIds.includes(exercise.id);
-          const ExerciseIcon = getExerciseIcon(exercise.id);
-
-          return (
-            <View key={exercise.id} style={styles.exerciseCard}>
-              <View style={styles.exerciseHeader}>
-                <IconBadge
-                  size={52}
-                  backgroundColor={colors.backgroundSoft}
-                  borderColor={colors.border}
-                >
-                  <ExerciseIcon size={25} color={colors.text} />
-                </IconBadge>
-
-                <View style={styles.exerciseHeaderText}>
-                  <Text style={styles.exerciseCategory}>
-                    {exercise.category} · {exercise.duration} · {exercise.level}
-                  </Text>
-                  <Text style={styles.exerciseTitle}>{exercise.title}</Text>
-                </View>
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroTextBlock}>
+                <Text style={styles.heroLabel}>Mouvement</Text>
+                <Text style={styles.heroTitle}>Bouger un peu, souvent.</Text>
               </View>
 
-              <Text style={styles.exerciseDescription}>
-                {exercise.description}
+              <View style={styles.pointsCircle}>
+                <Text style={styles.pointsNumber}>{points}</Text>
+                <Text style={styles.pointsLabel}>points</Text>
+              </View>
+            </View>
+
+            <Text style={styles.heroText}>
+              Choisissez un exercice court selon la zone que vous souhaitez
+              mobiliser. L’objectif est la régularité, pas la performance.
+            </Text>
+          </View>
+
+          <View style={styles.statsPanel}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{completedExercises}</Text>
+              <Text style={styles.statLabel}>exercices</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{points}</Text>
+              <Text style={styles.statLabel}>points</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{filteredExercises.length}</Text>
+              <Text style={styles.statLabel}>proposés</Text>
+            </View>
+          </View>
+
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Catégories</Text>
+              <Text style={styles.sectionSubtitle}>
+                Filtrez les exercices par zone.
               </Text>
-
-              <View style={styles.stepsBox}>
-                {exercise.steps.map((step, index) => (
-                  <View key={`${exercise.id}-${index}`} style={styles.stepRow}>
-                    <View style={styles.stepNumber}>
-                      <Text style={styles.stepNumberText}>{index + 1}</Text>
-                    </View>
-
-                    <Text style={styles.stepText}>{step}</Text>
-                  </View>
-                ))}
-              </View>
-
-              {!completed ? (
-                <Pressable
-                  style={styles.primaryButton}
-                  onPress={() => handleCompleteExercise(exercise.id)}
-                >
-                  <Text style={styles.primaryButtonText}>
-                    Marquer comme complété
-                  </Text>
-                  <Text style={styles.primaryButtonArrow}>→</Text>
-                </Pressable>
-              ) : (
-                <View style={styles.completedBox}>
-                  <Text style={styles.completedText}>Complété</Text>
-                </View>
-              )}
             </View>
-          );
-        })}
-
-        <View style={styles.tipBox}>
-          <Text style={styles.tipTitle}>Conseil</Text>
-          <Text style={styles.tipText}>
-            Les exercices doivent rester confortables. Ne forcez pas un mouvement
-            douloureux. En cas de douleur importante ou persistante, consultez un
-            professionnel.
-          </Text>
-        </View>
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Actions rapides</Text>
-            <Text style={styles.sectionSubtitle}>
-              Continuez avec une pause ou votre routine.
-            </Text>
           </View>
 
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.categoryRow}
+          >
+            {categories.map((category) => {
+              const selected = selectedCategory === category;
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickActionsRow}
-        >
-          {quickActions.map((item) => {
-            const QuickIcon = item.Icon;
+              return (
+                <PressableScale
+                  key={category}
+                  style={[
+                    styles.categoryButton,
+                    selected ? styles.categoryButtonSelected : null,
+                  ]}
+                  onPress={() => setSelectedCategory(category)}
+                >
+                  <Text
+                    style={[
+                      styles.categoryButtonText,
+                      selected ? styles.categoryButtonTextSelected : null,
+                    ]}
+                  >
+                    {category}
+                  </Text>
+                </PressableScale>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Exercices proposés</Text>
+              <Text style={styles.sectionSubtitle}>
+                Suivez les étapes lentement et sans douleur.
+              </Text>
+            </View>
+          </View>
+
+          {filteredExercises.map((exercise) => {
+            const completed = completedExerciseIds.includes(exercise.id);
+            const ExerciseIcon = getExerciseIcon(exercise.id);
 
             return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.quickCard}>
+              <View key={exercise.id} style={styles.exerciseCard}>
+                <View style={styles.exerciseHeader}>
                   <IconBadge
-                    size={44}
+                    size={layout.isMobile ? 46 : 52}
                     backgroundColor={colors.backgroundSoft}
                     borderColor={colors.border}
                   >
-                    <QuickIcon size={21} color={colors.text} />
+                    <ExerciseIcon
+                      size={layout.isMobile ? 22 : 25}
+                      color={colors.text}
+                    />
                   </IconBadge>
 
-                  <Text style={styles.quickLabel}>{item.label}</Text>
-                  <Text style={styles.quickTitle}>{item.title}</Text>
-                  <Text style={styles.quickText}>{item.text}</Text>
-
-                  <View style={styles.quickArrowCircle}>
-                    <Text style={styles.quickArrowText}>→</Text>
+                  <View style={styles.exerciseHeaderText}>
+                    <Text style={styles.exerciseCategory}>
+                      {exercise.category} · {exercise.duration} ·{" "}
+                      {exercise.level}
+                    </Text>
+                    <Text style={styles.exerciseTitle}>{exercise.title}</Text>
                   </View>
-                </Pressable>
-              </Link>
+                </View>
+
+                <Text style={styles.exerciseDescription}>
+                  {exercise.description}
+                </Text>
+
+                <View style={styles.stepsBox}>
+                  {exercise.steps.map((step, index) => (
+                    <View
+                      key={`${exercise.id}-${index}`}
+                      style={styles.stepRow}
+                    >
+                      <View style={styles.stepNumber}>
+                        <Text style={styles.stepNumberText}>{index + 1}</Text>
+                      </View>
+
+                      <Text style={styles.stepText}>{step}</Text>
+                    </View>
+                  ))}
+                </View>
+
+                {!completed ? (
+                  <PressableScale
+                    style={styles.primaryButton}
+                    onPress={() => handleCompleteExercise(exercise.id)}
+                  >
+                    <Text style={styles.primaryButtonText}>
+                      Marquer comme complété
+                    </Text>
+                    <Text style={styles.primaryButtonArrow}>→</Text>
+                  </PressableScale>
+                ) : (
+                  <View style={styles.completedBox}>
+                    <Text style={styles.completedText}>Complété</Text>
+                  </View>
+                )}
+              </View>
             );
           })}
-        </ScrollView>
 
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+          <View style={styles.tipBox}>
+            <Text style={styles.tipTitle}>Conseil</Text>
+            <Text style={styles.tipText}>
+              Les exercices doivent rester confortables. Ne forcez pas un
+              mouvement douloureux. En cas de douleur importante ou persistante,
+              consultez un professionnel.
+            </Text>
+          </View>
+
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Actions rapides</Text>
+              <Text style={styles.sectionSubtitle}>
+                Continuez avec une pause ou votre routine.
+              </Text>
+            </View>
+
+            <Text style={styles.sectionAction}>Défilez →</Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsRow}
+          >
+            {quickActions.map((item) => {
+              const QuickIcon = item.Icon;
+
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.quickCard}>
+                    <IconBadge
+                      size={layout.isMobile ? 40 : 44}
+                      backgroundColor={colors.backgroundSoft}
+                      borderColor={colors.border}
+                    >
+                      <QuickIcon
+                        size={layout.isMobile ? 19 : 21}
+                        color={colors.text}
+                      />
+                    </IconBadge>
+
+                    <Text style={styles.quickLabel}>{item.label}</Text>
+                    <Text style={styles.quickTitle}>{item.title}</Text>
+                    <Text style={styles.quickText}>{item.text}</Text>
+
+                    <View style={styles.quickArrowCircle}>
+                      <Text style={styles.quickArrowText}>→</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
+
+          <BottomNav />
+        </ScrollView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: 38,
-      lineHeight: 45,
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: 10,
+      marginBottom: isMobile ? 8 : 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 245,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 220 : 245,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
     heroTextBlock: {
       flex: 1,
     },
     heroLabel: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -1106,27 +1130,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 34,
-      lineHeight: 41,
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
       color: colors.primary,
       letterSpacing: -0.7,
-      maxWidth: 360,
+      maxWidth: isMobile ? 235 : 360,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 460,
       zIndex: 2,
-      marginTop: 22,
+      marginTop: isMobile ? 18 : 22,
     },
     pointsCircle: {
-      width: 74,
-      height: 74,
-      borderRadius: 37,
+      width: isMobile ? 64 : 74,
+      height: isMobile ? 64 : 74,
+      borderRadius: isMobile ? 32 : 37,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -1134,22 +1158,22 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     pointsNumber: {
-      fontSize: 23,
+      fontSize: isMobile ? 20 : 23,
       fontWeight: "900",
       color: colors.black,
-      lineHeight: 27,
+      lineHeight: isMobile ? 24 : 27,
     },
     pointsLabel: {
-      fontSize: 11,
+      fontSize: isMobile ? 10 : 11,
       fontWeight: "900",
       color: colors.black,
     },
     statsPanel: {
-      marginHorizontal: 24,
-      marginBottom: 26,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 24 : 26,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 16,
+      borderRadius: isMobile ? 22 : 26,
+      padding: isMobile ? 13 : 16,
       borderWidth: 1,
       borderColor: colors.border,
       flexDirection: "row",
@@ -1161,18 +1185,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     statDivider: {
       width: 1,
-      height: 38,
+      height: isMobile ? 34 : 38,
       backgroundColor: colors.border,
     },
     statNumber: {
-      fontSize: 23,
+      fontSize: isMobile ? 19 : 23,
       fontWeight: "900",
       color: colors.primary,
-      lineHeight: 27,
+      lineHeight: isMobile ? 23 : 27,
     },
     statLabel: {
       marginTop: 4,
-      fontSize: 10,
+      fontSize: isMobile ? 8 : 10,
       color: colors.textMuted,
       fontWeight: "900",
       textAlign: "center",
@@ -1180,24 +1204,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       letterSpacing: 0.4,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
     },
+    sectionHeaderTextBlock: {
+      flex: 1,
+    },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     sectionAction: {
@@ -1207,14 +1234,14 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 4,
     },
     categoryRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
-      gap: 10,
-      marginBottom: 26,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
+      gap: isMobile ? 8 : 10,
+      marginBottom: isMobile ? 22 : 26,
     },
     categoryButton: {
-      paddingVertical: 11,
-      paddingHorizontal: 16,
+      paddingVertical: isMobile ? 10 : 11,
+      paddingHorizontal: isMobile ? 14 : 16,
       borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1225,7 +1252,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     categoryButtonText: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
     },
@@ -1233,19 +1260,23 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.black,
     },
     exerciseCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 20,
-      marginBottom: 16,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 14 : 16,
       borderWidth: 1,
       borderColor: colors.border,
+      boxShadow:
+        mode === "dark"
+          ? "0px 18px 36px rgba(0,0,0,0.12)"
+          : "0px 18px 36px rgba(0,0,0,0.08)",
     },
     exerciseHeader: {
       flexDirection: "row",
       alignItems: "center",
-      marginBottom: 14,
-      gap: 14,
+      marginBottom: isMobile ? 13 : 14,
+      gap: isMobile ? 12 : 14,
     },
     exerciseHeaderText: {
       flex: 1,
@@ -1260,20 +1291,20 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     exerciseTitle: {
       fontFamily: "Georgia",
-      fontSize: 23,
-      lineHeight: 29,
+      fontSize: isMobile ? 21 : 23,
+      lineHeight: isMobile ? 26 : 29,
       color: colors.primary,
     },
     exerciseDescription: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 22,
       color: colors.textSoft,
-      marginBottom: 16,
+      marginBottom: isMobile ? 14 : 16,
     },
     stepsBox: {
       backgroundColor: colors.cardWarm,
-      borderRadius: 22,
-      padding: 14,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 13 : 14,
       marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1285,8 +1316,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       gap: 10,
     },
     stepNumber: {
-      width: 28,
-      height: 28,
+      width: isMobile ? 25 : 28,
+      height: isMobile ? 25 : 28,
       borderRadius: 14,
       backgroundColor: colors.primary,
       alignItems: "center",
@@ -1298,19 +1329,19 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     stepNumberText: {
       color: colors.black,
       fontWeight: "900",
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
     },
     stepText: {
       flex: 1,
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.text,
       fontWeight: "700",
     },
     primaryButton: {
       backgroundColor: colors.primary,
-      paddingVertical: 15,
-      paddingHorizontal: 18,
+      paddingVertical: isMobile ? 14 : 15,
+      paddingHorizontal: isMobile ? 16 : 18,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -1321,8 +1352,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,
@@ -1332,7 +1364,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     completedBox: {
       backgroundColor: colors.turquoiseSoft,
-      paddingVertical: 14,
+      paddingVertical: isMobile ? 13 : 14,
       borderRadius: 999,
       alignItems: "center",
       borderWidth: 1,
@@ -1340,22 +1372,22 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     completedText: {
       color: colors.text,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
     },
     tipBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      marginBottom: 26,
+      marginBottom: isMobile ? 24 : 26,
     },
     tipTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1365,17 +1397,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.warningText,
     },
     quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 165,
-      minHeight: 200,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
+      minHeight: isMobile ? 185 : 200,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -1386,26 +1418,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: 19,
-      lineHeight: 24,
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,

@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -16,6 +15,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -95,7 +96,8 @@ export default function TimerScreen() {
   const [message, setMessage] = useState("");
 
   const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshStats() {
@@ -215,298 +217,319 @@ export default function TimerScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Pause active</Text>
-          </View>
-
-          <Text style={styles.pageTitle}>Minuterie</Text>
-
-          <Text style={styles.subtitle}>
-            Alternez entre périodes de concentration et pauses actives pour
-            limiter l’immobilité prolongée.
-          </Text>
-        </View>
-
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.heroLabel}>{modeLabel}</Text>
-              <Text style={styles.heroTitle}>{modeTitle}</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Pause active</Text>
             </View>
 
-            <View style={styles.pointsCircle}>
-              <Text style={styles.pointsNumber}>{points}</Text>
-              <Text style={styles.pointsLabel}>points</Text>
-            </View>
+            <Text style={styles.pageTitle}>Minuterie</Text>
+
+            <Text style={styles.subtitle}>
+              Alternez entre périodes de concentration et pauses actives pour
+              limiter l’immobilité prolongée.
+            </Text>
           </View>
 
-          <Text style={styles.heroText}>{modeText}</Text>
-        </View>
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroTextBlock}>
+                <Text style={styles.heroLabel}>{modeLabel}</Text>
+                <Text style={styles.heroTitle}>{modeTitle}</Text>
+              </View>
 
-        <View style={styles.timerCard}>
-          <View style={styles.modeSwitch}>
-            <Pressable
-              style={[
-                styles.modeButton,
-                timerMode === "work" ? styles.modeButtonActive : null,
-              ]}
-              onPress={handleSwitchToWork}
-            >
-              <Text
+              <View style={styles.pointsCircle}>
+                <Text style={styles.pointsNumber}>{points}</Text>
+                <Text style={styles.pointsLabel}>points</Text>
+              </View>
+            </View>
+
+            <Text style={styles.heroText}>{modeText}</Text>
+          </View>
+
+          <View style={styles.timerCard}>
+            <View style={styles.modeSwitch}>
+              <PressableScale
                 style={[
-                  styles.modeButtonText,
-                  timerMode === "work" ? styles.modeButtonTextActive : null,
+                  styles.modeButton,
+                  timerMode === "work" ? styles.modeButtonActive : null,
                 ]}
+                onPress={handleSwitchToWork}
               >
-                Travail
-              </Text>
-            </Pressable>
+                <Text
+                  style={[
+                    styles.modeButtonText,
+                    timerMode === "work" ? styles.modeButtonTextActive : null,
+                  ]}
+                >
+                  Travail
+                </Text>
+              </PressableScale>
 
-            <Pressable
-              style={[
-                styles.modeButton,
-                timerMode === "break" ? styles.modeButtonActive : null,
-              ]}
-              onPress={handleSwitchToBreak}
-            >
-              <Text
+              <PressableScale
                 style={[
-                  styles.modeButtonText,
-                  timerMode === "break" ? styles.modeButtonTextActive : null,
+                  styles.modeButton,
+                  timerMode === "break" ? styles.modeButtonActive : null,
                 ]}
+                onPress={handleSwitchToBreak}
               >
-                Pause
+                <Text
+                  style={[
+                    styles.modeButtonText,
+                    timerMode === "break" ? styles.modeButtonTextActive : null,
+                  ]}
+                >
+                  Pause
+                </Text>
+              </PressableScale>
+            </View>
+
+            <View style={styles.timerCircle}>
+              <View style={styles.timerInnerCircle}>
+                <IconBadge
+                  size={layout.isMobile ? 44 : 50}
+                  backgroundColor={colors.backgroundSoft}
+                  borderColor={colors.border}
+                >
+                  <BreakIcon
+                    size={layout.isMobile ? 21 : 24}
+                    color={colors.text}
+                  />
+                </IconBadge>
+
+                <Text style={styles.timerLabel}>
+                  {timerMode === "work" ? "Focus" : "Pause"}
+                </Text>
+
+                <Text style={styles.timerText}>
+                  {formatTime(secondsRemaining)}
+                </Text>
+
+                <Text style={styles.timerSmallText}>
+                  {isRunning ? "Minuterie en cours" : "Prêt à commencer"}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.progressHeader}>
+              <Text style={styles.progressTitle}>Progression</Text>
+              <Text style={styles.progressValue}>{progressPercent}%</Text>
+            </View>
+
+            <View style={styles.progressBarBackground}>
+              <View
+                style={[
+                  styles.progressBarFill,
+                  {
+                    width: `${progressPercent}%`,
+                  },
+                ]}
+              />
+            </View>
+
+            <View style={styles.buttonRow}>
+              <PressableScale
+                style={styles.primaryButton}
+                onPress={handleStartPause}
+              >
+                <Text style={styles.primaryButtonText}>
+                  {isRunning ? "Mettre en pause" : "Démarrer"}
+                </Text>
+                <Text style={styles.primaryButtonArrow}>→</Text>
+              </PressableScale>
+
+              <PressableScale style={styles.secondaryButton} onPress={handleReset}>
+                <Text style={styles.secondaryButtonText}>Réinitialiser</Text>
+              </PressableScale>
+            </View>
+
+            <PressableScale
+              style={styles.secondaryButtonFull}
+              onPress={handleManualBreakCompleted}
+            >
+              <Text style={styles.secondaryButtonText}>
+                Marquer une pause comme complétée
               </Text>
-            </Pressable>
+            </PressableScale>
+
+            {message.length > 0 && (
+              <View style={styles.messageBox}>
+                <Text style={styles.savedMessage}>{message}</Text>
+              </View>
+            )}
           </View>
 
-          <View style={styles.timerCircle}>
-            <View style={styles.timerInnerCircle}>
-              <IconBadge
-                size={50}
-                backgroundColor={colors.backgroundSoft}
-                borderColor={colors.border}
-              >
-                <BreakIcon size={24} color={colors.text} />
-              </IconBadge>
+          <View style={styles.statsPanel}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{completedBreaks}</Text>
+              <Text style={styles.statLabel}>pauses</Text>
+            </View>
 
-              <Text style={styles.timerLabel}>
-                {timerMode === "work" ? "Focus" : "Pause"}
-              </Text>
+            <View style={styles.statDivider} />
 
-              <Text style={styles.timerText}>
-                {formatTime(secondsRemaining)}
-              </Text>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{points}</Text>
+              <Text style={styles.statLabel}>points</Text>
+            </View>
 
-              <Text style={styles.timerSmallText}>
-                {isRunning ? "Minuterie en cours" : "Prêt à commencer"}
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>
+                {completedBreaks > 0 ? "Oui" : "—"}
               </Text>
+              <Text style={styles.statLabel}>routine</Text>
             </View>
           </View>
 
-          <View style={styles.progressHeader}>
-            <Text style={styles.progressTitle}>Progression</Text>
-            <Text style={styles.progressValue}>{progressPercent}%</Text>
+          <View style={styles.tipBox}>
+            <Text style={styles.tipTitle}>Conseil</Text>
+            <Text style={styles.tipText}>
+              Vous n’avez pas besoin d’une longue pause pour créer un effet
+              utile. Deux minutes peuvent suffire pour changer de position,
+              relâcher les épaules et réactiver le mouvement.
+            </Text>
           </View>
 
-          <View style={styles.progressBarBackground}>
-            <View
-              style={[
-                styles.progressBarFill,
-                {
-                  width: `${progressPercent}%`,
-                },
-              ]}
-            />
-          </View>
-
-          <View style={styles.buttonRow}>
-            <Pressable style={styles.primaryButton} onPress={handleStartPause}>
-              <Text style={styles.primaryButtonText}>
-                {isRunning ? "Mettre en pause" : "Démarrer"}
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Actions rapides</Text>
+              <Text style={styles.sectionSubtitle}>
+                Continuez votre routine après la minuterie.
               </Text>
-              <Text style={styles.primaryButtonArrow}>→</Text>
-            </Pressable>
+            </View>
 
-            <Pressable style={styles.secondaryButton} onPress={handleReset}>
-              <Text style={styles.secondaryButtonText}>Réinitialiser</Text>
-            </Pressable>
+            <Text style={styles.sectionAction}>Défilez →</Text>
           </View>
 
-          <Pressable
-            style={styles.secondaryButtonFull}
-            onPress={handleManualBreakCompleted}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsRow}
           >
-            <Text style={styles.secondaryButtonText}>
-              Marquer une pause comme complétée
-            </Text>
-          </Pressable>
+            {quickActions.map((item) => {
+              const QuickIcon = item.Icon;
 
-          {message.length > 0 && (
-            <View style={styles.messageBox}>
-              <Text style={styles.savedMessage}>{message}</Text>
-            </View>
-          )}
-        </View>
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.quickCard}>
+                    <IconBadge
+                      size={layout.isMobile ? 40 : 44}
+                      backgroundColor={colors.backgroundSoft}
+                      borderColor={colors.border}
+                    >
+                      <QuickIcon
+                        size={layout.isMobile ? 19 : 21}
+                        color={colors.text}
+                      />
+                    </IconBadge>
 
-        <View style={styles.statsPanel}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{completedBreaks}</Text>
-            <Text style={styles.statLabel}>pauses</Text>
-          </View>
+                    <Text style={styles.quickLabel}>{item.label}</Text>
+                    <Text style={styles.quickTitle}>{item.title}</Text>
+                    <Text style={styles.quickText}>{item.text}</Text>
 
-          <View style={styles.statDivider} />
+                    <View style={styles.quickArrowCircle}>
+                      <Text style={styles.quickArrowText}>→</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
 
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{points}</Text>
-            <Text style={styles.statLabel}>points</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>
-              {completedBreaks > 0 ? "Oui" : "—"}
-            </Text>
-            <Text style={styles.statLabel}>routine</Text>
-          </View>
-        </View>
-
-        <View style={styles.tipBox}>
-          <Text style={styles.tipTitle}>Conseil</Text>
-          <Text style={styles.tipText}>
-            Vous n’avez pas besoin d’une longue pause pour créer un effet utile.
-            Deux minutes peuvent suffire pour changer de position, relâcher les
-            épaules et réactiver le mouvement.
-          </Text>
-        </View>
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Actions rapides</Text>
-            <Text style={styles.sectionSubtitle}>
-              Continuez votre routine après la minuterie.
-            </Text>
-          </View>
-
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickActionsRow}
-        >
-          {quickActions.map((item) => {
-            const QuickIcon = item.Icon;
-
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.quickCard}>
-                  <IconBadge
-                    size={44}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <QuickIcon size={21} color={colors.text} />
-                  </IconBadge>
-
-                  <Text style={styles.quickLabel}>{item.label}</Text>
-                  <Text style={styles.quickTitle}>{item.title}</Text>
-                  <Text style={styles.quickText}>{item.text}</Text>
-
-                  <View style={styles.quickArrowCircle}>
-                    <Text style={styles.quickArrowText}>→</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
+          <BottomNav />
         </ScrollView>
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: 38,
-      lineHeight: 45,
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: 10,
+      marginBottom: isMobile ? 8 : 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 245,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 220 : 245,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
     heroTextBlock: {
       flex: 1,
     },
     heroLabel: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -515,27 +538,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 34,
-      lineHeight: 41,
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
       color: colors.primary,
       letterSpacing: -0.7,
-      maxWidth: 360,
+      maxWidth: isMobile ? 235 : 360,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 460,
       zIndex: 2,
-      marginTop: 22,
+      marginTop: isMobile ? 18 : 22,
     },
     pointsCircle: {
-      width: 74,
-      height: 74,
-      borderRadius: 37,
+      width: isMobile ? 64 : 74,
+      height: isMobile ? 64 : 74,
+      borderRadius: isMobile ? 32 : 37,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -543,39 +566,44 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     pointsNumber: {
-      fontSize: 23,
+      fontSize: isMobile ? 20 : 23,
       fontWeight: "900",
       color: colors.black,
-      lineHeight: 27,
+      lineHeight: isMobile ? 24 : 27,
     },
     pointsLabel: {
-      fontSize: 11,
+      fontSize: isMobile ? 10 : 11,
       fontWeight: "900",
       color: colors.black,
     },
     timerCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 34,
-      padding: 22,
-      marginBottom: 18,
+      borderRadius: isMobile ? 28 : 34,
+      padding: isMobile ? 17 : 22,
+      marginBottom: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
+      boxShadow:
+        mode === "dark"
+          ? "0px 18px 36px rgba(0,0,0,0.12)"
+          : "0px 18px 36px rgba(0,0,0,0.08)",
     },
     modeSwitch: {
       flexDirection: "row",
       backgroundColor: colors.cardWarm,
       borderRadius: 999,
-      padding: 6,
-      marginBottom: 24,
+      padding: isMobile ? 5 : 6,
+      marginBottom: isMobile ? 20 : 24,
       borderWidth: 1,
       borderColor: colors.border,
     },
     modeButton: {
       flex: 1,
-      paddingVertical: 12,
+      paddingVertical: isMobile ? 11 : 12,
       borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
     },
     modeButtonActive: {
       backgroundColor: colors.primary,
@@ -583,56 +611,58 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     modeButtonText: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.textSoft,
+      textAlign: "center",
     },
     modeButtonTextActive: {
       color: colors.black,
     },
     timerCircle: {
-      width: 250,
-      height: 250,
-      borderRadius: 125,
+      width: isSmallMobile ? 215 : isMobile ? 235 : 250,
+      height: isSmallMobile ? 215 : isMobile ? 235 : 250,
+      borderRadius: isSmallMobile ? 108 : isMobile ? 118 : 125,
       alignSelf: "center",
       alignItems: "center",
       justifyContent: "center",
-      marginBottom: 22,
+      marginBottom: isMobile ? 20 : 22,
       backgroundColor: colors.backgroundSoft,
       borderWidth: 1,
       borderColor: colors.border,
     },
     timerInnerCircle: {
-      width: 218,
-      height: 218,
-      borderRadius: 109,
-      borderWidth: 12,
+      width: isSmallMobile ? 187 : isMobile ? 205 : 218,
+      height: isSmallMobile ? 187 : isMobile ? 205 : 218,
+      borderRadius: isSmallMobile ? 94 : isMobile ? 103 : 109,
+      borderWidth: isMobile ? 10 : 12,
       borderColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
       backgroundColor: colors.cardWarm,
     },
     timerLabel: {
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       color: colors.textMuted,
-      marginTop: 12,
-      marginBottom: 6,
+      marginTop: isMobile ? 10 : 12,
+      marginBottom: isMobile ? 5 : 6,
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     timerText: {
       fontFamily: "Georgia",
-      fontSize: 54,
-      lineHeight: 60,
+      fontSize: isSmallMobile ? 44 : isMobile ? 49 : 54,
+      lineHeight: isSmallMobile ? 50 : isMobile ? 55 : 60,
       color: colors.primary,
       letterSpacing: -1,
     },
     timerSmallText: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "800",
       color: colors.textSoft,
       marginTop: 6,
+      textAlign: "center",
     },
     progressHeader: {
       flexDirection: "row",
@@ -640,23 +670,23 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 10,
     },
     progressTitle: {
-      fontSize: 14,
+      fontSize: isMobile ? 12 : 14,
       fontWeight: "900",
       color: colors.textSoft,
       textTransform: "uppercase",
       letterSpacing: 0.6,
     },
     progressValue: {
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
       color: colors.primary,
     },
     progressBarBackground: {
-      height: 12,
+      height: isMobile ? 11 : 12,
       backgroundColor: colors.cardWarm,
       borderRadius: 20,
       overflow: "hidden",
-      marginBottom: 18,
+      marginBottom: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -666,14 +696,14 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderRadius: 20,
     },
     buttonRow: {
-      flexDirection: "row",
+      flexDirection: isMobile ? "column" : "row",
       gap: 12,
       marginBottom: 12,
     },
     primaryButton: {
-      flex: 1,
+      flex: isMobile ? undefined : 1,
       backgroundColor: colors.primary,
-      paddingVertical: 15,
+      paddingVertical: isMobile ? 14 : 15,
       paddingHorizontal: 16,
       borderRadius: 999,
       alignItems: "center",
@@ -685,8 +715,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,
@@ -695,8 +726,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       lineHeight: 19,
     },
     secondaryButton: {
-      flex: 1,
-      paddingVertical: 15,
+      flex: isMobile ? undefined : 1,
+      paddingVertical: isMobile ? 14 : 15,
       paddingHorizontal: 16,
       borderRadius: 999,
       alignItems: "center",
@@ -706,7 +737,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       backgroundColor: colors.cardWarm,
     },
     secondaryButtonFull: {
-      paddingVertical: 14,
+      paddingVertical: isMobile ? 13 : 14,
       paddingHorizontal: 16,
       borderRadius: 999,
       alignItems: "center",
@@ -718,7 +749,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     secondaryButtonText: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       textAlign: "center",
     },
@@ -737,11 +768,11 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       textAlign: "center",
     },
     statsPanel: {
-      marginHorizontal: 24,
-      marginBottom: 18,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 16,
+      borderRadius: isMobile ? 22 : 26,
+      padding: isMobile ? 13 : 16,
       borderWidth: 1,
       borderColor: colors.border,
       flexDirection: "row",
@@ -753,18 +784,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     statDivider: {
       width: 1,
-      height: 38,
+      height: isMobile ? 34 : 38,
       backgroundColor: colors.border,
     },
     statNumber: {
-      fontSize: 23,
+      fontSize: isMobile ? 19 : 23,
       fontWeight: "900",
       color: colors.primary,
-      lineHeight: 27,
+      lineHeight: isMobile ? 23 : 27,
     },
     statLabel: {
       marginTop: 4,
-      fontSize: 10,
+      fontSize: isMobile ? 8 : 10,
       color: colors.textMuted,
       fontWeight: "900",
       textAlign: "center",
@@ -772,18 +803,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       letterSpacing: 0.4,
     },
     tipBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
-      marginBottom: 26,
+      marginBottom: isMobile ? 24 : 26,
     },
     tipTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -793,24 +824,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.warningText,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
     },
+    sectionHeaderTextBlock: {
+      flex: 1,
+    },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     sectionAction: {
@@ -820,17 +854,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 4,
     },
     quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 165,
-      minHeight: 200,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
+      minHeight: isMobile ? 185 : 200,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -841,26 +875,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: 19,
-      lineHeight: 24,
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,

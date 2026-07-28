@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -15,6 +14,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -254,38 +255,39 @@ function getCheckinsToday(checkins: DailyCheckin[]) {
 
 export default function ProgressScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
-const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
-  getSavedCheckins()
-);
-const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
+    getSavedCheckins()
+  );
+  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
-const { colors, mode } = useAppTheme();
-const styles = createStyles(colors, mode);
+  const { colors, mode } = useAppTheme();
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
-useEffect(() => {
-  function refreshData() {
-    setStats(getAppStats());
-    setCheckins(getSavedCheckins());
-  }
+  useEffect(() => {
+    function refreshData() {
+      setStats(getAppStats());
+      setCheckins(getSavedCheckins());
+    }
 
-  refreshData();
+    refreshData();
 
-  if (typeof window === "undefined") {
-    return;
-  }
+    if (typeof window === "undefined") {
+      return;
+    }
 
-  window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-  window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-  window.addEventListener("focus", refreshData);
-  window.addEventListener("storage", refreshData);
+    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+    window.addEventListener("focus", refreshData);
+    window.addEventListener("storage", refreshData);
 
-  return () => {
-    window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-    window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-    window.removeEventListener("focus", refreshData);
-    window.removeEventListener("storage", refreshData);
-  };
-}, []);
+    return () => {
+      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
+      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+      window.removeEventListener("focus", refreshData);
+      window.removeEventListener("storage", refreshData);
+    };
+  }, []);
 
   const profile = stats.profile ?? null;
 
@@ -317,355 +319,370 @@ useEffect(() => {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Suivi personnel</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Suivi personnel</Text>
+            </View>
+
+            <Text style={styles.pageTitle}>Évolution</Text>
+
+            <Text style={styles.subtitle}>
+              Suivez vos check-ins pour comprendre l’évolution de votre douleur,
+              de votre fatigue et des zones sensibles.
+            </Text>
           </View>
 
-          <Text style={styles.pageTitle}>Évolution</Text>
-
-          <Text style={styles.subtitle}>
-            Suivez vos check-ins pour comprendre l’évolution de votre douleur,
-            de votre fatigue et des zones sensibles.
-          </Text>
-        </View>
-
-        {!hasCheckins && (
-          <>
-            <View style={styles.emptyCard}>
-
-              <IconBadge
-                size={58}
-                backgroundColor={colors.backgroundSoft}
-                borderColor={colors.border}
-              >
-                <ProgressIcon size={27} color={colors.text} />
-              </IconBadge>
-
-              <Text style={styles.emptyTitle}>
-                Aucun check-in pour l’instant
-              </Text>
-
-              <Text style={styles.emptyText}>
-                Faites votre premier check-in pour commencer à suivre votre
-                évolution.
-              </Text>
-
-              <Link href="/daily-checkin" asChild>
-                <Pressable style={styles.primaryButton}>
-                  <Text style={styles.primaryButtonText}>
-                    Faire mon premier check-in
-                  </Text>
-                  <Text style={styles.primaryButtonArrow}>→</Text>
-                </Pressable>
-              </Link>
-            </View>
-
-            <View style={styles.tipBox}>
-              <Text style={styles.tipTitle}>Pourquoi suivre l’évolution?</Text>
-              <Text style={styles.tipText}>
-                Les check-ins aident à repérer les tendances : douleur moyenne,
-                fatigue et zones qui reviennent souvent.
-              </Text>
-            </View>
-          </>
-        )}
-
-        {hasCheckins && (
-          <>
-            <View style={styles.heroCard}>
-
-              <View style={styles.heroTopRow}>
-                <View style={styles.heroTextBlock}>
-                  <Text style={styles.heroGreeting}>
-                    {profile?.firstName
-                      ? `Suivi de ${profile.firstName}`
-                      : "Votre suivi"}
-                  </Text>
-
-                  <Text style={styles.heroTitle}>{trend.title}</Text>
-                </View>
-
-                <View style={styles.trendBadge}>
-                  <TrendMiniIcon kind={trend.kind} color={colors.text} />
-                </View>
-              </View>
-
-              <Text style={styles.heroText}>{trend.text}</Text>
-            </View>
-
-            <View style={styles.statsGrid}>
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Check-ins</Text>
-                <Text style={styles.statNumber}>{checkins.length}</Text>
-                <Text style={styles.statSmall}>total</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Aujourd’hui</Text>
-                <Text style={styles.statNumber}>{todayCheckins.length}</Text>
-                <Text style={styles.statSmall}>check-ins</Text>
-              </View>
-
-              <View style={styles.statCard}>
-                <Text style={styles.statLabel}>Douleur</Text>
-                <Text style={styles.statNumber}>{averagePain}</Text>
-                <Text style={styles.statSmall}>/10 moyenne</Text>
-              </View>
-            </View>
-
-            <View style={styles.latestCard}>
-              <View style={styles.latestSectionIntro}>
-                <Text style={styles.sectionTitle}>Dernier check-in</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Votre mesure la plus récente
-                </Text>
-              </View>
-
-              <View style={styles.latestHeader}>
+          {!hasCheckins && (
+            <>
+              <View style={styles.emptyCard}>
                 <IconBadge
-                  size={48}
-                  backgroundColor={colors.turquoiseSoft}
+                  size={layout.isMobile ? 52 : 58}
+                  backgroundColor={colors.backgroundSoft}
                   borderColor={colors.border}
                 >
-                  <RoutineIcon size={23} color={colors.text} />
+                  <ProgressIcon
+                    size={layout.isMobile ? 24 : 27}
+                    color={colors.text}
+                  />
                 </IconBadge>
 
-                <View style={styles.latestHeaderText}>
-                  <Text style={styles.dateText}>
-                    {latestCheckin?.date} à {latestCheckin?.time}
-                  </Text>
-                  <Text style={styles.latestTitle}>État enregistré</Text>
-                </View>
+                <Text style={styles.emptyTitle}>
+                  Aucun check-in pour l’instant
+                </Text>
+
+                <Text style={styles.emptyText}>
+                  Faites votre premier check-in pour commencer à suivre votre
+                  évolution.
+                </Text>
+
+                <Link href="/daily-checkin" asChild>
+                  <PressableScale style={styles.primaryButton}>
+                    <Text style={styles.primaryButtonText}>
+                      Faire mon premier check-in
+                    </Text>
+                    <Text style={styles.primaryButtonArrow}>→</Text>
+                  </PressableScale>
+                </Link>
               </View>
 
-              <View style={styles.painHeader}>
-                <Text style={styles.painLabel}>Douleur</Text>
-                <Text style={styles.painValue}>
-                  {latestCheckin?.painLevel}/10
+              <View style={styles.tipBox}>
+                <Text style={styles.tipTitle}>Pourquoi suivre l’évolution?</Text>
+                <Text style={styles.tipText}>
+                  Les check-ins aident à repérer les tendances : douleur
+                  moyenne, fatigue et zones qui reviennent souvent.
                 </Text>
               </View>
+            </>
+          )}
 
-              <View style={styles.progressBarBackground}>
-                <View
-                  style={[
-                    styles.progressBarFill,
-                    { width: `${latestPainPercent}%` },
-                  ]}
-                />
-              </View>
+          {hasCheckins && (
+            <>
+              <View style={styles.heroCard}>
+                <View style={styles.heroTopRow}>
+                  <View style={styles.heroTextBlock}>
+                    <Text style={styles.heroGreeting}>
+                      {profile?.firstName
+                        ? `Suivi de ${profile.firstName}`
+                        : "Votre suivi"}
+                    </Text>
 
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Fatigue</Text>
-                <Text style={styles.detailValue}>
-                  {latestCheckin?.fatigueLevel}
-                </Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Zone principale</Text>
-                <Text style={styles.detailValue}>{latestCheckin?.mainZone}</Text>
-              </View>
-
-              {latestCheckin?.note && latestCheckin.note.length > 0 && (
-                <View style={styles.noteBox}>
-                  <Text style={styles.noteTitle}>Note</Text>
-                  <Text style={styles.noteText}>{latestCheckin.note}</Text>
-                </View>
-              )}
-            </View>
-
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Résumé global</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Les grandes tendances de votre suivi.
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.summaryCard}>
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Nombre total de check-ins</Text>
-                <Text style={styles.detailValue}>{checkins.length}</Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Douleur moyenne</Text>
-                <Text style={styles.detailValue}>{averagePain}/10</Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Fatigue moyenne</Text>
-                <Text style={styles.detailValue}>{averageFatigue}</Text>
-              </View>
-
-              <View style={styles.detailRow}>
-                <Text style={styles.detailLabel}>Zone la plus fréquente</Text>
-                <Text style={styles.detailValue}>{mostFrequentZone}</Text>
-              </View>
-
-              <View style={styles.detailRowLast}>
-                <Text style={styles.detailLabel}>Tendance</Text>
-                <Text style={styles.detailValue}>{trend.title}</Text>
-              </View>
-            </View>
-
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Derniers check-ins</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Les dix entrées les plus récentes.
-                </Text>
-              </View>
-            </View>
-
-            <View style={styles.historySection}>
-              {lastTenCheckins.map((checkin) => {
-                const painPercent = Math.round((checkin.painLevel / 10) * 100);
-                const isConfirmingDelete = deleteConfirmId === checkin.id;
-
-                return (
-                  <View key={checkin.id} style={styles.historyCard}>
-                    <View style={styles.historyHeader}>
-                      <View>
-                        <Text style={styles.historyDate}>
-                          {checkin.date} à {checkin.time}
-                        </Text>
-                        <Text style={styles.historySubtitle}>
-                          {checkin.mainZone} · fatigue {checkin.fatigueLevel}
-                        </Text>
-                      </View>
-
-                      <View style={styles.historyPainBadge}>
-                        <Text style={styles.historyPainNumber}>
-                          {checkin.painLevel}
-                        </Text>
-                        <Text style={styles.historyPainSmall}>/10</Text>
-                      </View>
-                    </View>
-
-                    <View style={styles.miniBarBackground}>
-                      <View
-                        style={[
-                          styles.miniBarFill,
-                          { width: `${painPercent}%` },
-                        ]}
-                      />
-                    </View>
-
-                    {checkin.note.length > 0 && (
-                      <Text style={styles.historyNote}>{checkin.note}</Text>
-                    )}
-
-                    {!isConfirmingDelete ? (
-                      <Pressable
-                        style={styles.deleteButton}
-                        onPress={() => setDeleteConfirmId(checkin.id)}
-                      >
-                        <Text style={styles.deleteButtonText}>
-                          Supprimer ce check-in
-                        </Text>
-                      </Pressable>
-                    ) : (
-                      <View style={styles.deleteConfirmBox}>
-                        <Text style={styles.deleteConfirmText}>
-                          Confirmer la suppression ?
-                        </Text>
-
-                        <Pressable
-                          style={styles.confirmDeleteButton}
-                          onPress={() => handleDeleteCheckin(checkin.id)}
-                        >
-                          <Text style={styles.confirmDeleteButtonText}>
-                            Oui, supprimer
-                          </Text>
-                        </Pressable>
-
-                        <Pressable
-                          style={styles.cancelDeleteButton}
-                          onPress={() => setDeleteConfirmId(null)}
-                        >
-                          <Text style={styles.cancelDeleteButtonText}>
-                            Annuler
-                          </Text>
-                        </Pressable>
-                      </View>
-                    )}
+                    <Text style={styles.heroTitle}>{trend.title}</Text>
                   </View>
-                );
-              })}
-            </View>
 
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Actions rapides</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Continuez votre suivi ou votre routine.
+                  <View style={styles.trendBadge}>
+                    <TrendMiniIcon kind={trend.kind} color={colors.text} />
+                  </View>
+                </View>
+
+                <Text style={styles.heroText}>{trend.text}</Text>
+              </View>
+
+              <View style={styles.statsGrid}>
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Check-ins</Text>
+                  <Text style={styles.statNumber}>{checkins.length}</Text>
+                  <Text style={styles.statSmall}>total</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Aujourd’hui</Text>
+                  <Text style={styles.statNumber}>{todayCheckins.length}</Text>
+                  <Text style={styles.statSmall}>check-ins</Text>
+                </View>
+
+                <View style={styles.statCard}>
+                  <Text style={styles.statLabel}>Douleur</Text>
+                  <Text style={styles.statNumber}>{averagePain}</Text>
+                  <Text style={styles.statSmall}>/10 moyenne</Text>
+                </View>
+              </View>
+
+              <View style={styles.latestCard}>
+                <View style={styles.latestSectionIntro}>
+                  <Text style={styles.sectionTitle}>Dernier check-in</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Votre mesure la plus récente
+                  </Text>
+                </View>
+
+                <View style={styles.latestHeader}>
+                  <IconBadge
+                    size={layout.isMobile ? 43 : 48}
+                    backgroundColor={colors.turquoiseSoft}
+                    borderColor={colors.border}
+                  >
+                    <RoutineIcon
+                      size={layout.isMobile ? 20 : 23}
+                      color={colors.text}
+                    />
+                  </IconBadge>
+
+                  <View style={styles.latestHeaderText}>
+                    <Text style={styles.dateText}>
+                      {latestCheckin?.date} à {latestCheckin?.time}
+                    </Text>
+                    <Text style={styles.latestTitle}>État enregistré</Text>
+                  </View>
+                </View>
+
+                <View style={styles.painHeader}>
+                  <Text style={styles.painLabel}>Douleur</Text>
+                  <Text style={styles.painValue}>
+                    {latestCheckin?.painLevel}/10
+                  </Text>
+                </View>
+
+                <View style={styles.progressBarBackground}>
+                  <View
+                    style={[
+                      styles.progressBarFill,
+                      { width: `${latestPainPercent}%` },
+                    ]}
+                  />
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Fatigue</Text>
+                  <Text style={styles.detailValue}>
+                    {latestCheckin?.fatigueLevel}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Zone principale</Text>
+                  <Text style={styles.detailValue}>
+                    {latestCheckin?.mainZone}
+                  </Text>
+                </View>
+
+                {latestCheckin?.note && latestCheckin.note.length > 0 && (
+                  <View style={styles.noteBox}>
+                    <Text style={styles.noteTitle}>Note</Text>
+                    <Text style={styles.noteText}>{latestCheckin.note}</Text>
+                  </View>
+                )}
+              </View>
+
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderTextBlock}>
+                  <Text style={styles.sectionTitle}>Résumé global</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Les grandes tendances de votre suivi.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.summaryCard}>
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>
+                    Nombre total de check-ins
+                  </Text>
+                  <Text style={styles.detailValue}>{checkins.length}</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Douleur moyenne</Text>
+                  <Text style={styles.detailValue}>{averagePain}/10</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Fatigue moyenne</Text>
+                  <Text style={styles.detailValue}>{averageFatigue}</Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>
+                    Zone la plus fréquente
+                  </Text>
+                  <Text style={styles.detailValue}>{mostFrequentZone}</Text>
+                </View>
+
+                <View style={styles.detailRowLast}>
+                  <Text style={styles.detailLabel}>Tendance</Text>
+                  <Text style={styles.detailValue}>{trend.title}</Text>
+                </View>
+              </View>
+
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderTextBlock}>
+                  <Text style={styles.sectionTitle}>Derniers check-ins</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Les dix entrées les plus récentes.
+                  </Text>
+                </View>
+              </View>
+
+              <View style={styles.historySection}>
+                {lastTenCheckins.map((checkin) => {
+                  const painPercent = Math.round(
+                    (checkin.painLevel / 10) * 100
+                  );
+                  const isConfirmingDelete = deleteConfirmId === checkin.id;
+
+                  return (
+                    <View key={checkin.id} style={styles.historyCard}>
+                      <View style={styles.historyHeader}>
+                        <View style={styles.historyHeaderTextBlock}>
+                          <Text style={styles.historyDate}>
+                            {checkin.date} à {checkin.time}
+                          </Text>
+                          <Text style={styles.historySubtitle}>
+                            {checkin.mainZone} · fatigue {checkin.fatigueLevel}
+                          </Text>
+                        </View>
+
+                        <View style={styles.historyPainBadge}>
+                          <Text style={styles.historyPainNumber}>
+                            {checkin.painLevel}
+                          </Text>
+                          <Text style={styles.historyPainSmall}>/10</Text>
+                        </View>
+                      </View>
+
+                      <View style={styles.miniBarBackground}>
+                        <View
+                          style={[
+                            styles.miniBarFill,
+                            { width: `${painPercent}%` },
+                          ]}
+                        />
+                      </View>
+
+                      {checkin.note.length > 0 && (
+                        <Text style={styles.historyNote}>{checkin.note}</Text>
+                      )}
+
+                      {!isConfirmingDelete ? (
+                        <PressableScale
+                          style={styles.deleteButton}
+                          onPress={() => setDeleteConfirmId(checkin.id)}
+                        >
+                          <Text style={styles.deleteButtonText}>
+                            Supprimer ce check-in
+                          </Text>
+                        </PressableScale>
+                      ) : (
+                        <View style={styles.deleteConfirmBox}>
+                          <Text style={styles.deleteConfirmText}>
+                            Confirmer la suppression ?
+                          </Text>
+
+                          <PressableScale
+                            style={styles.confirmDeleteButton}
+                            onPress={() => handleDeleteCheckin(checkin.id)}
+                          >
+                            <Text style={styles.confirmDeleteButtonText}>
+                              Oui, supprimer
+                            </Text>
+                          </PressableScale>
+
+                          <PressableScale
+                            style={styles.cancelDeleteButton}
+                            onPress={() => setDeleteConfirmId(null)}
+                          >
+                            <Text style={styles.cancelDeleteButtonText}>
+                              Annuler
+                            </Text>
+                          </PressableScale>
+                        </View>
+                      )}
+                    </View>
+                  );
+                })}
+              </View>
+
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderTextBlock}>
+                  <Text style={styles.sectionTitle}>Actions rapides</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Continuez votre suivi ou votre routine.
+                  </Text>
+                </View>
+
+                <Text style={styles.sectionAction}>Défilez →</Text>
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickActionsRow}
+              >
+                {quickActions.map((item) => {
+                  const QuickIcon = item.Icon;
+
+                  return (
+                    <Link key={item.href} href={item.href} asChild>
+                      <PressableScale style={styles.quickCard}>
+                        <IconBadge
+                          size={layout.isMobile ? 40 : 44}
+                          backgroundColor={colors.backgroundSoft}
+                          borderColor={colors.border}
+                        >
+                          <QuickIcon
+                            size={layout.isMobile ? 19 : 21}
+                            color={colors.text}
+                          />
+                        </IconBadge>
+
+                        <Text style={styles.quickLabel}>{item.label}</Text>
+                        <Text style={styles.quickTitle}>{item.title}</Text>
+                        <Text style={styles.quickText}>{item.text}</Text>
+
+                        <View style={styles.quickArrowCircle}>
+                          <Text style={styles.quickArrowText}>→</Text>
+                        </View>
+                      </PressableScale>
+                    </Link>
+                  );
+                })}
+              </ScrollView>
+
+              <View style={styles.tipBox}>
+                <Text style={styles.tipTitle}>Interprétation</Text>
+
+                <Text style={styles.tipText}>
+                  Comme vous pouvez ajouter plusieurs check-ins par jour,
+                  regardez surtout les tendances générales : douleur moyenne,
+                  fatigue et zones qui reviennent souvent.
                 </Text>
               </View>
 
-              <Text style={styles.sectionAction}>Défilez →</Text>
-            </View>
+              <View style={styles.warningBox}>
+                <Text style={styles.warningTitle}>À retenir</Text>
+                <Text style={styles.warningText}>
+                  Ce suivi est un outil personnel d’éducation et de prévention.
+                  Il ne remplace pas une consultation médicale. Si une douleur
+                  est forte, persistante, inhabituelle ou inquiétante, consultez
+                  un professionnel de la santé.
+                </Text>
+              </View>
+            </>
+          )}
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickActionsRow}
-            >
-              {quickActions.map((item) => {
-                const QuickIcon = item.Icon;
-
-                return (
-                  <Link key={item.href} href={item.href} asChild>
-                    <Pressable style={styles.quickCard}>
-                      <IconBadge
-                        size={44}
-                        backgroundColor={colors.backgroundSoft}
-                        borderColor={colors.border}
-                      >
-                        <QuickIcon size={21} color={colors.text} />
-                      </IconBadge>
-
-                      <Text style={styles.quickLabel}>{item.label}</Text>
-                      <Text style={styles.quickTitle}>{item.title}</Text>
-                      <Text style={styles.quickText}>{item.text}</Text>
-
-                      <View style={styles.quickArrowCircle}>
-                        <Text style={styles.quickArrowText}>→</Text>
-                      </View>
-                    </Pressable>
-                  </Link>
-                );
-              })}
-            </ScrollView>
-
-            <View style={styles.tipBox}>
-              <Text style={styles.tipTitle}>Interprétation</Text>
-
-              <Text style={styles.tipText}>
-                Comme vous pouvez ajouter plusieurs check-ins par jour, regardez
-                surtout les tendances générales : douleur moyenne, fatigue et
-                zones qui reviennent souvent.
-              </Text>
-            </View>
-
-            <View style={styles.warningBox}>
-              <Text style={styles.warningTitle}>À retenir</Text>
-              <Text style={styles.warningText}>
-                Ce suivi est un outil personnel d’éducation et de prévention. Il
-                ne remplace pas une consultation médicale. Si une douleur est
-                forte, persistante, inhabituelle ou inquiétante, consultez un
-                professionnel de la santé.
-              </Text>
-            </View>
-          </>
-        )}
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+          <BottomNav />
+        </ScrollView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
@@ -795,8 +812,14 @@ const trendIconStyles = StyleSheet.create({
   },
 });
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
 
   return StyleSheet.create({
     safeArea: {
@@ -804,76 +827,80 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
-  fontFamily: "Georgia",
-  fontSize: 38,
-  lineHeight: 45,
-  color: colors.primary,
-  letterSpacing: -0.8,
-  marginBottom: 10,
-  textShadowColor: "rgba(0,0,0,0.20)",
-  textShadowOffset: { width: 0, height: 2 },
-  textShadowRadius: 7,
-},
+      fontFamily: "Georgia",
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
+      marginBottom: isMobile ? 8 : 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
+    },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     emptyCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 34,
-      padding: 24,
+      borderRadius: isMobile ? 28 : 34,
+      padding: isMobile ? 20 : 24,
       marginBottom: 18,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
       overflow: "hidden",
       position: "relative",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     emptyTitle: {
-  fontFamily: "Georgia",
-  fontSize: 27,
-  lineHeight: 34,
-  color: colors.primary,
-  textAlign: "center",
-  marginTop: 18,
-  marginBottom: 10,
-  zIndex: 2,
-  textShadowColor: "rgba(0,0,0,0.18)",
-  textShadowOffset: { width: 0, height: 2 },
-  textShadowRadius: 7,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 23 : 27,
+      lineHeight: isMobile ? 29 : 34,
+      color: colors.primary,
+      textAlign: "center",
+      marginTop: isMobile ? 16 : 18,
+      marginBottom: 10,
+      zIndex: 2,
+      textShadowColor: "rgba(0,0,0,0.18)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
+    },
     emptyText: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 22,
       color: colors.textSoft,
       textAlign: "center",
       marginBottom: 18,
@@ -881,57 +908,61 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       zIndex: 2,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 245,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 220 : 245,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
     heroTextBlock: {
       flex: 1,
     },
     heroGreeting: {
-      fontSize: 16,
+      fontSize: isMobile ? 14 : 16,
       fontWeight: "900",
       color: colors.primary,
       marginBottom: 8,
     },
     heroTitle: {
-  fontFamily: "Georgia",
-  fontSize: 34,
-  lineHeight: 41,
-  color: colors.primary,
-  letterSpacing: -0.7,
-  maxWidth: 360,
-  textShadowColor: "rgba(0,0,0,0.20)",
-  textShadowOffset: { width: 0, height: 2 },
-  textShadowRadius: 7,
-},
+      fontFamily: "Georgia",
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
+      color: colors.primary,
+      letterSpacing: -0.7,
+      maxWidth: isMobile ? 235 : 360,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
+    },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 460,
       zIndex: 2,
-      marginTop: 22,
+      marginTop: isMobile ? 18 : 22,
     },
     trendBadge: {
-      width: 58,
-      height: 58,
-      borderRadius: 29,
+      width: isMobile ? 50 : 58,
+      height: isMobile ? 50 : 58,
+      borderRadius: isMobile ? 25 : 29,
       backgroundColor: colors.backgroundSoft,
       borderWidth: 1,
       borderColor: colors.border,
@@ -940,21 +971,22 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     statsGrid: {
       flexDirection: "row",
-      gap: 12,
-      marginHorizontal: 24,
-      marginBottom: 26,
+      gap: isMobile ? 9 : 12,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 24 : 26,
     },
     statCard: {
       flex: 1,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 16,
+      borderRadius: isMobile ? 21 : 26,
+      paddingVertical: isMobile ? 14 : 16,
+      paddingHorizontal: isMobile ? 8 : 16,
       alignItems: "center",
       borderWidth: 1,
       borderColor: colors.border,
     },
     statLabel: {
-      fontSize: 11,
+      fontSize: isMobile ? 9 : 11,
       fontWeight: "900",
       color: colors.textMuted,
       marginBottom: 7,
@@ -963,37 +995,40 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.4,
     },
     statNumber: {
-      fontSize: 32,
-      lineHeight: 36,
+      fontSize: isMobile ? 25 : 32,
+      lineHeight: isMobile ? 30 : 36,
       fontWeight: "900",
       color: colors.primary,
     },
     statSmall: {
-      fontSize: 11,
+      fontSize: isMobile ? 10 : 11,
       fontWeight: "800",
       color: colors.textSoft,
       textAlign: "center",
       marginTop: 3,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
     },
+    sectionHeaderTextBlock: {
+      flex: 1,
+    },
     sectionTitle: {
-  fontFamily: "Georgia",
-  fontSize: 28,
-  lineHeight: 35,
-  color: colors.primary,
-  letterSpacing: -0.5,
-  marginBottom: 4,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
+      marginBottom: 4,
+    },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     sectionAction: {
@@ -1003,28 +1038,28 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 4,
     },
     latestCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 20,
-      marginBottom: 26,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 24 : 26,
       borderWidth: 1,
       borderColor: colors.border,
     },
     latestSectionIntro: {
-      marginBottom: 18,
+      marginBottom: isMobile ? 16 : 18,
     },
     latestHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 14,
-      marginBottom: 18,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 16 : 18,
     },
     latestHeaderText: {
       flex: 1,
     },
     dateText: {
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -1032,33 +1067,33 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 5,
     },
     latestTitle: {
-  fontFamily: "Georgia",
-  fontSize: 23,
-  lineHeight: 29,
-  color: colors.primary,
-  letterSpacing: -0.3,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 21 : 23,
+      lineHeight: isMobile ? 26 : 29,
+      color: colors.primary,
+      letterSpacing: -0.3,
+    },
     painHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
       marginBottom: 10,
     },
     painLabel: {
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
       color: colors.text,
     },
     painValue: {
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
       color: colors.primary,
     },
     progressBarBackground: {
-      height: 14,
+      height: isMobile ? 12 : 14,
       backgroundColor: colors.cardWarm,
       borderRadius: 20,
       overflow: "hidden",
-      marginBottom: 18,
+      marginBottom: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1070,7 +1105,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     detailRow: {
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      paddingVertical: 13,
+      paddingVertical: isMobile ? 12 : 13,
       flexDirection: "row",
       justifyContent: "space-between",
       gap: 14,
@@ -1078,19 +1113,19 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     detailRowLast: {
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      paddingTop: 13,
+      paddingTop: isMobile ? 12 : 13,
       flexDirection: "row",
       justifyContent: "space-between",
       gap: 14,
     },
     detailLabel: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "800",
       color: colors.textSoft,
       flex: 1,
     },
     detailValue: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
       textAlign: "right",
@@ -1099,7 +1134,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     noteBox: {
       backgroundColor: colors.cardWarm,
       borderRadius: 18,
-      padding: 14,
+      padding: isMobile ? 13 : 14,
       marginTop: 10,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1111,27 +1146,27 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 6,
     },
     noteText: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     summaryCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 28,
-      padding: 20,
-      marginBottom: 26,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 24 : 26,
       borderWidth: 1,
       borderColor: colors.border,
     },
     historySection: {
-      marginHorizontal: 24,
-      marginBottom: 26,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 24 : 26,
     },
     historyCard: {
       backgroundColor: colors.card,
-      borderRadius: 24,
-      padding: 16,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 15 : 16,
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1143,22 +1178,25 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 12,
       gap: 12,
     },
+    historyHeaderTextBlock: {
+      flex: 1,
+    },
     historyDate: {
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
       color: colors.text,
       marginBottom: 4,
     },
     historySubtitle: {
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 17 : 18,
       color: colors.textSoft,
       fontWeight: "700",
     },
     historyPainBadge: {
-      minWidth: 50,
-      height: 42,
-      borderRadius: 21,
+      minWidth: isMobile ? 46 : 50,
+      height: isMobile ? 39 : 42,
+      borderRadius: isMobile ? 20 : 21,
       backgroundColor: colors.primary,
       borderWidth: 1,
       borderColor: colors.primaryDark,
@@ -1168,7 +1206,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       paddingHorizontal: 9,
     },
     historyPainNumber: {
-      fontSize: 19,
+      fontSize: isMobile ? 17 : 19,
       fontWeight: "900",
       color: colors.black,
     },
@@ -1194,17 +1232,18 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     historyNote: {
       marginTop: 4,
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
     },
     deleteButton: {
-      alignSelf: "flex-start",
+      alignSelf: isMobile ? "stretch" : "flex-start",
       marginTop: 12,
       paddingVertical: 10,
       paddingHorizontal: 13,
       borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
       borderWidth: 1,
       borderColor: colors.dangerBorder,
       backgroundColor: colors.dangerSoft,
@@ -1213,6 +1252,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       color: colors.danger,
       fontSize: 13,
       fontWeight: "900",
+      textAlign: "center",
     },
     deleteConfirmBox: {
       marginTop: 12,
@@ -1234,6 +1274,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       paddingVertical: 12,
       borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
       marginBottom: 8,
     },
     confirmDeleteButtonText: {
@@ -1246,6 +1287,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       paddingVertical: 12,
       borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -1255,17 +1297,17 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       fontWeight: "900",
     },
     quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 165,
-      minHeight: 200,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
+      minHeight: isMobile ? 185 : 200,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -1276,26 +1318,26 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
-  fontFamily: "Georgia",
-  fontSize: 19,
-  lineHeight: 24,
-  color: colors.primary,
-  marginBottom: 6,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
+      color: colors.primary,
+      marginBottom: 6,
+    },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1310,42 +1352,42 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       lineHeight: 19,
     },
     tipBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       marginBottom: 14,
       borderWidth: 1,
       borderColor: colors.border,
     },
     tipTitle: {
-  fontFamily: "Georgia",
-  fontSize: 18,
-  lineHeight: 23,
-  color: colors.primary,
-  marginBottom: 6,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
+      color: colors.primary,
+      marginBottom: 6,
+    },
     tipText: {
       fontSize: 13,
       lineHeight: 20,
       color: colors.textSoft,
     },
     warningBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
       marginBottom: 14,
     },
     warningTitle: {
-  fontFamily: "Georgia",
-  fontSize: 18,
-  lineHeight: 23,
-  color: colors.warningText,
-  marginBottom: 5,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
+      color: colors.warningText,
+      marginBottom: 5,
+    },
     warningText: {
       fontSize: 13,
       lineHeight: 20,
@@ -1353,8 +1395,8 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     primaryButton: {
       backgroundColor: colors.primary,
-      paddingVertical: 15,
-      paddingHorizontal: 18,
+      paddingVertical: isMobile ? 14 : 15,
+      paddingHorizontal: isMobile ? 16 : 18,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -1362,13 +1404,14 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       borderColor: colors.primaryDark,
       flexDirection: "row",
       gap: 10,
-      alignSelf: "center",
+      alignSelf: isMobile ? "stretch" : "center",
       zIndex: 2,
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,

@@ -5,7 +5,6 @@ import {
   View,
   Text,
   TextInput,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -25,6 +24,8 @@ import {
 } from "../lib/notifications";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { ThemeMode, useAppTheme } from "../theme/ThemeContext";
 import {
@@ -148,7 +149,8 @@ export default function ProfileScreen() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const { colors, mode, setThemeMode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshStats() {
@@ -289,598 +291,641 @@ export default function ProfileScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Paramètres</Text>
-          </View>
-
-          <Text style={styles.pageTitle}>Profil</Text>
-
-          <Text style={styles.subtitle}>
-            Personnalisez votre profil, gérez l’apparence de l’application et
-            contrôlez vos données locales.
-          </Text>
-        </View>
-
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.avatarCircle}>
-              <Text style={styles.avatarText}>{avatarLetter}</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Paramètres</Text>
             </View>
 
-            <View style={styles.heroTextContainer}>
-              <Text style={styles.heroLabel}>
-                {displayName ? "Espace personnel" : "Bienvenue"}
-              </Text>
+            <Text style={styles.pageTitle}>Profil</Text>
 
-              <Text style={styles.heroTitle}>
-                {displayName ? displayName : "Votre espace"}
-              </Text>
-
-              <Text style={styles.heroText}>
-                {profession
-                  ? profession
-                  : "Configurez votre profil pour personnaliser votre expérience."}
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <SunIcon
-                size={22}
-                color={mode === "light" ? colors.text : colors.textSoft}
-              />
-            </IconBadge>
-
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>Apparence</Text>
-              <Text style={styles.sectionSubtitle}>
-                Choisissez le mode visuel de l’application.
-              </Text>
-            </View>
+            <Text style={styles.subtitle}>
+              Personnalisez votre profil, gérez l’apparence de l’application et
+              contrôlez vos données locales.
+            </Text>
           </View>
 
-          <View style={styles.themeOptions}>
-            <Pressable
-              style={[
-                styles.themeChoice,
-                mode === "light" ? styles.themeChoiceSelected : null,
-              ]}
-              onPress={() => handleThemeChange("light")}
-            >
-              <SunIcon
-                size={25}
-                color={mode === "light" ? colors.black : colors.text}
-              />
-
-              <Text
-                style={[
-                  styles.themeChoiceText,
-                  mode === "light" ? styles.themeChoiceTextSelected : null,
-                ]}
-              >
-                Mode clair
-              </Text>
-            </Pressable>
-
-            <Pressable
-              style={[
-                styles.themeChoice,
-                mode === "dark" ? styles.themeChoiceSelected : null,
-              ]}
-              onPress={() => handleThemeChange("dark")}
-            >
-              <MoonIcon
-                size={27}
-                color={mode === "dark" ? colors.black : colors.text}
-              />
-
-              <Text
-                style={[
-                  styles.themeChoiceText,
-                  mode === "dark" ? styles.themeChoiceTextSelected : null,
-                ]}
-              >
-                Mode sombre
-              </Text>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <RoutineIcon size={22} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>Notifications</Text>
-              <Text style={styles.sectionSubtitle}>
-                Choisissez les rappels que vous souhaitez recevoir dans
-                l’application.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.settingsList}>
-            <Pressable
-              style={styles.settingRow}
-              onPress={handleToggleNotifications}
-            >
-              <View style={styles.settingTextBlock}>
-                <Text style={styles.settingTitle}>Notifications activées</Text>
-                <Text style={styles.settingDescription}>
-                  Active ou désactive tous les rappels internes de l’application.
-                </Text>
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.avatarCircle}>
+                <Text style={styles.avatarText}>{avatarLetter}</Text>
               </View>
 
-              <View
-                style={[
-                  styles.switchTrack,
-                  notificationSettings.enabled
-                    ? styles.switchTrackSelected
-                    : null,
-                ]}
+              <View style={styles.heroTextContainer}>
+                <Text style={styles.heroLabel}>
+                  {displayName ? "Espace personnel" : "Bienvenue"}
+                </Text>
+
+                <Text style={styles.heroTitle}>
+                  {displayName ? displayName : "Votre espace"}
+                </Text>
+
+                <Text style={styles.heroText}>
+                  {profession
+                    ? profession
+                    : "Configurez votre profil pour personnaliser votre expérience."}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
               >
+                <SunIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={mode === "light" ? colors.text : colors.textSoft}
+                />
+              </IconBadge>
+
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>Apparence</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Choisissez le mode visuel de l’application.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.themeOptions}>
+              <PressableScale
+                style={[
+                  styles.themeChoice,
+                  mode === "light" ? styles.themeChoiceSelected : null,
+                ]}
+                onPress={() => handleThemeChange("light")}
+              >
+                <SunIcon
+                  size={layout.isMobile ? 23 : 25}
+                  color={mode === "light" ? colors.black : colors.text}
+                />
+
+                <Text
+                  style={[
+                    styles.themeChoiceText,
+                    mode === "light" ? styles.themeChoiceTextSelected : null,
+                  ]}
+                >
+                  Mode clair
+                </Text>
+              </PressableScale>
+
+              <PressableScale
+                style={[
+                  styles.themeChoice,
+                  mode === "dark" ? styles.themeChoiceSelected : null,
+                ]}
+                onPress={() => handleThemeChange("dark")}
+              >
+                <MoonIcon
+                  size={layout.isMobile ? 25 : 27}
+                  color={mode === "dark" ? colors.black : colors.text}
+                />
+
+                <Text
+                  style={[
+                    styles.themeChoiceText,
+                    mode === "dark" ? styles.themeChoiceTextSelected : null,
+                  ]}
+                >
+                  Mode sombre
+                </Text>
+              </PressableScale>
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <RoutineIcon size={layout.isMobile ? 20 : 22} color={colors.text} />
+              </IconBadge>
+
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>Notifications</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Choisissez les rappels que vous souhaitez recevoir dans
+                  l’application.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.settingsList}>
+              <PressableScale
+                style={styles.settingRow}
+                onPress={handleToggleNotifications}
+              >
+                <View style={styles.settingTextBlock}>
+                  <Text style={styles.settingTitle}>
+                    Notifications activées
+                  </Text>
+                  <Text style={styles.settingDescription}>
+                    Active ou désactive tous les rappels internes de
+                    l’application.
+                  </Text>
+                </View>
+
                 <View
                   style={[
-                    styles.switchKnob,
+                    styles.switchTrack,
                     notificationSettings.enabled
-                      ? styles.switchKnobSelected
+                      ? styles.switchTrackSelected
                       : null,
                   ]}
-                />
-              </View>
-            </Pressable>
+                >
+                  <View
+                    style={[
+                      styles.switchKnob,
+                      notificationSettings.enabled
+                        ? styles.switchKnobSelected
+                        : null,
+                    ]}
+                  />
+                </View>
+              </PressableScale>
 
-            <Pressable
-              style={[
-                styles.settingRow,
-                !notificationSettings.enabled ? styles.settingRowDisabled : null,
-              ]}
-              onPress={handleToggleDailyCheckinReminder}
-            >
-              <View style={styles.settingTextBlock}>
-                <Text style={styles.settingTitle}>
-                  Rappel du bilan quotidien
-                </Text>
-                <Text style={styles.settingDescription}>
-                  Ajoute un rappel pour noter vos douleurs et votre confort
-                  chaque jour.
-                </Text>
-              </View>
-
-              <View
+              <PressableScale
                 style={[
-                  styles.switchTrack,
-                  notificationSettings.enabled &&
-                  notificationSettings.dailyCheckinReminder
-                    ? styles.switchTrackSelected
+                  styles.settingRow,
+                  !notificationSettings.enabled
+                    ? styles.settingRowDisabled
                     : null,
                 ]}
+                onPress={handleToggleDailyCheckinReminder}
               >
+                <View style={styles.settingTextBlock}>
+                  <Text style={styles.settingTitle}>
+                    Rappel du bilan quotidien
+                  </Text>
+                  <Text style={styles.settingDescription}>
+                    Ajoute un rappel pour noter vos douleurs et votre confort
+                    chaque jour.
+                  </Text>
+                </View>
+
                 <View
                   style={[
-                    styles.switchKnob,
+                    styles.switchTrack,
                     notificationSettings.enabled &&
                     notificationSettings.dailyCheckinReminder
-                      ? styles.switchKnobSelected
+                      ? styles.switchTrackSelected
                       : null,
                   ]}
-                />
-              </View>
-            </Pressable>
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <ProfileIcon size={22} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>Informations personnelles</Text>
-              <Text style={styles.sectionSubtitle}>
-                Ces informations restent sauvegardées localement.
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.label}>Prénom</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex. Antonia"
-            placeholderTextColor={colors.textMuted}
-            value={firstName}
-            onChangeText={setFirstName}
-          />
-
-          <Text style={styles.label}>Statut</Text>
-
-          <View style={styles.optionsContainer}>
-            {statuses.map((item) => {
-              const selected = status === item;
-
-              return (
-                <Pressable
-                  key={item}
-                  style={[
-                    styles.optionButton,
-                    selected ? styles.optionButtonSelected : null,
-                  ]}
-                  onPress={() => setStatus(item)}
                 >
-                  <Text
+                  <View
                     style={[
-                      styles.optionText,
-                      selected ? styles.optionTextSelected : null,
+                      styles.switchKnob,
+                      notificationSettings.enabled &&
+                      notificationSettings.dailyCheckinReminder
+                        ? styles.switchKnobSelected
+                        : null,
                     ]}
-                  >
-                    {item}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Text style={styles.label}>Profession ou domaine</Text>
-          <TextInput
-            style={styles.input}
-            placeholder="Ex. médecine, ergonomie, bureau, informatique..."
-            placeholderTextColor={colors.textMuted}
-            value={profession}
-            onChangeText={setProfession}
-          />
-
-          <Text style={styles.label}>Objectif principal</Text>
-
-          <View style={styles.optionsContainer}>
-            {goals.map((item) => {
-              const selected = mainGoal === item;
-
-              return (
-                <Pressable
-                  key={item}
-                  style={[
-                    styles.optionButton,
-                    selected ? styles.optionButtonSelected : null,
-                  ]}
-                  onPress={() => setMainGoal(item)}
-                >
-                  <Text
-                    style={[
-                      styles.optionText,
-                      selected ? styles.optionTextSelected : null,
-                    ]}
-                  >
-                    {item}
-                  </Text>
-                </Pressable>
-              );
-            })}
-          </View>
-
-          <Pressable style={styles.primaryButton} onPress={handleSaveProfile}>
-            <Text style={styles.primaryButtonText}>Sauvegarder mon profil</Text>
-            <Text style={styles.primaryButtonArrow}>→</Text>
-          </Pressable>
-
-          {savedMessage.length > 0 && (
-            <View style={styles.messageBox}>
-              <Text style={styles.savedMessage}>{savedMessage}</Text>
-            </View>
-          )}
-        </View>
-
-        <View style={styles.summaryCard}>
-          <View style={styles.summaryHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.turquoiseSoft}
-              borderColor={colors.border}
-            >
-              <ProgressIcon size={22} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>
-                {displayName ? `Résumé de ${displayName}` : "Résumé"}
-              </Text>
-              <Text style={styles.sectionSubtitle}>
-                Aperçu de votre progression locale.
-              </Text>
+                  />
+                </View>
+              </PressableScale>
             </View>
           </View>
 
-          <View style={styles.summaryGrid}>
-            <View style={styles.summaryMiniCard}>
-              <Text style={styles.summaryMiniNumber}>
-                {questionnaireScore !== undefined ? questionnaireScore : "--"}
-              </Text>
-              <Text style={styles.summaryMiniLabel}>Score TMS</Text>
-            </View>
-
-            <View style={styles.summaryMiniCard}>
-              <Text style={styles.summaryMiniNumber}>
-                {workstationScore !== undefined ? workstationScore : "--"}
-              </Text>
-              <Text style={styles.summaryMiniLabel}>Score poste</Text>
-            </View>
-
-            <View style={styles.summaryMiniCard}>
-              <Text style={styles.summaryMiniNumber}>{stats.points}</Text>
-              <Text style={styles.summaryMiniLabel}>Points</Text>
-            </View>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Pauses</Text>
-            <Text style={styles.summaryValue}>{stats.completedBreaks}</Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Exercices</Text>
-            <Text style={styles.summaryValue}>{stats.completedExercises}</Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Capsules lues</Text>
-            <Text style={styles.summaryValue}>{stats.completedCapsules}</Text>
-          </View>
-
-          <View style={styles.summaryRow}>
-            <Text style={styles.summaryLabel}>Objectif</Text>
-            <Text style={styles.summaryValueSmall}>{mainGoal}</Text>
-          </View>
-        </View>
-
-        <View style={styles.healthBox}>
-          <Text style={styles.healthTitle}>Avertissement santé</Text>
-          <Text style={styles.healthText}>
-            ErgoPrevent est un outil d’éducation et de prévention. L’application
-            ne pose pas de diagnostic, ne remplace pas un ergonome, un
-            physiothérapeute, un médecin ou un autre professionnel de la santé.
-            Si vous ressentez une douleur importante, persistante, inhabituelle
-            ou accompagnée de symptômes inquiétants, consultez un professionnel.
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <View style={styles.cardHeader}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <ProfileIcon size={22} color={colors.text} />
-            </IconBadge>
-
-            <View style={styles.cardHeaderText}>
-              <Text style={styles.sectionTitle}>Données locales</Text>
-              <Text style={styles.sectionSubtitle}>
-                Vos données restent dans ce navigateur.
-              </Text>
-            </View>
-          </View>
-
-          <Text style={styles.dataText}>
-            Vos données sont sauvegardées uniquement dans ce navigateur, sur cet
-            appareil. Elles ne sont pas envoyées vers une base de données externe.
-          </Text>
-
-          <Pressable
-            style={styles.secondaryButtonInside}
-            onPress={() => setShowData(!showData)}
-          >
-            <Text style={styles.secondaryButtonText}>
-              {showData ? "Masquer mes données" : "Afficher mes données"}
-            </Text>
-          </Pressable>
-
-          {showData && (
-            <View style={styles.dataBox}>
-              <ScrollView
-                style={styles.dataScroll}
-                nestedScrollEnabled
-                showsVerticalScrollIndicator
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
               >
-                <ScrollView horizontal showsHorizontalScrollIndicator>
-                  <Text selectable style={styles.dataCode}>
-                    {exportedData}
-                  </Text>
+                <ProfileIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>
+                  Informations personnelles
+                </Text>
+                <Text style={styles.sectionSubtitle}>
+                  Ces informations restent sauvegardées localement.
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.label}>Prénom</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex. Antonia"
+              placeholderTextColor={colors.textMuted}
+              value={firstName}
+              onChangeText={setFirstName}
+            />
+
+            <Text style={styles.label}>Statut</Text>
+
+            <View style={styles.optionsContainer}>
+              {statuses.map((item) => {
+                const selected = status === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setStatus(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <Text style={styles.label}>Profession ou domaine</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="Ex. médecine, ergonomie, bureau, informatique..."
+              placeholderTextColor={colors.textMuted}
+              value={profession}
+              onChangeText={setProfession}
+            />
+
+            <Text style={styles.label}>Objectif principal</Text>
+
+            <View style={styles.optionsContainer}>
+              {goals.map((item) => {
+                const selected = mainGoal === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setMainGoal(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <PressableScale
+              style={styles.primaryButton}
+              onPress={handleSaveProfile}
+            >
+              <Text style={styles.primaryButtonText}>
+                Sauvegarder mon profil
+              </Text>
+              <Text style={styles.primaryButtonArrow}>→</Text>
+            </PressableScale>
+
+            {savedMessage.length > 0 && (
+              <View style={styles.messageBox}>
+                <Text style={styles.savedMessage}>{savedMessage}</Text>
+              </View>
+            )}
+          </View>
+
+          <View style={styles.summaryCard}>
+            <View style={styles.summaryHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.turquoiseSoft}
+                borderColor={colors.border}
+              >
+                <ProgressIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>
+                  {displayName ? `Résumé de ${displayName}` : "Résumé"}
+                </Text>
+                <Text style={styles.sectionSubtitle}>
+                  Aperçu de votre progression locale.
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.summaryGrid}>
+              <View style={styles.summaryMiniCard}>
+                <Text style={styles.summaryMiniNumber}>
+                  {questionnaireScore !== undefined ? questionnaireScore : "--"}
+                </Text>
+                <Text style={styles.summaryMiniLabel}>Score TMS</Text>
+              </View>
+
+              <View style={styles.summaryMiniCard}>
+                <Text style={styles.summaryMiniNumber}>
+                  {workstationScore !== undefined ? workstationScore : "--"}
+                </Text>
+                <Text style={styles.summaryMiniLabel}>Score poste</Text>
+              </View>
+
+              <View style={styles.summaryMiniCard}>
+                <Text style={styles.summaryMiniNumber}>{stats.points}</Text>
+                <Text style={styles.summaryMiniLabel}>Points</Text>
+              </View>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Pauses</Text>
+              <Text style={styles.summaryValue}>{stats.completedBreaks}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Exercices</Text>
+              <Text style={styles.summaryValue}>{stats.completedExercises}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Capsules lues</Text>
+              <Text style={styles.summaryValue}>{stats.completedCapsules}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Objectif</Text>
+              <Text style={styles.summaryValueSmall}>{mainGoal}</Text>
+            </View>
+          </View>
+
+          <View style={styles.healthBox}>
+            <Text style={styles.healthTitle}>Avertissement santé</Text>
+            <Text style={styles.healthText}>
+              ErgoPrevent est un outil d’éducation et de prévention.
+              L’application ne pose pas de diagnostic, ne remplace pas un
+              ergonome, un physiothérapeute, un médecin ou un autre
+              professionnel de la santé. Si vous ressentez une douleur
+              importante, persistante, inhabituelle ou accompagnée de symptômes
+              inquiétants, consultez un professionnel.
+            </Text>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <ProfileIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>Données locales</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Vos données restent dans ce navigateur.
+                </Text>
+              </View>
+            </View>
+
+            <Text style={styles.dataText}>
+              Vos données sont sauvegardées uniquement dans ce navigateur, sur
+              cet appareil. Elles ne sont pas envoyées vers une base de données
+              externe.
+            </Text>
+
+            <PressableScale
+              style={styles.secondaryButtonInside}
+              onPress={() => setShowData(!showData)}
+            >
+              <Text style={styles.secondaryButtonText}>
+                {showData ? "Masquer mes données" : "Afficher mes données"}
+              </Text>
+            </PressableScale>
+
+            {showData && (
+              <View style={styles.dataBox}>
+                <ScrollView
+                  style={styles.dataScroll}
+                  nestedScrollEnabled
+                  showsVerticalScrollIndicator
+                >
+                  <ScrollView horizontal showsHorizontalScrollIndicator>
+                    <Text selectable style={styles.dataCode}>
+                      {exportedData}
+                    </Text>
+                  </ScrollView>
                 </ScrollView>
-              </ScrollView>
+              </View>
+            )}
+          </View>
+
+          <Link href="/export-data" asChild>
+            <PressableScale style={styles.primaryButtonOutside}>
+              <Text style={styles.primaryButtonText}>Exporter mes données</Text>
+              <Text style={styles.primaryButtonArrow}>→</Text>
+            </PressableScale>
+          </Link>
+
+          <View style={styles.warningBox}>
+            <Text style={styles.warningTitle}>Réinitialisation</Text>
+            <Text style={styles.warningText}>
+              La réinitialisation supprime le profil, les scores, les pauses,
+              les exercices, les capsules, les points, les routines et les
+              check-ins sauvegardés sur cet appareil.
+            </Text>
+          </View>
+
+          {!showResetConfirm ? (
+            <PressableScale
+              style={styles.dangerButton}
+              onPress={() => setShowResetConfirm(true)}
+            >
+              <Text style={styles.dangerButtonText}>
+                Réinitialiser mes données
+              </Text>
+            </PressableScale>
+          ) : (
+            <View style={styles.confirmBox}>
+              <Text style={styles.confirmTitle}>
+                Confirmer la réinitialisation
+              </Text>
+              <Text style={styles.confirmText}>
+                Cette action supprimera toutes les données locales de
+                l’application sur cet appareil.
+              </Text>
+
+              <PressableScale
+                style={styles.dangerButtonInside}
+                onPress={handleResetData}
+              >
+                <Text style={styles.dangerButtonText}>
+                  Oui, tout réinitialiser
+                </Text>
+              </PressableScale>
+
+              <PressableScale
+                style={styles.secondaryButtonInside}
+                onPress={() => setShowResetConfirm(false)}
+              >
+                <Text style={styles.secondaryButtonText}>Annuler</Text>
+              </PressableScale>
             </View>
           )}
-        </View>
 
-        <Link href="/export-data" asChild>
-          <Pressable style={styles.primaryButtonOutside}>
-            <Text style={styles.primaryButtonText}>Exporter mes données</Text>
-            <Text style={styles.primaryButtonArrow}>→</Text>
-          </Pressable>
-        </Link>
-
-        <View style={styles.warningBox}>
-          <Text style={styles.warningTitle}>Réinitialisation</Text>
-          <Text style={styles.warningText}>
-            La réinitialisation supprime le profil, les scores, les pauses, les
-            exercices, les capsules, les points, les routines et les check-ins
-            sauvegardés sur cet appareil.
-          </Text>
-        </View>
-
-        {!showResetConfirm ? (
-          <Pressable
-            style={styles.dangerButton}
-            onPress={() => setShowResetConfirm(true)}
-          >
-            <Text style={styles.dangerButtonText}>
-              Réinitialiser mes données
-            </Text>
-          </Pressable>
-        ) : (
-          <View style={styles.confirmBox}>
-            <Text style={styles.confirmTitle}>Confirmer la réinitialisation</Text>
-            <Text style={styles.confirmText}>
-              Cette action supprimera toutes les données locales de
-              l’application sur cet appareil.
-            </Text>
-
-            <Pressable style={styles.dangerButtonInside} onPress={handleResetData}>
-              <Text style={styles.dangerButtonText}>
-                Oui, tout réinitialiser
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitleLarge}>Actions rapides</Text>
+              <Text style={styles.sectionSubtitle}>
+                Accédez rapidement à vos pages principales.
               </Text>
-            </Pressable>
+            </View>
 
-            <Pressable
-              style={styles.secondaryButtonInside}
-              onPress={() => setShowResetConfirm(false)}
-            >
-              <Text style={styles.secondaryButtonText}>Annuler</Text>
-            </Pressable>
-          </View>
-        )}
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitleLarge}>Actions rapides</Text>
-            <Text style={styles.sectionSubtitle}>
-              Accédez rapidement à vos pages principales.
-            </Text>
+            <Text style={styles.sectionAction}>Défilez →</Text>
           </View>
 
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsRow}
+          >
+            {quickActions.map((item) => {
+              const QuickIcon = item.Icon;
 
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickActionsRow}
-        >
-          {quickActions.map((item) => {
-            const QuickIcon = item.Icon;
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.quickCard}>
+                    <IconBadge
+                      size={layout.isMobile ? 40 : 44}
+                      backgroundColor={colors.backgroundSoft}
+                      borderColor={colors.border}
+                    >
+                      <QuickIcon
+                        size={layout.isMobile ? 19 : 21}
+                        color={colors.text}
+                      />
+                    </IconBadge>
 
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.quickCard}>
-                  <IconBadge
-                    size={44}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <QuickIcon size={21} color={colors.text} />
-                  </IconBadge>
+                    <Text style={styles.quickLabel}>{item.label}</Text>
+                    <Text style={styles.quickTitle}>{item.title}</Text>
+                    <Text style={styles.quickText}>{item.text}</Text>
 
-                  <Text style={styles.quickLabel}>{item.label}</Text>
-                  <Text style={styles.quickTitle}>{item.title}</Text>
-                  <Text style={styles.quickText}>{item.text}</Text>
+                    <View style={styles.quickArrowCircle}>
+                      <Text style={styles.quickArrowText}>→</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
 
-                  <View style={styles.quickArrowCircle}>
-                    <Text style={styles.quickArrowText}>→</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
+          <BottomNav />
         </ScrollView>
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: 38,
-      lineHeight: 45,
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: 10,
+      marginBottom: isMobile ? 8 : 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 210,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 188 : 210,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "center",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 16,
+      gap: isMobile ? 13 : 16,
       zIndex: 2,
     },
     avatarCircle: {
-      width: 70,
-      height: 70,
-      borderRadius: 35,
+      width: isMobile ? 62 : 70,
+      height: isMobile ? 62 : 70,
+      borderRadius: isMobile ? 31 : 35,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -888,10 +933,10 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     avatarText: {
-      fontSize: 30,
+      fontSize: isMobile ? 27 : 30,
       fontWeight: "900",
       color: colors.black,
-      lineHeight: 34,
+      lineHeight: isMobile ? 31 : 34,
     },
     heroTextContainer: {
       flex: 1,
@@ -906,8 +951,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 34,
-      lineHeight: 41,
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
       color: colors.primary,
       letterSpacing: -0.7,
       marginBottom: 6,
@@ -916,57 +961,61 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       textShadowRadius: 7,
     },
     heroText: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 22,
       color: colors.textSoft,
       maxWidth: 440,
     },
     card: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 30,
-      padding: 20,
-      marginBottom: 16,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 14 : 16,
       borderWidth: 1,
       borderColor: colors.border,
+      boxShadow:
+        mode === "dark"
+          ? "0px 18px 36px rgba(0,0,0,0.12)"
+          : "0px 18px 36px rgba(0,0,0,0.08)",
     },
     cardHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 14,
-      marginBottom: 16,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 14 : 16,
     },
     cardHeaderText: {
       flex: 1,
     },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 24,
-      lineHeight: 30,
+      fontSize: isMobile ? 21 : 24,
+      lineHeight: isMobile ? 26 : 30,
       color: colors.primary,
       letterSpacing: -0.3,
       marginBottom: 4,
     },
     sectionTitleLarge: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     settingsList: {
       gap: 10,
     },
     settingRow: {
-      minHeight: 82,
-      borderRadius: 22,
-      paddingVertical: 14,
+      minHeight: isMobile ? 78 : 82,
+      borderRadius: isMobile ? 20 : 22,
+      paddingVertical: isMobile ? 13 : 14,
       paddingHorizontal: 14,
       backgroundColor: colors.cardWarm,
       borderWidth: 1,
@@ -984,15 +1033,15 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     settingTitle: {
       color: colors.text,
-      fontSize: 15,
-      lineHeight: 20,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 19 : 20,
       fontWeight: "900",
       marginBottom: 4,
     },
     settingDescription: {
       color: colors.textSoft,
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 17 : 18,
       fontWeight: "600",
     },
     switchTrack: {
@@ -1021,7 +1070,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       backgroundColor: colors.black,
     },
     label: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.textSoft,
       marginBottom: 8,
@@ -1033,9 +1082,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 18,
-      paddingVertical: 14,
+      paddingVertical: isMobile ? 13 : 14,
       paddingHorizontal: 14,
-      fontSize: 16,
+      fontSize: isMobile ? 15 : 16,
       color: colors.text,
       backgroundColor: colors.cardWarm,
       marginBottom: 10,
@@ -1045,13 +1094,14 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 10,
     },
     optionButton: {
-      paddingVertical: 13,
+      paddingVertical: isMobile ? 12 : 13,
       paddingHorizontal: 14,
       borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.cardWarm,
       alignItems: "center",
+      justifyContent: "center",
     },
     optionButtonSelected: {
       backgroundColor: colors.primary,
@@ -1059,15 +1109,16 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     optionText: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
+      textAlign: "center",
     },
     optionTextSelected: {
       color: colors.black,
     },
     themeOptions: {
       flexDirection: "row",
-      gap: 12,
+      gap: isMobile ? 10 : 12,
       marginTop: 4,
     },
     themeChoice: {
@@ -1075,9 +1126,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       backgroundColor: colors.cardWarm,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: 24,
-      paddingVertical: 18,
-      paddingHorizontal: 14,
+      borderRadius: isMobile ? 22 : 24,
+      paddingVertical: isMobile ? 16 : 18,
+      paddingHorizontal: isMobile ? 12 : 14,
       alignItems: "center",
       gap: 9,
     },
@@ -1086,7 +1137,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     themeChoiceText: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
       textAlign: "center",
@@ -1097,8 +1148,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     primaryButton: {
       marginTop: 8,
       backgroundColor: colors.primary,
-      paddingVertical: 15,
-      paddingHorizontal: 18,
+      paddingVertical: isMobile ? 14 : 15,
+      paddingHorizontal: isMobile ? 16 : 18,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -1108,9 +1159,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       gap: 10,
     },
     primaryButtonOutside: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.primary,
-      paddingVertical: 15,
+      paddingVertical: isMobile ? 14 : 15,
       paddingHorizontal: 18,
       borderRadius: 999,
       alignItems: "center",
@@ -1123,8 +1174,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,
@@ -1147,43 +1199,43 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       textAlign: "center",
     },
     summaryCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 30,
-      padding: 20,
-      marginBottom: 16,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 17 : 20,
+      marginBottom: isMobile ? 14 : 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
     summaryHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 14,
-      marginBottom: 16,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 14 : 16,
     },
     summaryGrid: {
       flexDirection: "row",
-      gap: 10,
+      gap: isMobile ? 8 : 10,
       marginBottom: 14,
     },
     summaryMiniCard: {
       flex: 1,
       backgroundColor: colors.cardWarm,
-      borderRadius: 20,
-      padding: 13,
+      borderRadius: isMobile ? 18 : 20,
+      padding: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
     },
     summaryMiniNumber: {
-      fontSize: 24,
+      fontSize: isMobile ? 20 : 24,
       fontWeight: "900",
       color: colors.primary,
-      lineHeight: 28,
+      lineHeight: isMobile ? 24 : 28,
     },
     summaryMiniLabel: {
       marginTop: 5,
-      fontSize: 10,
+      fontSize: isMobile ? 8 : 10,
       color: colors.textMuted,
       fontWeight: "900",
       textAlign: "center",
@@ -1193,18 +1245,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     summaryRow: {
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      paddingVertical: 12,
+      paddingVertical: isMobile ? 11 : 12,
       flexDirection: "row",
       justifyContent: "space-between",
       gap: 14,
     },
     summaryLabel: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.textSoft,
     },
     summaryValue: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
       textAlign: "right",
@@ -1212,23 +1264,23 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     summaryValueSmall: {
       flex: 1,
       textAlign: "right",
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
     },
     healthBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 24,
-      padding: 18,
-      marginBottom: 16,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 16 : 18,
+      marginBottom: isMobile ? 14 : 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
     healthTitle: {
       fontFamily: "Georgia",
-      fontSize: 20,
-      lineHeight: 26,
+      fontSize: isMobile ? 19 : 20,
+      lineHeight: isMobile ? 25 : 26,
       color: colors.primary,
       marginBottom: 8,
     },
@@ -1239,8 +1291,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontWeight: "700",
     },
     dataText: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 20 : 21,
       color: colors.textSoft,
       marginBottom: 14,
     },
@@ -1251,19 +1303,19 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginTop: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      height: 320,
+      height: isMobile ? 260 : 320,
       overflow: "hidden",
     },
     dataScroll: {
-      maxHeight: 292,
+      maxHeight: isMobile ? 232 : 292,
     },
     dataCode: {
-      fontSize: 12,
-      lineHeight: 18,
+      fontSize: isMobile ? 11 : 12,
+      lineHeight: isMobile ? 17 : 18,
       color: colors.text,
     },
     secondaryButtonInside: {
-      paddingVertical: 13,
+      paddingVertical: isMobile ? 12 : 13,
       paddingHorizontal: 16,
       borderRadius: 999,
       alignItems: "center",
@@ -1274,23 +1326,23 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     secondaryButtonText: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       textAlign: "center",
     },
     warningBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
       marginBottom: 14,
     },
     warningTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1300,58 +1352,64 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.warningText,
     },
     dangerButton: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.danger,
-      paddingVertical: 15,
+      paddingVertical: isMobile ? 14 : 15,
       borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
       marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
     },
     dangerButtonInside: {
       backgroundColor: colors.danger,
-      paddingVertical: 15,
+      paddingVertical: isMobile ? 14 : 15,
       borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
     },
     dangerButtonText: {
       color: colors.white,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     confirmBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 18,
+      borderRadius: isMobile ? 24 : 26,
+      padding: isMobile ? 16 : 18,
       marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
     },
     confirmTitle: {
       fontFamily: "Georgia",
-      fontSize: 21,
-      lineHeight: 27,
+      fontSize: isMobile ? 20 : 21,
+      lineHeight: isMobile ? 26 : 27,
       color: colors.primary,
       marginBottom: 8,
     },
     confirmText: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
       marginBottom: 14,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
+    },
+    sectionHeaderTextBlock: {
+      flex: 1,
     },
     sectionAction: {
       fontSize: 12,
@@ -1360,17 +1418,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginBottom: 4,
     },
     quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 165,
-      minHeight: 200,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
+      minHeight: isMobile ? 185 : 200,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -1381,26 +1439,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: 19,
-      lineHeight: 24,
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,

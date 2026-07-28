@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -15,6 +14,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -352,7 +353,8 @@ export default function PersonalPlanScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
 
   const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshStats() {
@@ -394,382 +396,418 @@ export default function PersonalPlanScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Plan personnalisé</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Plan personnalisé</Text>
+            </View>
+
+            <Text style={styles.pageTitle}>Votre plan</Text>
+
+            <Text style={styles.subtitle}>
+              Transformez vos scores en actions simples à appliquer dès
+              aujourd’hui.
+            </Text>
           </View>
 
-          <Text style={styles.pageTitle}>Votre plan</Text>
+          {!hasEnoughData && (
+            <>
+              <View style={styles.emptyCard}>
+                <IconBadge
+                  size={layout.isMobile ? 52 : 58}
+                  backgroundColor={colors.backgroundSoft}
+                  borderColor={colors.border}
+                >
+                  <PlanIcon
+                    size={layout.isMobile ? 24 : 27}
+                    color={colors.text}
+                  />
+                </IconBadge>
 
-          <Text style={styles.subtitle}>
-            Transformez vos scores en actions simples à appliquer dès
-            aujourd’hui.
-          </Text>
-        </View>
+                <Text style={styles.emptyTitle}>
+                  Votre plan n’est pas encore prêt
+                </Text>
 
-        {!hasEnoughData && (
-          <>
-            <View style={styles.emptyCard}>
-              <IconBadge
-                size={58}
-                backgroundColor={colors.backgroundSoft}
-                borderColor={colors.border}
-              >
-                <PlanIcon size={27} color={colors.text} />
-              </IconBadge>
+                <Text style={styles.emptyText}>
+                  Complétez d’abord le questionnaire TMS ou l’audit du poste
+                  pour recevoir des recommandations personnalisées.
+                </Text>
 
-              <Text style={styles.emptyTitle}>
-                Votre plan n’est pas encore prêt
-              </Text>
+                <View style={styles.emptyActions}>
+                  <Link href="/questionnaire" asChild>
+                    <PressableScale style={styles.primaryButton}>
+                      <Text style={styles.primaryButtonText}>
+                        Faire le questionnaire
+                      </Text>
+                      <Text style={styles.primaryButtonArrow}>→</Text>
+                    </PressableScale>
+                  </Link>
 
-              <Text style={styles.emptyText}>
-                Complétez d’abord le questionnaire TMS ou l’audit du poste pour
-                recevoir des recommandations personnalisées.
-              </Text>
-
-              <View style={styles.emptyActions}>
-                <Link href="/questionnaire" asChild>
-                  <Pressable style={styles.primaryButton}>
-                    <Text style={styles.primaryButtonText}>
-                      Faire le questionnaire
-                    </Text>
-                    <Text style={styles.primaryButtonArrow}>→</Text>
-                  </Pressable>
-                </Link>
-
-                <Link href="/workstation-audit" asChild>
-                  <Pressable style={styles.secondaryButton}>
-                    <Text style={styles.secondaryButtonText}>
-                      Faire l’audit du poste
-                    </Text>
-                    <Text style={styles.secondaryButtonArrow}>→</Text>
-                  </Pressable>
-                </Link>
-              </View>
-            </View>
-
-            <View style={styles.tipBox}>
-              <Text style={styles.tipTitle}>Pourquoi commencer par là?</Text>
-              <Text style={styles.tipText}>
-                Le plan personnalisé dépend de vos réponses. Plus vos données
-                sont complètes, plus les recommandations seront utiles.
-              </Text>
-            </View>
-          </>
-        )}
-
-        {hasEnoughData && (
-          <>
-            <View style={styles.heroCard}>
-              <View style={styles.heroTopRow}>
-                <View style={styles.heroTextBlock}>
-                  <Text style={styles.heroLabel}>
-                    {profile?.firstName
-                      ? `Plan de ${profile.firstName}`
-                      : "Votre plan"}
-                  </Text>
-
-                  <Text style={styles.heroTitle}>
-                    Prioriser les gestes simples.
-                  </Text>
-                </View>
-
-                <View style={styles.heroIconBubble}>
-                  <FirstPriorityIcon size={25} color={colors.text} />
+                  <Link href="/workstation-audit" asChild>
+                    <PressableScale style={styles.secondaryButton}>
+                      <Text style={styles.secondaryButtonText}>
+                        Faire l’audit du poste
+                      </Text>
+                      <Text style={styles.secondaryButtonArrow}>→</Text>
+                    </PressableScale>
+                  </Link>
                 </View>
               </View>
 
-              <Text style={styles.heroText}>
-                Commencez par les actions les plus utiles et les plus faciles à
-                intégrer selon vos priorités actuelles.
-              </Text>
-            </View>
-
-            <View style={styles.scoreRow}>
-              <View style={styles.scoreMiniCard}>
-                <Text style={styles.scoreLabel}>Score TMS</Text>
-                <Text style={styles.scoreValue}>
-                  {questionnaireResult ? questionnaireResult.score : "--"}
-                </Text>
-                <Text style={styles.scoreSmall}>/100</Text>
-              </View>
-
-              <View style={styles.scoreMiniCard}>
-                <Text style={styles.scoreLabel}>Score poste</Text>
-                <Text style={styles.scoreValue}>
-                  {workstationAuditResult ? workstationAuditResult.score : "--"}
-                </Text>
-                <Text style={styles.scoreSmall}>/100</Text>
-              </View>
-            </View>
-
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Priorités détectées</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Les zones à travailler en premier.
+              <View style={styles.tipBox}>
+                <Text style={styles.tipTitle}>Pourquoi commencer par là?</Text>
+                <Text style={styles.tipText}>
+                  Le plan personnalisé dépend de vos réponses. Plus vos données
+                  sont complètes, plus les recommandations seront utiles.
                 </Text>
               </View>
+            </>
+          )}
 
-              <View style={styles.sectionCountPill}>
-                <Text style={styles.sectionCountText}>
-                  {mainPriorities.length}
+          {hasEnoughData && (
+            <>
+              <View style={styles.heroCard}>
+                <View style={styles.heroTopRow}>
+                  <View style={styles.heroTextBlock}>
+                    <Text style={styles.heroLabel}>
+                      {profile?.firstName
+                        ? `Plan de ${profile.firstName}`
+                        : "Votre plan"}
+                    </Text>
+
+                    <Text style={styles.heroTitle}>
+                      Prioriser les gestes simples.
+                    </Text>
+                  </View>
+
+                  <View style={styles.heroIconBubble}>
+                    <FirstPriorityIcon
+                      size={layout.isMobile ? 22 : 25}
+                      color={colors.text}
+                    />
+                  </View>
+                </View>
+
+                <Text style={styles.heroText}>
+                  Commencez par les actions les plus utiles et les plus faciles
+                  à intégrer selon vos priorités actuelles.
                 </Text>
               </View>
-            </View>
 
-            {mainPriorities.length > 0 ? (
-              <ScrollView
-                horizontal
-                showsHorizontalScrollIndicator={false}
-                contentContainerStyle={styles.priorityRow}
-              >
-                {mainPriorities.map((priority, index) => {
+              <View style={styles.scoreRow}>
+                <View style={styles.scoreMiniCard}>
+                  <Text style={styles.scoreLabel}>Score TMS</Text>
+                  <Text style={styles.scoreValue}>
+                    {questionnaireResult ? questionnaireResult.score : "--"}
+                  </Text>
+                  <Text style={styles.scoreSmall}>/100</Text>
+                </View>
+
+                <View style={styles.scoreMiniCard}>
+                  <Text style={styles.scoreLabel}>Score poste</Text>
+                  <Text style={styles.scoreValue}>
+                    {workstationAuditResult
+                      ? workstationAuditResult.score
+                      : "--"}
+                  </Text>
+                  <Text style={styles.scoreSmall}>/100</Text>
+                </View>
+              </View>
+
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderTextBlock}>
+                  <Text style={styles.sectionTitle}>Priorités détectées</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Les zones à travailler en premier.
+                  </Text>
+                </View>
+
+                <View style={styles.sectionCountPill}>
+                  <Text style={styles.sectionCountText}>
+                    {mainPriorities.length}
+                  </Text>
+                </View>
+              </View>
+
+              {mainPriorities.length > 0 ? (
+                <ScrollView
+                  horizontal
+                  showsHorizontalScrollIndicator={false}
+                  contentContainerStyle={styles.priorityRow}
+                >
+                  {mainPriorities.map((priority, index) => {
+                    const PriorityIcon = getPriorityIcon(priority);
+
+                    return (
+                      <View
+                        key={`${priority}-${index}`}
+                        style={styles.priorityCard}
+                      >
+                        <View style={styles.priorityTopRow}>
+                          <IconBadge
+                            size={layout.isMobile ? 40 : 44}
+                            backgroundColor={colors.backgroundSoft}
+                            borderColor={colors.border}
+                          >
+                            <PriorityIcon
+                              size={layout.isMobile ? 19 : 21}
+                              color={colors.text}
+                            />
+                          </IconBadge>
+
+                          <View style={styles.priorityNumber}>
+                            <Text style={styles.priorityNumberText}>
+                              {index + 1}
+                            </Text>
+                          </View>
+                        </View>
+
+                        <Text style={styles.priorityText}>{priority}</Text>
+                        <Text style={styles.priorityCaption}>
+                          Priorité à intégrer dans votre routine.
+                        </Text>
+                      </View>
+                    );
+                  })}
+                </ScrollView>
+              ) : (
+                <View style={styles.noPriorityCard}>
+                  <Text style={styles.noPriorityTitle}>
+                    Aucune priorité majeure
+                  </Text>
+                  <Text style={styles.noPriorityText}>
+                    Continuez vos bonnes habitudes : pauses régulières,
+                    mouvement et ajustements du poste au besoin.
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderTextBlock}>
+                  <Text style={styles.sectionTitle}>Actions recommandées</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Des gestes concrets selon vos priorités.
+                  </Text>
+                </View>
+              </View>
+
+              {mainPriorities.length > 0 ? (
+                mainPriorities.map((priority) => {
                   const PriorityIcon = getPriorityIcon(priority);
 
                   return (
-                    <View key={`${priority}-${index}`} style={styles.priorityCard}>
-                      <View style={styles.priorityTopRow}>
+                    <View key={priority} style={styles.planSection}>
+                      <View style={styles.planSectionHeader}>
                         <IconBadge
-                          size={44}
-                          backgroundColor={colors.backgroundSoft}
+                          size={layout.isMobile ? 39 : 42}
+                          backgroundColor={colors.turquoiseSoft}
                           borderColor={colors.border}
                         >
-                          <PriorityIcon size={21} color={colors.text} />
+                          <PriorityIcon
+                            size={layout.isMobile ? 18 : 20}
+                            color={colors.text}
+                          />
                         </IconBadge>
 
-                        <View style={styles.priorityNumber}>
-                          <Text style={styles.priorityNumberText}>
-                            {index + 1}
+                        <View style={styles.planSectionTextBlock}>
+                          <Text style={styles.planSectionLabel}>Priorité</Text>
+                          <Text style={styles.planSectionTitle}>
+                            {priority}
                           </Text>
                         </View>
                       </View>
 
-                      <Text style={styles.priorityText}>{priority}</Text>
-                      <Text style={styles.priorityCaption}>
-                        Priorité à intégrer dans votre routine.
-                      </Text>
+                      {getRecommendations(priority).map((recommendation) => (
+                        <View
+                          key={`${priority}-${recommendation.title}`}
+                          style={styles.recommendationCard}
+                        >
+                          <Text style={styles.recommendationTitle}>
+                            {recommendation.title}
+                          </Text>
+
+                          <Text style={styles.recommendationText}>
+                            {recommendation.text}
+                          </Text>
+
+                          <Link href={recommendation.href} asChild>
+                            <PressableScale style={styles.smallButton}>
+                              <Text style={styles.smallButtonText}>
+                                {recommendation.buttonText}
+                              </Text>
+                              <Text style={styles.smallButtonArrow}>→</Text>
+                            </PressableScale>
+                          </Link>
+                        </View>
+                      ))}
                     </View>
+                  );
+                })
+              ) : (
+                <View style={styles.recommendationCard}>
+                  <Text style={styles.recommendationTitle}>
+                    Continuer vos habitudes
+                  </Text>
+
+                  <Text style={styles.recommendationText}>
+                    Gardez une routine simple : pauses régulières, mouvement,
+                    exercices doux et ajustements du poste au besoin.
+                  </Text>
+                </View>
+              )}
+
+              <View style={styles.sectionHeaderRow}>
+                <View style={styles.sectionHeaderTextBlock}>
+                  <Text style={styles.sectionTitle}>Outils utiles</Text>
+                  <Text style={styles.sectionSubtitle}>
+                    Accès rapide aux actions de votre plan.
+                  </Text>
+                </View>
+
+                <Text style={styles.sectionAction}>Défilez →</Text>
+              </View>
+
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                contentContainerStyle={styles.quickActionsRow}
+              >
+                {quickActions.map((item) => {
+                  const QuickIcon = item.Icon;
+
+                  return (
+                    <Link key={item.href} href={item.href} asChild>
+                      <PressableScale style={styles.quickCard}>
+                        <IconBadge
+                          size={layout.isMobile ? 40 : 44}
+                          backgroundColor={colors.backgroundSoft}
+                          borderColor={colors.border}
+                        >
+                          <QuickIcon
+                            size={layout.isMobile ? 19 : 21}
+                            color={colors.text}
+                          />
+                        </IconBadge>
+
+                        <Text style={styles.quickLabel}>{item.label}</Text>
+                        <Text style={styles.quickTitle}>{item.title}</Text>
+                        <Text style={styles.quickText}>{item.text}</Text>
+
+                        <View style={styles.quickArrowCircle}>
+                          <Text style={styles.quickArrowText}>→</Text>
+                        </View>
+                      </PressableScale>
+                    </Link>
                   );
                 })}
               </ScrollView>
-            ) : (
-              <View style={styles.noPriorityCard}>
-                <Text style={styles.noPriorityTitle}>Aucune priorité majeure</Text>
-                <Text style={styles.noPriorityText}>
-                  Continuez vos bonnes habitudes : pauses régulières, mouvement
-                  et ajustements du poste au besoin.
-                </Text>
-              </View>
-            )}
 
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Actions recommandées</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Des gestes concrets selon vos priorités.
-                </Text>
-              </View>
-            </View>
-
-            {mainPriorities.length > 0 ? (
-              mainPriorities.map((priority) => {
-                const PriorityIcon = getPriorityIcon(priority);
-
-                return (
-                  <View key={priority} style={styles.planSection}>
-                    <View style={styles.planSectionHeader}>
-                      <IconBadge
-                        size={42}
-                        backgroundColor={colors.turquoiseSoft}
-                        borderColor={colors.border}
-                      >
-                        <PriorityIcon size={20} color={colors.text} />
-                      </IconBadge>
-
-                      <View>
-                        <Text style={styles.planSectionLabel}>Priorité</Text>
-                        <Text style={styles.planSectionTitle}>{priority}</Text>
-                      </View>
-                    </View>
-
-                    {getRecommendations(priority).map((recommendation) => (
-                      <View
-                        key={`${priority}-${recommendation.title}`}
-                        style={styles.recommendationCard}
-                      >
-                        <Text style={styles.recommendationTitle}>
-                          {recommendation.title}
-                        </Text>
-
-                        <Text style={styles.recommendationText}>
-                          {recommendation.text}
-                        </Text>
-
-                        <Link href={recommendation.href} asChild>
-                          <Pressable style={styles.smallButton}>
-                            <Text style={styles.smallButtonText}>
-                              {recommendation.buttonText}
-                            </Text>
-                            <Text style={styles.smallButtonArrow}>→</Text>
-                          </Pressable>
-                        </Link>
-                      </View>
-                    ))}
-                  </View>
-                );
-              })
-            ) : (
-              <View style={styles.recommendationCard}>
-                <Text style={styles.recommendationTitle}>
-                  Continuer vos habitudes
-                </Text>
-
-                <Text style={styles.recommendationText}>
-                  Gardez une routine simple : pauses régulières, mouvement,
-                  exercices doux et ajustements du poste au besoin.
-                </Text>
-              </View>
-            )}
-
-            <View style={styles.sectionHeaderRow}>
-              <View>
-                <Text style={styles.sectionTitle}>Outils utiles</Text>
-                <Text style={styles.sectionSubtitle}>
-                  Accès rapide aux actions de votre plan.
+              <View style={styles.warningBox}>
+                <Text style={styles.warningTitle}>À retenir</Text>
+                <Text style={styles.warningText}>
+                  Ce plan est un outil d’éducation et de prévention. Il ne
+                  remplace pas une évaluation personnalisée par un professionnel.
                 </Text>
               </View>
 
-              <Text style={styles.sectionAction}>Défilez →</Text>
-            </View>
+              <Link href="/dashboard" asChild>
+                <PressableScale style={styles.primaryButtonFull}>
+                  <Text style={styles.primaryButtonText}>
+                    Voir mon tableau de bord
+                  </Text>
+                  <Text style={styles.primaryButtonArrow}>→</Text>
+                </PressableScale>
+              </Link>
+            </>
+          )}
 
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={styles.quickActionsRow}
-            >
-              {quickActions.map((item) => {
-                const QuickIcon = item.Icon;
-
-                return (
-                  <Link key={item.href} href={item.href} asChild>
-                    <Pressable style={styles.quickCard}>
-                      <IconBadge
-                        size={44}
-                        backgroundColor={colors.backgroundSoft}
-                        borderColor={colors.border}
-                      >
-                        <QuickIcon size={21} color={colors.text} />
-                      </IconBadge>
-
-                      <Text style={styles.quickLabel}>{item.label}</Text>
-                      <Text style={styles.quickTitle}>{item.title}</Text>
-                      <Text style={styles.quickText}>{item.text}</Text>
-
-                      <View style={styles.quickArrowCircle}>
-                        <Text style={styles.quickArrowText}>→</Text>
-                      </View>
-                    </Pressable>
-                  </Link>
-                );
-              })}
-            </ScrollView>
-
-            <View style={styles.warningBox}>
-              <Text style={styles.warningTitle}>À retenir</Text>
-              <Text style={styles.warningText}>
-                Ce plan est un outil d’éducation et de prévention. Il ne
-                remplace pas une évaluation personnalisée par un professionnel.
-              </Text>
-            </View>
-
-            <Link href="/dashboard" asChild>
-              <Pressable style={styles.primaryButtonFull}>
-                <Text style={styles.primaryButtonText}>
-                  Voir mon tableau de bord
-                </Text>
-                <Text style={styles.primaryButtonArrow}>→</Text>
-              </Pressable>
-            </Link>
-          </>
-        )}
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+          <BottomNav />
+        </ScrollView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: 38,
-      lineHeight: 45,
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: 10,
+      marginBottom: isMobile ? 8 : 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     emptyCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 34,
-      padding: 24,
+      borderRadius: isMobile ? 28 : 34,
+      padding: isMobile ? 20 : 24,
       marginBottom: 18,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
       overflow: "hidden",
       position: "relative",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     emptyTitle: {
       fontFamily: "Georgia",
-      fontSize: 27,
-      lineHeight: 34,
+      fontSize: isMobile ? 23 : 27,
+      lineHeight: isMobile ? 29 : 34,
       color: colors.primary,
       textAlign: "center",
-      marginTop: 18,
+      marginTop: isMobile ? 16 : 18,
       marginBottom: 10,
       zIndex: 2,
       textShadowColor: "rgba(0,0,0,0.18)",
@@ -777,8 +815,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       textShadowRadius: 7,
     },
     emptyText: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 22,
       color: colors.textSoft,
       textAlign: "center",
       marginBottom: 18,
@@ -786,35 +824,40 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       zIndex: 2,
     },
     emptyActions: {
-      alignItems: "center",
+      alignItems: isMobile ? "stretch" : "center",
+      alignSelf: "stretch",
       gap: 10,
       zIndex: 2,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 245,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 220 : 245,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
     heroTextBlock: {
       flex: 1,
     },
     heroLabel: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -823,27 +866,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 34,
-      lineHeight: 41,
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
       color: colors.primary,
       letterSpacing: -0.7,
-      maxWidth: 360,
+      maxWidth: isMobile ? 250 : 360,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 460,
       zIndex: 2,
-      marginTop: 22,
+      marginTop: isMobile ? 18 : 22,
     },
     heroIconBubble: {
-      width: 58,
-      height: 58,
-      borderRadius: 29,
+      width: isMobile ? 50 : 58,
+      height: isMobile ? 50 : 58,
+      borderRadius: isMobile ? 25 : 29,
       backgroundColor: colors.backgroundSoft,
       borderWidth: 1,
       borderColor: colors.border,
@@ -852,32 +895,33 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     scoreRow: {
       flexDirection: "row",
-      gap: 12,
-      marginHorizontal: 24,
-      marginBottom: 26,
+      gap: isMobile ? 10 : 12,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 24 : 26,
     },
     scoreMiniCard: {
       flex: 1,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 18,
+      borderRadius: isMobile ? 22 : 26,
+      padding: isMobile ? 15 : 18,
       alignItems: "center",
       borderWidth: 1,
       borderColor: colors.border,
     },
     scoreLabel: {
-      fontSize: 12,
+      fontSize: isMobile ? 10 : 12,
       fontWeight: "900",
       color: colors.textMuted,
       marginBottom: 6,
       textTransform: "uppercase",
       letterSpacing: 0.5,
+      textAlign: "center",
     },
     scoreValue: {
-      fontSize: 36,
+      fontSize: isMobile ? 30 : 36,
       fontWeight: "900",
       color: colors.primary,
-      lineHeight: 40,
+      lineHeight: isMobile ? 34 : 40,
     },
     scoreSmall: {
       fontSize: 12,
@@ -886,24 +930,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginTop: 2,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
     },
+    sectionHeaderTextBlock: {
+      flex: 1,
+    },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     sectionAction: {
@@ -927,17 +974,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textSoft,
     },
     priorityRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 28,
+      marginBottom: isMobile ? 24 : 28,
     },
     priorityCard: {
-      width: 175,
-      minHeight: 180,
+      width: isSmallMobile ? 152 : isMobile ? 165 : 175,
+      minHeight: isMobile ? 165 : 180,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -949,8 +996,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       gap: 8,
     },
     priorityNumber: {
-      width: 31,
-      height: 31,
+      width: isMobile ? 29 : 31,
+      height: isMobile ? 29 : 31,
       borderRadius: 16,
       backgroundColor: colors.primary,
       alignItems: "center",
@@ -965,53 +1012,56 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     priorityText: {
       fontFamily: "Georgia",
-      fontSize: 22,
-      lineHeight: 27,
+      fontSize: isMobile ? 19 : 22,
+      lineHeight: isMobile ? 24 : 27,
       color: colors.primary,
       letterSpacing: -0.3,
-      marginTop: 20,
+      marginTop: isMobile ? 16 : 20,
     },
     priorityCaption: {
-      fontSize: 13,
-      lineHeight: 18,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 17 : 18,
       color: colors.textSoft,
       marginTop: 8,
     },
     noPriorityCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 24,
-      padding: 18,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
       marginBottom: 26,
     },
     noPriorityTitle: {
       fontFamily: "Georgia",
-      fontSize: 22,
-      lineHeight: 28,
+      fontSize: isMobile ? 20 : 22,
+      lineHeight: isMobile ? 25 : 28,
       color: colors.primary,
       marginBottom: 8,
     },
     noPriorityText: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 20 : 21,
       color: colors.textSoft,
     },
     planSection: {
-      marginHorizontal: 24,
-      marginBottom: 26,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 22 : 26,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 30,
-      padding: 18,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
     },
     planSectionHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 13,
+      gap: isMobile ? 11 : 13,
       marginBottom: 16,
+    },
+    planSectionTextBlock: {
+      flex: 1,
     },
     planSectionLabel: {
       fontSize: 11,
@@ -1023,39 +1073,40 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     planSectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 24,
-      lineHeight: 30,
+      fontSize: isMobile ? 21 : 24,
+      lineHeight: isMobile ? 26 : 30,
       color: colors.primary,
       letterSpacing: -0.3,
     },
     recommendationCard: {
       backgroundColor: colors.card,
-      borderRadius: 23,
-      padding: 17,
+      borderRadius: isMobile ? 20 : 23,
+      padding: isMobile ? 15 : 17,
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.border,
     },
     recommendationTitle: {
       fontFamily: "Georgia",
-      fontSize: 21,
-      lineHeight: 27,
+      fontSize: isMobile ? 19 : 21,
+      lineHeight: isMobile ? 24 : 27,
       color: colors.primary,
       marginBottom: 8,
     },
     recommendationText: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 20 : 21,
       color: colors.textSoft,
       marginBottom: 14,
     },
     smallButton: {
-      alignSelf: "flex-start",
+      alignSelf: isMobile ? "stretch" : "flex-start",
       backgroundColor: colors.backgroundSoft,
       paddingVertical: 11,
       paddingHorizontal: 13,
       borderRadius: 999,
       alignItems: "center",
+      justifyContent: "center",
       borderWidth: 1,
       borderColor: colors.border,
       flexDirection: "row",
@@ -1065,6 +1116,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.text,
       fontSize: 13,
       fontWeight: "900",
+      textAlign: "center",
     },
     smallButtonArrow: {
       color: colors.text,
@@ -1073,17 +1125,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       lineHeight: 17,
     },
     quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 165,
-      minHeight: 200,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
+      minHeight: isMobile ? 185 : 200,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -1094,26 +1146,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: 19,
-      lineHeight: 24,
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1128,18 +1180,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       lineHeight: 19,
     },
     warningBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
       marginBottom: 16,
     },
     warningTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1149,18 +1201,18 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.warningText,
     },
     tipBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
       marginBottom: 22,
     },
     tipTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1171,8 +1223,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     primaryButton: {
       backgroundColor: colors.primary,
-      paddingVertical: 15,
-      paddingHorizontal: 18,
+      paddingVertical: isMobile ? 14 : 15,
+      paddingHorizontal: isMobile ? 16 : 18,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -1180,12 +1232,12 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
       flexDirection: "row",
       gap: 10,
-      alignSelf: "center",
+      alignSelf: isMobile ? "stretch" : "center",
     },
     primaryButtonFull: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.primary,
-      paddingVertical: 16,
+      paddingVertical: isMobile ? 14 : 16,
       paddingHorizontal: 18,
       borderRadius: 999,
       alignItems: "center",
@@ -1198,8 +1250,9 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,
@@ -1210,6 +1263,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     secondaryButton: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       gap: 8,
       paddingVertical: 13,
       paddingHorizontal: 16,
@@ -1217,12 +1271,13 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.cardWarm,
-      alignSelf: "center",
+      alignSelf: isMobile ? "stretch" : "center",
     },
     secondaryButtonText: {
       color: colors.text,
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
+      textAlign: "center",
     },
     secondaryButtonArrow: {
       color: colors.text,

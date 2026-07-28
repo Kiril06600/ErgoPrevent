@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -15,6 +14,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -185,7 +186,8 @@ export default function DashboardScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
 
   const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshStats() {
@@ -269,385 +271,419 @@ export default function DashboardScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Vue globale</Text>
-          </View>
-
-          <Text style={styles.pageTitle}>
-            {profile?.firstName
-              ? `Bonjour ${profile.firstName}`
-              : "Tableau de bord"}
-          </Text>
-
-          <Text style={styles.subtitle}>
-            Suivez votre progression, vos scores et vos habitudes de prévention.
-          </Text>
-        </View>
-
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View style={styles.heroTextBlock}>
-              <Text style={styles.heroLabel}>Niveau actuel</Text>
-              <Text style={styles.heroTitle}>{userLevel}</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Vue globale</Text>
             </View>
 
-            <View style={styles.pointsCircle}>
-              <Text style={styles.pointsNumber}>{points}</Text>
-              <Text style={styles.pointsLabel}>points</Text>
+            <Text style={styles.pageTitle}>
+              {profile?.firstName
+                ? `Bonjour ${profile.firstName}`
+                : "Tableau de bord"}
+            </Text>
+
+            <Text style={styles.subtitle}>
+              Suivez votre progression, vos scores et vos habitudes de
+              prévention.
+            </Text>
+          </View>
+
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroTextBlock}>
+                <Text style={styles.heroLabel}>Niveau actuel</Text>
+                <Text style={styles.heroTitle}>{userLevel}</Text>
+              </View>
+
+              <View style={styles.pointsCircle}>
+                <Text style={styles.pointsNumber}>{points}</Text>
+                <Text style={styles.pointsLabel}>points</Text>
+              </View>
+            </View>
+
+            <Text style={styles.heroText}>
+              Continuez vos pauses, exercices, capsules et check-ins pour
+              progresser régulièrement.
+            </Text>
+          </View>
+
+          <View style={styles.scoreGrid}>
+            <View style={styles.scoreCard}>
+              <Text style={styles.scoreLabel}>Score TMS</Text>
+              <Text style={styles.score}>
+                {questionnaireResult ? score : "--"}
+              </Text>
+              <Text style={styles.scoreSmall}>/100</Text>
+              <Text style={styles.scoreMessage}>
+                {questionnaireResult ? level : "Questionnaire à compléter"}
+              </Text>
+            </View>
+
+            <View style={styles.scoreCard}>
+              <Text style={styles.scoreLabel}>Score poste</Text>
+              <Text style={styles.score}>
+                {workstationAuditResult ? workstationScore : "--"}
+              </Text>
+              <Text style={styles.scoreSmall}>/100</Text>
+              <Text style={styles.scoreMessage}>
+                {workstationAuditResult ? workstationLevel : "Audit à compléter"}
+              </Text>
             </View>
           </View>
 
-          <Text style={styles.heroText}>
-            Continuez vos pauses, exercices, capsules et check-ins pour
-            progresser régulièrement.
-          </Text>
-        </View>
+          <View style={styles.statsPanel}>
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{completedBreaks}</Text>
+              <Text style={styles.statLabel}>pauses</Text>
+            </View>
 
-        <View style={styles.scoreGrid}>
-          <View style={styles.scoreCard}>
-            <Text style={styles.scoreLabel}>Score TMS</Text>
-            <Text style={styles.score}>
-              {questionnaireResult ? score : "--"}
-            </Text>
-            <Text style={styles.scoreSmall}>/100</Text>
-            <Text style={styles.scoreMessage}>
-              {questionnaireResult ? level : "Questionnaire à compléter"}
-            </Text>
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{completedExercises}</Text>
+              <Text style={styles.statLabel}>exercices</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{completedCapsules}</Text>
+              <Text style={styles.statLabel}>capsules</Text>
+            </View>
+
+            <View style={styles.statDivider} />
+
+            <View style={styles.statItem}>
+              <Text style={styles.statNumber}>{totalActions}</Text>
+              <Text style={styles.statLabel}>actions</Text>
+            </View>
           </View>
 
-          <View style={styles.scoreCard}>
-            <Text style={styles.scoreLabel}>Score poste</Text>
-            <Text style={styles.score}>
-              {workstationAuditResult ? workstationScore : "--"}
-            </Text>
-            <Text style={styles.scoreSmall}>/100</Text>
-            <Text style={styles.scoreMessage}>
-              {workstationAuditResult ? workstationLevel : "Audit à compléter"}
-            </Text>
-          </View>
-        </View>
-
-        <View style={styles.statsPanel}>
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{completedBreaks}</Text>
-            <Text style={styles.statLabel}>pauses</Text>
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Priorités</Text>
+              <Text style={styles.sectionSubtitle}>
+                Les points principaux à suivre.
+              </Text>
+            </View>
           </View>
 
-          <View style={styles.statDivider} />
+          {hasAnyPriority ? (
+            <>
+              {priorities.length > 0 && (
+                <View style={styles.prioritySection}>
+                  <View style={styles.priorityHeader}>
+                    <IconBadge
+                      size={layout.isMobile ? 39 : 42}
+                      backgroundColor={colors.turquoiseSoft}
+                      borderColor={colors.border}
+                    >
+                      <EducationIcon
+                        size={layout.isMobile ? 18 : 20}
+                        color={colors.text}
+                      />
+                    </IconBadge>
 
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{completedExercises}</Text>
-            <Text style={styles.statLabel}>exercices</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{completedCapsules}</Text>
-            <Text style={styles.statLabel}>capsules</Text>
-          </View>
-
-          <View style={styles.statDivider} />
-
-          <View style={styles.statItem}>
-            <Text style={styles.statNumber}>{totalActions}</Text>
-            <Text style={styles.statLabel}>actions</Text>
-          </View>
-        </View>
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Priorités</Text>
-            <Text style={styles.sectionSubtitle}>
-              Les points principaux à suivre.
-            </Text>
-          </View>
-        </View>
-
-        {hasAnyPriority ? (
-          <>
-            {priorities.length > 0 && (
-              <View style={styles.prioritySection}>
-                <View style={styles.priorityHeader}>
-                  <IconBadge
-                    size={42}
-                    backgroundColor={colors.turquoiseSoft}
-                    borderColor={colors.border}
-                  >
-                    <EducationIcon size={20} color={colors.text} />
-                  </IconBadge>
-
-                  <View>
-                    <Text style={styles.priorityLabel}>Questionnaire</Text>
-                    <Text style={styles.priorityTitle}>Priorités TMS</Text>
-                  </View>
-                </View>
-
-                {priorities.map((priority, index) => (
-                  <View key={priority} style={styles.priorityRow}>
-                    <View style={styles.priorityNumber}>
-                      <Text style={styles.priorityNumberText}>{index + 1}</Text>
+                    <View style={styles.priorityHeaderTextBlock}>
+                      <Text style={styles.priorityLabel}>Questionnaire</Text>
+                      <Text style={styles.priorityTitle}>Priorités TMS</Text>
                     </View>
-
-                    <Text style={styles.priorityText}>{priority}</Text>
                   </View>
-                ))}
-              </View>
-            )}
 
-            {workstationPriorities.length > 0 && (
-              <View style={styles.prioritySection}>
-                <View style={styles.priorityHeader}>
-                  <IconBadge
-                    size={42}
-                    backgroundColor={colors.turquoiseSoft}
-                    borderColor={colors.border}
-                  >
-                    <PostureIcon size={20} color={colors.text} />
-                  </IconBadge>
+                  {priorities.map((priority, index) => (
+                    <View key={priority} style={styles.priorityRow}>
+                      <View style={styles.priorityNumber}>
+                        <Text style={styles.priorityNumberText}>
+                          {index + 1}
+                        </Text>
+                      </View>
 
-                  <View>
-                    <Text style={styles.priorityLabel}>Poste</Text>
-                    <Text style={styles.priorityTitle}>Priorités du poste</Text>
-                  </View>
-                </View>
-
-                {workstationPriorities.map((priority, index) => (
-                  <View key={priority} style={styles.priorityRow}>
-                    <View style={styles.priorityNumber}>
-                      <Text style={styles.priorityNumberText}>{index + 1}</Text>
+                      <Text style={styles.priorityText}>{priority}</Text>
                     </View>
+                  ))}
+                </View>
+              )}
 
-                    <Text style={styles.priorityText}>{priority}</Text>
+              {workstationPriorities.length > 0 && (
+                <View style={styles.prioritySection}>
+                  <View style={styles.priorityHeader}>
+                    <IconBadge
+                      size={layout.isMobile ? 39 : 42}
+                      backgroundColor={colors.turquoiseSoft}
+                      borderColor={colors.border}
+                    >
+                      <PostureIcon
+                        size={layout.isMobile ? 18 : 20}
+                        color={colors.text}
+                      />
+                    </IconBadge>
+
+                    <View style={styles.priorityHeaderTextBlock}>
+                      <Text style={styles.priorityLabel}>Poste</Text>
+                      <Text style={styles.priorityTitle}>
+                        Priorités du poste
+                      </Text>
+                    </View>
                   </View>
-                ))}
-              </View>
-            )}
-          </>
-        ) : (
-          <View style={styles.emptyPriorityCard}>
-            <IconBadge
-              size={46}
-              backgroundColor={colors.backgroundSoft}
-              borderColor={colors.border}
-            >
-              <PlanIcon size={22} color={colors.text} />
-            </IconBadge>
 
-            <Text style={styles.emptyPriorityTitle}>
-              Aucune priorité détectée pour l’instant
-            </Text>
+                  {workstationPriorities.map((priority, index) => (
+                    <View key={priority} style={styles.priorityRow}>
+                      <View style={styles.priorityNumber}>
+                        <Text style={styles.priorityNumberText}>
+                          {index + 1}
+                        </Text>
+                      </View>
 
-            <Text style={styles.emptyPriorityText}>
-              Complétez le questionnaire ou l’audit du poste pour obtenir des
-              priorités personnalisées.
-            </Text>
+                      <Text style={styles.priorityText}>{priority}</Text>
+                    </View>
+                  ))}
+                </View>
+              )}
+            </>
+          ) : (
+            <View style={styles.emptyPriorityCard}>
+              <IconBadge
+                size={layout.isMobile ? 42 : 46}
+                backgroundColor={colors.backgroundSoft}
+                borderColor={colors.border}
+              >
+                <PlanIcon
+                  size={layout.isMobile ? 20 : 22}
+                  color={colors.text}
+                />
+              </IconBadge>
+
+              <Text style={styles.emptyPriorityTitle}>
+                Aucune priorité détectée pour l’instant
+              </Text>
+
+              <Text style={styles.emptyPriorityText}>
+                Complétez le questionnaire ou l’audit du poste pour obtenir des
+                priorités personnalisées.
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Badges</Text>
+              <Text style={styles.sectionSubtitle}>
+                Vos étapes de progression.
+              </Text>
+            </View>
+
+            <View style={styles.sectionCountPill}>
+              <Text style={styles.sectionCountText}>
+                {unlockedBadges.length}/{badgeItems.length}
+              </Text>
+            </View>
           </View>
-        )}
 
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Badges</Text>
-            <Text style={styles.sectionSubtitle}>
-              Vos étapes de progression.
-            </Text>
-          </View>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.badgesRow}
+          >
+            {badgeItems.map((badge) => {
+              const BadgeIcon = badge.Icon;
 
-          <View style={styles.sectionCountPill}>
-            <Text style={styles.sectionCountText}>
-              {unlockedBadges.length}/{badgeItems.length}
-            </Text>
-          </View>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.badgesRow}
-        >
-          {badgeItems.map((badge) => {
-            const BadgeIcon = badge.Icon;
-
-            return (
-              <View
-  key={badge.title}
-  style={[
-    styles.badgeCard,
-    badge.isUnlocked ? styles.badgeCardUnlocked : styles.badgeCardLocked,
-  ]}
->
-  {!badge.isUnlocked && (
-    <View style={styles.lockPill}>
-      <LockIcon size={14} color={colors.primary} />
-      <Text style={styles.lockText}>Verrouillé</Text>
-    </View>
-  )}
-                <IconBadge
-                  size={46}
-                  backgroundColor={
-                    badge.isUnlocked
-                      ? colors.primaryLight
-                      : colors.backgroundSoft
-                  }
-                  borderColor={colors.border}
-                >
-                  <BadgeIcon
-                    size={22}
-                    color={badge.isUnlocked ? colors.text : colors.textMuted}
-                  />
-                </IconBadge>
-
-                <Text
+              return (
+                <View
+                  key={badge.title}
                   style={[
-                    styles.badgeTitle,
-                    !badge.isUnlocked ? styles.badgeTitleLocked : null,
+                    styles.badgeCard,
+                    badge.isUnlocked
+                      ? styles.badgeCardUnlocked
+                      : styles.badgeCardLocked,
                   ]}
                 >
-                  {badge.title}
-                </Text>
+                  {!badge.isUnlocked && (
+                    <View style={styles.lockPill}>
+                      <LockIcon size={14} color={colors.primary} />
+                      <Text style={styles.lockText}>Verrouillé</Text>
+                    </View>
+                  )}
 
-                <Text style={styles.badgeText}>
-                  {badge.isUnlocked ? badge.text : "À débloquer"}
-                </Text>
-              </View>
-            );
-          })}
-        </ScrollView>
+                  <IconBadge
+                    size={layout.isMobile ? 42 : 46}
+                    backgroundColor={
+                      badge.isUnlocked
+                        ? colors.primaryLight
+                        : colors.backgroundSoft
+                    }
+                    borderColor={colors.border}
+                  >
+                    <BadgeIcon
+                      size={layout.isMobile ? 20 : 22}
+                      color={badge.isUnlocked ? colors.text : colors.textMuted}
+                    />
+                  </IconBadge>
 
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Actions rapides</Text>
-            <Text style={styles.sectionSubtitle}>
-              Accédez aux fonctions principales.
+                  <Text
+                    style={[
+                      styles.badgeTitle,
+                      !badge.isUnlocked ? styles.badgeTitleLocked : null,
+                    ]}
+                  >
+                    {badge.title}
+                  </Text>
+
+                  <Text style={styles.badgeText}>
+                    {badge.isUnlocked ? badge.text : "À débloquer"}
+                  </Text>
+                </View>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Actions rapides</Text>
+              <Text style={styles.sectionSubtitle}>
+                Accédez aux fonctions principales.
+              </Text>
+            </View>
+
+            <Text style={styles.sectionAction}>Défilez →</Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickActionsRow}
+          >
+            {quickActions.map((item) => {
+              const QuickIcon = item.Icon;
+
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.quickCard}>
+                    <IconBadge
+                      size={layout.isMobile ? 40 : 44}
+                      backgroundColor={colors.backgroundSoft}
+                      borderColor={colors.border}
+                    >
+                      <QuickIcon
+                        size={layout.isMobile ? 19 : 21}
+                        color={colors.text}
+                      />
+                    </IconBadge>
+
+                    <Text style={styles.quickLabel}>{item.label}</Text>
+                    <Text style={styles.quickTitle}>{item.title}</Text>
+                    <Text style={styles.quickText}>{item.text}</Text>
+
+                    <View style={styles.quickArrowCircle}>
+                      <Text style={styles.quickArrowText}>→</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.infoBox}>
+            <Text style={styles.infoTitle}>À retenir</Text>
+            <Text style={styles.infoText}>
+              Le tableau de bord résume vos données de prévention. Il sert à
+              suivre vos habitudes, mais ne remplace pas un avis professionnel.
             </Text>
           </View>
 
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickActionsRow}
-        >
-          {quickActions.map((item) => {
-            const QuickIcon = item.Icon;
-
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.quickCard}>
-                  <IconBadge
-                    size={44}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <QuickIcon size={21} color={colors.text} />
-                  </IconBadge>
-
-                  <Text style={styles.quickLabel}>{item.label}</Text>
-                  <Text style={styles.quickTitle}>{item.title}</Text>
-                  <Text style={styles.quickText}>{item.text}</Text>
-
-                  <View style={styles.quickArrowCircle}>
-                    <Text style={styles.quickArrowText}>→</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
+          <BottomNav />
         </ScrollView>
-
-        <View style={styles.infoBox}>
-          <Text style={styles.infoTitle}>À retenir</Text>
-          <Text style={styles.infoText}>
-            Le tableau de bord résume vos données de prévention. Il sert à suivre
-            vos habitudes, mais ne remplace pas un avis professionnel.
-          </Text>
-        </View>
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
-  fontFamily: "Georgia",
-  fontSize: 38,
-  lineHeight: 45,
-  color: colors.primary,
-  letterSpacing: -0.8,
-  marginBottom: 10,
-  textShadowColor: "rgba(0,0,0,0.20)",
-  textShadowOffset: { width: 0, height: 2 },
-  textShadowRadius: 7,
-},
+      fontFamily: "Georgia",
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
+      marginBottom: isMobile ? 8 : 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
+    },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 245,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 220 : 245,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
     heroTextBlock: {
       flex: 1,
     },
     heroLabel: {
-      fontSize: 13,
+      fontSize: isMobile ? 12 : 13,
       fontWeight: "900",
       color: colors.primary,
       textTransform: "uppercase",
@@ -655,28 +691,28 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-  fontFamily: "Georgia",
-  fontSize: 34,
-  lineHeight: 41,
-  color: colors.primary,
-  letterSpacing: -0.7,
-  maxWidth: 360,
-  textShadowColor: "rgba(0,0,0,0.20)",
-  textShadowOffset: { width: 0, height: 2 },
-  textShadowRadius: 7,
-},
+      fontFamily: "Georgia",
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
+      color: colors.primary,
+      letterSpacing: -0.7,
+      maxWidth: isMobile ? 235 : 360,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
+    },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 460,
       zIndex: 2,
-      marginTop: 22,
+      marginTop: isMobile ? 18 : 22,
     },
     pointsCircle: {
-      width: 74,
-      height: 74,
-      borderRadius: 37,
+      width: isMobile ? 64 : 74,
+      height: isMobile ? 64 : 74,
+      borderRadius: isMobile ? 32 : 37,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -684,33 +720,33 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       borderColor: colors.primaryDark,
     },
     pointsNumber: {
-      fontSize: 23,
+      fontSize: isMobile ? 20 : 23,
       fontWeight: "900",
       color: colors.black,
-      lineHeight: 27,
+      lineHeight: isMobile ? 24 : 27,
     },
     pointsLabel: {
-      fontSize: 11,
+      fontSize: isMobile ? 10 : 11,
       fontWeight: "900",
       color: colors.black,
     },
     scoreGrid: {
       flexDirection: "row",
-      gap: 12,
-      marginHorizontal: 24,
-      marginBottom: 18,
+      gap: isMobile ? 10 : 12,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
     },
     scoreCard: {
       flex: 1,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 18,
+      borderRadius: isMobile ? 22 : 26,
+      padding: isMobile ? 15 : 18,
       alignItems: "center",
       borderWidth: 1,
       borderColor: colors.border,
     },
     scoreLabel: {
-      fontSize: 12,
+      fontSize: isMobile ? 10 : 12,
       fontWeight: "900",
       color: colors.textMuted,
       marginBottom: 7,
@@ -719,8 +755,8 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.4,
     },
     score: {
-      fontSize: 38,
-      lineHeight: 42,
+      fontSize: isMobile ? 30 : 38,
+      lineHeight: isMobile ? 34 : 42,
       fontWeight: "900",
       color: colors.primary,
     },
@@ -731,17 +767,17 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     scoreMessage: {
-      fontSize: 12,
-      lineHeight: 17,
+      fontSize: isMobile ? 11 : 12,
+      lineHeight: isMobile ? 16 : 17,
       color: colors.textSoft,
       textAlign: "center",
     },
     statsPanel: {
-      marginHorizontal: 24,
-      marginBottom: 28,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 24 : 28,
       backgroundColor: colors.card,
-      borderRadius: 26,
-      padding: 16,
+      borderRadius: isMobile ? 22 : 26,
+      padding: isMobile ? 13 : 16,
       borderWidth: 1,
       borderColor: colors.border,
       flexDirection: "row",
@@ -753,18 +789,18 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     statDivider: {
       width: 1,
-      height: 38,
+      height: isMobile ? 34 : 38,
       backgroundColor: colors.border,
     },
     statNumber: {
-      fontSize: 23,
+      fontSize: isMobile ? 19 : 23,
       fontWeight: "900",
       color: colors.text,
-      lineHeight: 27,
+      lineHeight: isMobile ? 23 : 27,
     },
     statLabel: {
       marginTop: 4,
-      fontSize: 10,
+      fontSize: isMobile ? 8 : 10,
       color: colors.textMuted,
       fontWeight: "900",
       textAlign: "center",
@@ -772,24 +808,27 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.4,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
     },
+    sectionHeaderTextBlock: {
+      flex: 1,
+    },
     sectionTitle: {
-  fontFamily: "Georgia",
-  fontSize: 28,
-  lineHeight: 35,
-  color: colors.primary,
-  letterSpacing: -0.5,
-  marginBottom: 4,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
+      marginBottom: 4,
+    },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     sectionAction: {
@@ -813,19 +852,22 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       color: colors.textSoft,
     },
     prioritySection: {
-      marginHorizontal: 24,
-      marginBottom: 18,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 30,
-      padding: 18,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 16 : 18,
       borderWidth: 1,
       borderColor: colors.border,
     },
     priorityHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 13,
+      gap: isMobile ? 11 : 13,
       marginBottom: 16,
+    },
+    priorityHeaderTextBlock: {
+      flex: 1,
     },
     priorityLabel: {
       fontSize: 11,
@@ -836,25 +878,25 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 4,
     },
     priorityTitle: {
-  fontFamily: "Georgia",
-  fontSize: 23,
-  lineHeight: 29,
-  color: colors.primary,
-  letterSpacing: -0.3,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 21 : 23,
+      lineHeight: isMobile ? 26 : 29,
+      color: colors.primary,
+      letterSpacing: -0.3,
+    },
     priorityRow: {
       flexDirection: "row",
       alignItems: "center",
       marginBottom: 10,
       backgroundColor: colors.card,
-      borderRadius: 18,
-      padding: 13,
+      borderRadius: isMobile ? 16 : 18,
+      padding: isMobile ? 12 : 13,
       borderWidth: 1,
       borderColor: colors.border,
     },
     priorityNumber: {
-      width: 31,
-      height: 31,
+      width: isMobile ? 29 : 31,
+      height: isMobile ? 29 : 31,
       borderRadius: 16,
       backgroundColor: colors.primary,
       alignItems: "center",
@@ -870,113 +912,113 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     priorityText: {
       flex: 1,
-      fontSize: 15,
-      lineHeight: 20,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 19 : 20,
       fontWeight: "800",
       color: colors.text,
     },
     emptyPriorityCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 20,
-      marginBottom: 26,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 18 : 20,
+      marginBottom: isMobile ? 24 : 26,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
     },
     emptyPriorityTitle: {
-  fontFamily: "Georgia",
-  fontSize: 22,
-  lineHeight: 28,
-  color: colors.primary,
-  textAlign: "center",
-  marginTop: 15,
-  marginBottom: 8,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 20 : 22,
+      lineHeight: isMobile ? 25 : 28,
+      color: colors.primary,
+      textAlign: "center",
+      marginTop: 15,
+      marginBottom: 8,
+    },
     emptyPriorityText: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 20 : 21,
       color: colors.textSoft,
       textAlign: "center",
       maxWidth: 430,
     },
     badgesRow: {
-  paddingLeft: 24,
-  paddingRight: 24,
-  gap: 12,
-  marginBottom: 28,
-},
-badgeCard: {
-  width: 160,
-  minHeight: 170,
-  backgroundColor: colors.card,
-  borderRadius: 28,
-  padding: 17,
-  borderWidth: 1,
-  borderColor: colors.border,
-  justifyContent: "space-between",
-  opacity: 0.72,
-  position: "relative",
-},
-badgeCardUnlocked: {
-  opacity: 1,
-  backgroundColor: colors.card,
-},
-badgeCardLocked: {
-  opacity: 0.62,
-  backgroundColor: colors.cardWarm,
-},
-lockPill: {
-  position: "absolute",
-  top: 12,
-  right: 12,
-  zIndex: 5,
-  flexDirection: "row",
-  alignItems: "center",
-  gap: 5,
-  backgroundColor: "rgba(0, 30, 24, 0.42)",
-  borderWidth: 1,
-  borderColor: "rgba(245, 238, 223, 0.16)",
-  borderRadius: 999,
-  paddingVertical: 5,
-  paddingHorizontal: 8,
-},
-lockText: {
-  color: colors.primary,
-  fontSize: 9,
-  fontWeight: "900",
-  textTransform: "uppercase",
-  letterSpacing: 0.4,
-},
-badgeTitle: {
-  fontFamily: "Georgia",
-  fontSize: 18,
-  lineHeight: 23,
-  color: colors.primary,
-  marginTop: 14,
-  marginBottom: 6,
-},
-badgeTitleLocked: {
-  color: colors.textMuted,
-},
-badgeText: {
-  fontSize: 13,
-  lineHeight: 18,
-  color: colors.textSoft,
-},  
-    quickActionsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 24 : 28,
+    },
+    badgeCard: {
+      width: isSmallMobile ? 148 : isMobile ? 158 : 160,
+      minHeight: isMobile ? 160 : 170,
+      backgroundColor: colors.card,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
+      borderWidth: 1,
+      borderColor: colors.border,
+      justifyContent: "space-between",
+      opacity: 0.72,
+      position: "relative",
+    },
+    badgeCardUnlocked: {
+      opacity: 1,
+      backgroundColor: colors.card,
+    },
+    badgeCardLocked: {
+      opacity: 0.62,
+      backgroundColor: colors.cardWarm,
+    },
+    lockPill: {
+      position: "absolute",
+      top: 12,
+      right: 12,
+      zIndex: 5,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 5,
+      backgroundColor: "rgba(0, 30, 24, 0.42)",
+      borderWidth: 1,
+      borderColor: "rgba(245, 238, 223, 0.16)",
+      borderRadius: 999,
+      paddingVertical: 5,
+      paddingHorizontal: 8,
+    },
+    lockText: {
+      color: colors.primary,
+      fontSize: 9,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    badgeTitle: {
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
+      color: colors.primary,
+      marginTop: isMobile ? 12 : 14,
+      marginBottom: 6,
+    },
+    badgeTitleLocked: {
+      color: colors.textMuted,
+    },
+    badgeText: {
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 17 : 18,
+      color: colors.textSoft,
+    },
+    quickActionsRow: {
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
+      gap: 12,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 165,
-      minHeight: 200,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
+      minHeight: isMobile ? 185 : 200,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -987,26 +1029,26 @@ badgeText: {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
-  fontFamily: "Georgia",
-  fontSize: 19,
-  lineHeight: 24,
-  color: colors.primary,
-  marginBottom: 6,
-},
+      fontFamily: "Georgia",
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
+      color: colors.primary,
+      marginBottom: 6,
+    },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,
@@ -1021,10 +1063,10 @@ badgeText: {
       lineHeight: 19,
     },
     infoBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
     },
