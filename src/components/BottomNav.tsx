@@ -1,6 +1,6 @@
 import React from "react";
 import { View, Text, Pressable, StyleSheet } from "react-native";
-import { Link, usePathname } from "expo-router";
+import { Link, usePathname, type Href } from "expo-router";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -14,7 +14,7 @@ import {
 
 type NavItem = {
   label: string;
-  href: string;
+  href: Href;
   activePaths: string[];
   Icon: React.ComponentType<{
     size?: number;
@@ -83,7 +83,7 @@ export default function BottomNav() {
           ]);
 
           return (
-            <Link key={item.href} href={item.href} asChild>
+            <Link key={item.label} href={item.href} asChild>
               <Pressable style={navItemStyle}>
                 <IconBadge
                   size={34}
