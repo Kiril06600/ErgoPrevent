@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -15,6 +14,8 @@ import {
 } from "../lib/storage";
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
+import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
@@ -193,7 +194,8 @@ export default function RoutineScreen() {
   );
 
   const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
 
   useEffect(() => {
     function refreshData() {
@@ -246,362 +248,386 @@ export default function RoutineScreen() {
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
-      <ScrollView contentContainerStyle={styles.container}>
-        <View style={styles.pageHeader}>
-          <View style={styles.pagePill}>
-            <Text style={styles.pagePillText}>Routine quotidienne</Text>
+        <ScrollView contentContainerStyle={styles.container}>
+          <View style={styles.pageHeader}>
+            <View style={styles.pagePill}>
+              <Text style={styles.pagePillText}>Routine quotidienne</Text>
+            </View>
+
+            <Text style={styles.pageTitle}>Routine du jour</Text>
+
+            <Text style={styles.subtitle}>
+              Un petit plan quotidien pour garder vos habitudes de prévention
+              actives, sans pression.
+            </Text>
           </View>
 
-          <Text style={styles.pageTitle}>Routine du jour</Text>
+          <View style={styles.heroCard}>
+            <View style={styles.heroTopRow}>
+              <View style={styles.heroTitleBlock}>
+                <Text style={styles.heroGreeting}>
+                  {profile?.firstName
+                    ? `Bonjour ${profile.firstName}`
+                    : "Objectif du jour"}
+                </Text>
 
-          <Text style={styles.subtitle}>
-            Un petit plan quotidien pour garder vos habitudes de prévention
-            actives, sans pression.
-          </Text>
-        </View>
+                <Text style={styles.heroTitle}>
+                  {completedCount === totalTasks
+                    ? "Routine complétée"
+                    : "Une action à la fois"}
+                </Text>
+              </View>
 
-        <View style={styles.heroCard}>
-          <View style={styles.heroTopRow}>
-            <View>
-              <Text style={styles.heroGreeting}>
-                {profile?.firstName
-                  ? `Bonjour ${profile.firstName}`
-                  : "Objectif du jour"}
-              </Text>
-
-              <Text style={styles.heroTitle}>
-                {completedCount === totalTasks
-                  ? "Routine complétée"
-                  : "Une action à la fois"}
-              </Text>
-            </View>
-
-            <View style={styles.completionBadge}>
-              <Text style={styles.completionNumber}>{completedCount}</Text>
-              <Text style={styles.completionText}>/{totalTasks}</Text>
-            </View>
-          </View>
-
-          <Text style={styles.heroText}>
-            {completedCount === totalTasks
-              ? "Vous avez complété toutes les actions prévues aujourd’hui."
-              : "L’objectif n’est pas d’être parfait, mais de bouger un peu et de répéter des gestes simples."}
-          </Text>
-
-          <View style={styles.progressArea}>
-            <View style={styles.progressHeader}>
-              <Text style={styles.progressTitle}>Progression</Text>
-              <Text style={styles.progressValue}>{progressPercent}%</Text>
-            </View>
-
-            <View style={styles.progressBarBackground}>
-              <View
-                style={[
-                  styles.progressBarFill,
-                  { width: `${progressPercent}%` },
-                ]}
-              />
-            </View>
-          </View>
-        </View>
-
-        {nextTask && (
-          <View style={styles.nextCard}>
-            <View style={styles.nextTopRow}>
-              <IconBadge
-                size={48}
-                backgroundColor={colors.turquoiseSoft}
-                borderColor={colors.border}
-              >
-                <NextTaskIcon size={23} color={colors.text} />
-              </IconBadge>
-
-              <View style={styles.nextTextBlock}>
-                <Text style={styles.nextLabel}>Prochaine action</Text>
-                <Text style={styles.nextTitle}>{nextTask.title}</Text>
+              <View style={styles.completionBadge}>
+                <Text style={styles.completionNumber}>{completedCount}</Text>
+                <Text style={styles.completionText}>/{totalTasks}</Text>
               </View>
             </View>
 
-            <Text style={styles.nextText}>{nextTask.text}</Text>
-
-            <Link href={nextTask.href} asChild>
-              <Pressable style={styles.primaryButton}>
-                <Text style={styles.primaryButtonText}>
-                  {nextTask.buttonText}
-                </Text>
-                <Text style={styles.primaryButtonArrow}>→</Text>
-              </Pressable>
-            </Link>
-          </View>
-        )}
-
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Checklist du jour</Text>
-            <Text style={styles.sectionSubtitle}>
-              Cochez les actions que vous avez faites.
+            <Text style={styles.heroText}>
+              {completedCount === totalTasks
+                ? "Vous avez complété toutes les actions prévues aujourd’hui."
+                : "L’objectif n’est pas d’être parfait, mais de bouger un peu et de répéter des gestes simples."}
             </Text>
+
+            <View style={styles.progressArea}>
+              <View style={styles.progressHeader}>
+                <Text style={styles.progressTitle}>Progression</Text>
+                <Text style={styles.progressValue}>{progressPercent}%</Text>
+              </View>
+
+              <View style={styles.progressBarBackground}>
+                <View
+                  style={[
+                    styles.progressBarFill,
+                    { width: `${progressPercent}%` },
+                  ]}
+                />
+              </View>
+            </View>
           </View>
 
-          <View style={styles.sectionCountPill}>
-            <Text style={styles.sectionCountText}>
-              {completedCount}/{totalTasks}
-            </Text>
-          </View>
-        </View>
-
-        {routineTasks.map((task) => {
-          const isCompleted = completedTaskIds.includes(task.id);
-          const TaskIcon = task.Icon;
-
-          return (
-            <View
-              key={task.id}
-              style={[
-                styles.taskCard,
-                isCompleted ? styles.taskCardCompleted : null,
-              ]}
-            >
-              <View style={styles.taskHeader}>
+          {nextTask && (
+            <View style={styles.nextCard}>
+              <View style={styles.nextTopRow}>
                 <IconBadge
-                  size={48}
-                  backgroundColor={
-                    isCompleted ? colors.primaryLight : colors.backgroundSoft
-                  }
+                  size={layout.isMobile ? 43 : 48}
+                  backgroundColor={colors.turquoiseSoft}
                   borderColor={colors.border}
                 >
-                  <TaskIcon size={23} color={colors.text} />
+                  <NextTaskIcon
+                    size={layout.isMobile ? 20 : 23}
+                    color={colors.text}
+                  />
                 </IconBadge>
 
-                <View style={styles.taskTextContainer}>
-                  <Text style={styles.taskLabel}>{task.label}</Text>
-                  <Text style={styles.taskTitle}>{task.title}</Text>
-                  <Text style={styles.taskText}>{task.text}</Text>
+                <View style={styles.nextTextBlock}>
+                  <Text style={styles.nextLabel}>Prochaine action</Text>
+                  <Text style={styles.nextTitle}>{nextTask.title}</Text>
                 </View>
               </View>
 
-              <View style={styles.taskActions}>
-                <Pressable
-                  style={[
-                    styles.checkButton,
-                    isCompleted ? styles.checkButtonCompleted : null,
-                  ]}
-                  onPress={() => toggleTask(task.id)}
-                >
-                  <View
-                    style={[
-                      styles.checkCircle,
-                      isCompleted ? styles.checkCircleCompleted : null,
-                    ]}
+              <Text style={styles.nextText}>{nextTask.text}</Text>
+
+              <Link href={nextTask.href} asChild>
+                <PressableScale style={styles.primaryButton}>
+                  <Text style={styles.primaryButtonText}>
+                    {nextTask.buttonText}
+                  </Text>
+                  <Text style={styles.primaryButtonArrow}>→</Text>
+                </PressableScale>
+              </Link>
+            </View>
+          )}
+
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Checklist du jour</Text>
+              <Text style={styles.sectionSubtitle}>
+                Cochez les actions que vous avez faites.
+              </Text>
+            </View>
+
+            <View style={styles.sectionCountPill}>
+              <Text style={styles.sectionCountText}>
+                {completedCount}/{totalTasks}
+              </Text>
+            </View>
+          </View>
+
+          {routineTasks.map((task) => {
+            const isCompleted = completedTaskIds.includes(task.id);
+            const TaskIcon = task.Icon;
+
+            return (
+              <View
+                key={task.id}
+                style={[
+                  styles.taskCard,
+                  isCompleted ? styles.taskCardCompleted : null,
+                ]}
+              >
+                <View style={styles.taskHeader}>
+                  <IconBadge
+                    size={layout.isMobile ? 43 : 48}
+                    backgroundColor={
+                      isCompleted ? colors.primaryLight : colors.backgroundSoft
+                    }
+                    borderColor={colors.border}
                   >
-                    <Text
+                    <TaskIcon
+                      size={layout.isMobile ? 20 : 23}
+                      color={colors.text}
+                    />
+                  </IconBadge>
+
+                  <View style={styles.taskTextContainer}>
+                    <Text style={styles.taskLabel}>{task.label}</Text>
+                    <Text style={styles.taskTitle}>{task.title}</Text>
+                    <Text style={styles.taskText}>{task.text}</Text>
+                  </View>
+                </View>
+
+                <View style={styles.taskActions}>
+                  <PressableScale
+                    style={[
+                      styles.checkButton,
+                      isCompleted ? styles.checkButtonCompleted : null,
+                    ]}
+                    onPress={() => toggleTask(task.id)}
+                  >
+                    <View
                       style={[
-                        styles.checkSymbol,
-                        isCompleted ? styles.checkSymbolCompleted : null,
+                        styles.checkCircle,
+                        isCompleted ? styles.checkCircleCompleted : null,
                       ]}
                     >
-                      {isCompleted ? "✓" : ""}
-                    </Text>
-                  </View>
+                      <Text
+                        style={[
+                          styles.checkSymbol,
+                          isCompleted ? styles.checkSymbolCompleted : null,
+                        ]}
+                      >
+                        {isCompleted ? "✓" : ""}
+                      </Text>
+                    </View>
 
-                  <Text
-                    style={[
-                      styles.checkButtonText,
-                      isCompleted ? styles.checkButtonTextCompleted : null,
-                    ]}
-                  >
-                    {isCompleted ? "Complété" : "Marquer comme fait"}
-                  </Text>
-                </Pressable>
-
-                <Link href={task.href} asChild>
-                  <Pressable style={styles.secondaryButton}>
-                    <Text style={styles.secondaryButtonText}>
-                      {task.buttonText}
+                    <Text
+                      style={[
+                        styles.checkButtonText,
+                        isCompleted ? styles.checkButtonTextCompleted : null,
+                      ]}
+                    >
+                      {isCompleted ? "Complété" : "Marquer comme fait"}
                     </Text>
-                    <Text style={styles.secondaryButtonArrow}>→</Text>
-                  </Pressable>
-                </Link>
+                  </PressableScale>
+
+                  <Link href={task.href} asChild>
+                    <PressableScale style={styles.secondaryButton}>
+                      <Text style={styles.secondaryButtonText}>
+                        {task.buttonText}
+                      </Text>
+                      <Text style={styles.secondaryButtonArrow}>→</Text>
+                    </PressableScale>
+                  </Link>
+                </View>
               </View>
-            </View>
-          );
-        })}
+            );
+          })}
 
-        <View style={styles.sectionHeaderRow}>
-          <View>
-            <Text style={styles.sectionTitle}>Liens rapides</Text>
-            <Text style={styles.sectionSubtitle}>
-              Continuez votre suivi quand vous voulez.
+          <View style={styles.sectionHeaderRow}>
+            <View style={styles.sectionHeaderTextBlock}>
+              <Text style={styles.sectionTitle}>Liens rapides</Text>
+              <Text style={styles.sectionSubtitle}>
+                Continuez votre suivi quand vous voulez.
+              </Text>
+            </View>
+
+            <Text style={styles.sectionAction}>Défilez →</Text>
+          </View>
+
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.quickCardsRow}
+          >
+            {quickCards.map((item) => {
+              const QuickIcon = item.Icon;
+
+              return (
+                <Link key={item.href} href={item.href} asChild>
+                  <PressableScale style={styles.quickCard}>
+                    <IconBadge
+                      size={layout.isMobile ? 40 : 44}
+                      backgroundColor={colors.backgroundSoft}
+                      borderColor={colors.border}
+                    >
+                      <QuickIcon
+                        size={layout.isMobile ? 19 : 21}
+                        color={colors.text}
+                      />
+                    </IconBadge>
+
+                    <Text style={styles.quickLabel}>{item.label}</Text>
+                    <Text style={styles.quickTitle}>{item.title}</Text>
+                    <Text style={styles.quickText}>{item.text}</Text>
+
+                    <View style={styles.quickArrowCircle}>
+                      <Text style={styles.quickArrowText}>→</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              );
+            })}
+          </ScrollView>
+
+          <View style={styles.tipBox}>
+            <Text style={styles.tipTitle}>Conseil du jour</Text>
+            <Text style={styles.tipText}>
+              Même si vous ne complétez qu’une seule action aujourd’hui, c’est
+              déjà utile. La régularité compte plus que la perfection.
             </Text>
           </View>
 
-          <Text style={styles.sectionAction}>Défilez →</Text>
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.quickCardsRow}
-        >
-          {quickCards.map((item) => {
-            const QuickIcon = item.Icon;
-
-            return (
-              <Link key={item.href} href={item.href} asChild>
-                <Pressable style={styles.quickCard}>
-                  <IconBadge
-                    size={44}
-                    backgroundColor={colors.backgroundSoft}
-                    borderColor={colors.border}
-                  >
-                    <QuickIcon size={21} color={colors.text} />
-                  </IconBadge>
-
-                  <Text style={styles.quickLabel}>{item.label}</Text>
-                  <Text style={styles.quickTitle}>{item.title}</Text>
-                  <Text style={styles.quickText}>{item.text}</Text>
-
-                  <View style={styles.quickArrowCircle}>
-                    <Text style={styles.quickArrowText}>→</Text>
-                  </View>
-                </Pressable>
-              </Link>
-            );
-          })}
+          <BottomNav />
         </ScrollView>
-
-        <View style={styles.tipBox}>
-          <Text style={styles.tipTitle}>Conseil du jour</Text>
-          <Text style={styles.tipText}>
-            Même si vous ne complétez qu’une seule action aujourd’hui, c’est déjà
-            utile. La régularité compte plus que la perfection.
-          </Text>
-        </View>
-
-        <BottomNav />
-      </ScrollView>
-    </SafeAreaView>
+      </SafeAreaView>
     </AnimatedScreen>
   );
 }
 
-function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 24,
-      paddingBottom: 48,
+      paddingTop: isMobile ? 18 : 24,
+      paddingBottom: isMobile ? 38 : 48,
     },
     pageHeader: {
-      paddingHorizontal: 24,
-      marginTop: 10,
-      marginBottom: 22,
+      paddingHorizontal: horizontalPadding,
+      marginTop: isMobile ? 6 : 10,
+      marginBottom: isMobile ? 18 : 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: 8,
-      paddingHorizontal: 13,
+      paddingVertical: isMobile ? 7 : 8,
+      paddingHorizontal: isMobile ? 11 : 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: 12,
+      fontSize: isMobile ? 11 : 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: 38,
-      lineHeight: 45,
+      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: 10,
+      marginBottom: isMobile ? 8 : 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: 16,
-      lineHeight: 24,
+      fontSize: isMobile ? 14 : 16,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: 24,
-      marginBottom: 18,
-      borderRadius: 36,
-      padding: 24,
-      minHeight: 275,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 18,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 24,
+      minHeight: isMobile ? 260 : 275,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "space-between",
+      boxShadow:
+        mode === "dark"
+          ? "0px 20px 42px rgba(0,0,0,0.16)"
+          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-start",
-      gap: 16,
+      gap: isMobile ? 12 : 16,
       zIndex: 2,
     },
+    heroTitleBlock: {
+      flex: 1,
+    },
     heroGreeting: {
-      fontSize: 16,
+      fontSize: isMobile ? 14 : 16,
       fontWeight: "900",
       color: colors.primary,
-      marginBottom: 8,
+      marginBottom: isMobile ? 7 : 8,
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 34,
-      lineHeight: 41,
+      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
+      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
       color: colors.primary,
       letterSpacing: -0.7,
-      maxWidth: 300,
+      maxWidth: isMobile ? 240 : 300,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     completionBadge: {
-      minWidth: 72,
-      height: 58,
-      borderRadius: 29,
+      minWidth: isMobile ? 62 : 72,
+      height: isMobile ? 52 : 58,
+      borderRadius: isMobile ? 26 : 29,
       backgroundColor: colors.primary,
       borderWidth: 1,
       borderColor: colors.primaryDark,
       alignItems: "center",
       justifyContent: "center",
       flexDirection: "row",
-      paddingHorizontal: 10,
+      paddingHorizontal: isMobile ? 9 : 10,
     },
     completionNumber: {
-      fontSize: 25,
+      fontSize: isMobile ? 22 : 25,
       fontWeight: "900",
       color: colors.black,
     },
     completionText: {
-      fontSize: 14,
+      fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.black,
       marginTop: 5,
     },
     heroText: {
-      fontSize: 15,
-      lineHeight: 23,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 23,
       color: colors.textSoft,
       maxWidth: 420,
       zIndex: 2,
-      marginTop: 18,
-      marginBottom: 18,
+      marginTop: isMobile ? 16 : 18,
+      marginBottom: isMobile ? 16 : 18,
     },
     progressArea: {
       zIndex: 2,
@@ -609,22 +635,22 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     progressHeader: {
       flexDirection: "row",
       justifyContent: "space-between",
-      marginBottom: 12,
+      marginBottom: isMobile ? 10 : 12,
     },
     progressTitle: {
-      fontSize: 14,
+      fontSize: isMobile ? 12 : 14,
       fontWeight: "900",
       color: colors.textSoft,
       textTransform: "uppercase",
       letterSpacing: 0.6,
     },
     progressValue: {
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
       color: colors.primary,
     },
     progressBarBackground: {
-      height: 12,
+      height: isMobile ? 11 : 12,
       backgroundColor: colors.cardWarm,
       borderRadius: 20,
       overflow: "hidden",
@@ -637,19 +663,19 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderRadius: 20,
     },
     nextCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
-      borderRadius: 30,
-      padding: 22,
-      marginBottom: 28,
+      borderRadius: isMobile ? 26 : 30,
+      padding: isMobile ? 18 : 22,
+      marginBottom: isMobile ? 24 : 28,
       borderWidth: 1,
       borderColor: colors.border,
     },
     nextTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 14,
-      marginBottom: 14,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 12 : 14,
     },
     nextTextBlock: {
       flex: 1,
@@ -664,21 +690,21 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     nextTitle: {
       fontFamily: "Georgia",
-      fontSize: 24,
-      lineHeight: 30,
+      fontSize: isMobile ? 21 : 24,
+      lineHeight: isMobile ? 26 : 30,
       color: colors.primary,
       letterSpacing: -0.3,
     },
     nextText: {
-      fontSize: 15,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 21 : 22,
       color: colors.textSoft,
       marginBottom: 16,
     },
     primaryButton: {
       backgroundColor: colors.primary,
-      paddingVertical: 15,
-      paddingHorizontal: 18,
+      paddingVertical: isMobile ? 14 : 15,
+      paddingHorizontal: isMobile ? 16 : 18,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -686,12 +712,13 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       borderColor: colors.primaryDark,
       flexDirection: "row",
       gap: 10,
-      alignSelf: "flex-start",
+      alignSelf: isMobile ? "stretch" : "flex-start",
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: 15,
+      fontSize: isMobile ? 14 : 15,
       fontWeight: "900",
+      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,
@@ -700,24 +727,27 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       lineHeight: 20,
     },
     sectionHeaderRow: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
     },
+    sectionHeaderTextBlock: {
+      flex: 1,
+    },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 28,
-      lineHeight: 35,
+      fontSize: isMobile ? 24 : 28,
+      lineHeight: isMobile ? 30 : 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: 14,
-      lineHeight: 20,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
     sectionAction: {
@@ -741,11 +771,11 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textSoft,
     },
     taskCard: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 18,
-      marginBottom: 14,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 16 : 18,
+      marginBottom: isMobile ? 12 : 14,
       borderWidth: 1,
       borderColor: colors.border,
     },
@@ -755,8 +785,8 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     taskHeader: {
       flexDirection: "row",
       alignItems: "flex-start",
-      gap: 14,
-      marginBottom: 16,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 14 : 16,
     },
     taskTextContainer: {
       flex: 1,
@@ -771,25 +801,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     },
     taskTitle: {
       fontFamily: "Georgia",
-      fontSize: 22,
-      lineHeight: 28,
+      fontSize: isMobile ? 19 : 22,
+      lineHeight: isMobile ? 24 : 28,
       color: colors.primary,
       marginBottom: 7,
     },
     taskText: {
-      fontSize: 14,
-      lineHeight: 21,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 19 : 21,
       color: colors.textSoft,
     },
     taskActions: {
-      flexDirection: "row",
+      flexDirection: isMobile ? "column" : "row",
       gap: 10,
-      alignItems: "center",
+      alignItems: isMobile ? "stretch" : "center",
       flexWrap: "wrap",
     },
     checkButton: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       gap: 8,
       backgroundColor: colors.backgroundSoft,
       paddingVertical: 12,
@@ -828,6 +859,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.text,
       fontSize: 13,
       fontWeight: "900",
+      textAlign: "center",
     },
     checkButtonTextCompleted: {
       color: colors.black,
@@ -835,6 +867,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     secondaryButton: {
       flexDirection: "row",
       alignItems: "center",
+      justifyContent: "center",
       gap: 8,
       paddingVertical: 12,
       paddingHorizontal: 14,
@@ -847,6 +880,7 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.text,
       fontSize: 13,
       fontWeight: "900",
+      textAlign: "center",
     },
     secondaryButtonArrow: {
       color: colors.text,
@@ -855,17 +889,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       lineHeight: 17,
     },
     quickCardsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
       gap: 12,
-      marginBottom: 24,
+      marginBottom: isMobile ? 22 : 24,
     },
     quickCard: {
-      width: 175,
-      minHeight: 205,
+      width: isSmallMobile ? 155 : isMobile ? 165 : 175,
+      minHeight: isMobile ? 188 : 205,
       backgroundColor: colors.card,
-      borderRadius: 28,
-      padding: 17,
+      borderRadius: isMobile ? 24 : 28,
+      padding: isMobile ? 15 : 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -876,26 +910,26 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: 14,
+      marginTop: isMobile ? 12 : 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: 19,
-      lineHeight: 24,
+      fontSize: isMobile ? 17 : 19,
+      lineHeight: isMobile ? 22 : 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: 13,
-      lineHeight: 19,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 18 : 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: 38,
-      height: 38,
-      borderRadius: 19,
+      width: isMobile ? 34 : 38,
+      height: isMobile ? 34 : 38,
+      borderRadius: isMobile ? 17 : 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,
@@ -910,17 +944,17 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       lineHeight: 19,
     },
     tipBox: {
-      marginHorizontal: 24,
+      marginHorizontal: horizontalPadding,
       backgroundColor: colors.warning,
-      borderRadius: 22,
-      padding: 16,
+      borderRadius: isMobile ? 20 : 22,
+      padding: isMobile ? 15 : 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
     },
     tipTitle: {
       fontFamily: "Georgia",
-      fontSize: 18,
-      lineHeight: 23,
+      fontSize: isMobile ? 17 : 18,
+      lineHeight: isMobile ? 22 : 23,
       color: colors.warningText,
       marginBottom: 6,
     },
