@@ -12,6 +12,7 @@ import BottomNav from "../components/BottomNav";
 import AppLogo from "../components/AppLogo";
 import AnimatedScreen from "../components/AnimatedScreen";
 import PressableScale from "../components/PressableScale";
+import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { useAppTheme } from "../theme/ThemeContext";
 import { ThemeColors } from "../theme/colors";
 import { APP_STATS_UPDATED_EVENT, getAppStats } from "../lib/storage";
@@ -178,6 +179,10 @@ export default function HomeScreen() {
     getNotificationSettings().enabled
   );
 
+  const { colors, mode } = useAppTheme();
+  const layout = useResponsiveLayout();
+  const styles = createStyles(colors, mode, layout);
+
   useEffect(() => {
     function refreshStats() {
       setStats(getAppStats());
@@ -269,21 +274,18 @@ export default function HomeScreen() {
     ? getUnreadNotificationCount()
     : 0;
 
-  const { colors, mode } = useAppTheme();
-  const styles = createStyles(colors, mode);
-
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.topBar}>
-            <AppLogo height={100} />
+            <AppLogo height={layout.isMobile ? 78 : 100} />
 
             <PressableScale
               style={styles.notificationButton}
               onPress={handleToggleNotifications}
             >
-              <BellIcon size={23} color={colors.primary} />
+              <BellIcon size={layout.isMobile ? 21 : 23} color={colors.primary} />
 
               {notificationCount > 0 && (
                 <View style={styles.notificationBadge}>
@@ -449,11 +451,14 @@ export default function HomeScreen() {
                 <Link key={item.href} href={item.href} asChild>
                   <PressableScale style={styles.featureCard}>
                     <IconBadge
-                      size={70}
+                      size={layout.isMobile ? 58 : 70}
                       backgroundColor="rgba(0, 48, 38, 0.26)"
                       borderColor="rgba(245, 238, 223, 0.18)"
                     >
-                      <ItemIcon size={32} color={colors.primary} />
+                      <ItemIcon
+                        size={layout.isMobile ? 27 : 32}
+                        color={colors.primary}
+                      />
                     </IconBadge>
 
                     <Text style={styles.featureTitle}>{item.title}</Text>
@@ -491,11 +496,14 @@ export default function HomeScreen() {
                 <Link key={item.href} href={item.href} asChild>
                   <PressableScale style={styles.featureCard}>
                     <IconBadge
-                      size={70}
+                      size={layout.isMobile ? 58 : 70}
                       backgroundColor="rgba(0, 48, 38, 0.26)"
                       borderColor="rgba(245, 238, 223, 0.18)"
                     >
-                      <ItemIcon size={32} color={colors.primary} />
+                      <ItemIcon
+                        size={layout.isMobile ? 27 : 32}
+                        color={colors.primary}
+                      />
                     </IconBadge>
 
                     <Text style={styles.featureTitle}>{item.title}</Text>
@@ -517,35 +525,43 @@ export default function HomeScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
+function createStyles(
+  colors: ThemeColors,
+  mode: "light" | "dark",
+  layout: ReturnType<typeof useResponsiveLayout>
+) {
+  const isMobile = layout.isMobile;
+  const isSmallMobile = layout.isSmallMobile;
+  const horizontalPadding = layout.horizontalPadding;
+
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: 28,
-      paddingBottom: 42,
+      paddingTop: isMobile ? 18 : 28,
+      paddingBottom: isMobile ? 34 : 42,
     },
     topBar: {
-      paddingHorizontal: 24,
-      marginBottom: 28,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 16 : 28,
       flexDirection: "row",
       alignItems: "flex-start",
       justifyContent: "space-between",
       position: "relative",
-      minHeight: 105,
+      minHeight: isMobile ? 82 : 105,
       zIndex: 1000,
       overflow: "visible",
     },
     notificationButton: {
       position: "absolute",
-      top: 12,
-      right: 24,
+      top: isMobile ? 8 : 12,
+      right: horizontalPadding,
       zIndex: 70,
-      width: 48,
-      height: 48,
-      borderRadius: 24,
+      width: isMobile ? 44 : 48,
+      height: isMobile ? 44 : 48,
+      borderRadius: isMobile ? 22 : 24,
       backgroundColor: colors.cardWarm,
       borderWidth: 1,
       borderColor: colors.border,
@@ -578,12 +594,13 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     notificationsPanel: {
       position: "absolute",
-      top: 68,
-      right: 24,
+      top: isMobile ? 58 : 68,
+      right: horizontalPadding,
+      left: isMobile ? horizontalPadding : undefined,
       zIndex: 2000,
-      width: 310,
-      maxHeight: 250,
-      borderRadius: 26,
+      width: isMobile ? undefined : 310,
+      maxHeight: isMobile ? 285 : 250,
+      borderRadius: isMobile ? 22 : 26,
       backgroundColor: mode === "dark" ? "#243E37" : "#F7F1E7",
       borderWidth: 1,
       borderColor: colors.border,
@@ -594,7 +611,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
           : "0px 24px 48px rgba(8,45,36,0.18)",
     },
     notificationsPanelHeader: {
-      padding: 18,
+      padding: isMobile ? 15 : 18,
       borderBottomWidth: 1,
       borderBottomColor: colors.border,
       flexDirection: "row",
@@ -605,8 +622,8 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     notificationsPanelTitle: {
       fontFamily: "Georgia",
       color: colors.primary,
-      fontSize: 23,
-      lineHeight: 28,
+      fontSize: isMobile ? 20 : 23,
+      lineHeight: isMobile ? 25 : 28,
     },
     notificationsPanelSubtitle: {
       marginTop: 3,
@@ -628,7 +645,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       fontWeight: "900",
     },
     notificationsPanelScroll: {
-      maxHeight: 165,
+      maxHeight: isMobile ? 210 : 165,
     },
     notificationsPanelContent: {
       padding: 12,
@@ -720,11 +737,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     heroCard: {
       zIndex: 1,
-      marginHorizontal: 24,
-      marginBottom: 28,
-      minHeight: 320,
-      borderRadius: 36,
-      padding: 28,
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 24 : 28,
+      minHeight: isMobile ? 300 : 320,
+      borderRadius: isMobile ? 28 : 36,
+      padding: isMobile ? 20 : 28,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
@@ -736,132 +753,137 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
           : "0px 26px 52px rgba(0,0,0,0.14)",
     },
     heroTopRow: {
-      flexDirection: "row",
+      flexDirection: isMobile ? "column" : "row",
       justifyContent: "space-between",
-      alignItems: "flex-start",
-      gap: 18,
+      alignItems: isMobile ? "stretch" : "flex-start",
+      gap: isMobile ? 18 : 18,
     },
     heroTextBlock: {
       flex: 1,
-      paddingTop: 8,
+      paddingTop: isMobile ? 2 : 8,
     },
     greeting: {
-      fontSize: 17,
-      lineHeight: 24,
+      fontSize: isMobile ? 15 : 17,
+      lineHeight: isMobile ? 21 : 24,
       color: colors.textSoft,
-      marginBottom: 24,
+      marginBottom: isMobile ? 15 : 24,
       fontWeight: "500",
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: 39,
-      lineHeight: 48,
+      fontSize: isSmallMobile ? 29 : isMobile ? 32 : 39,
+      lineHeight: isSmallMobile ? 36 : isMobile ? 39 : 48,
       color: colors.primary,
       letterSpacing: -1,
-      marginBottom: 18,
+      marginBottom: isMobile ? 12 : 18,
       textShadowColor: "rgba(0,0,0,0.22)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 8,
     },
     heroSubtitle: {
-      fontSize: 18,
-      lineHeight: 27,
+      fontSize: isMobile ? 15 : 18,
+      lineHeight: isMobile ? 23 : 27,
       color: colors.textSoft,
       fontWeight: "400",
     },
     pointsBadge: {
-      width: 112,
-      minHeight: 82,
-      borderRadius: 38,
+      width: isMobile ? 92 : 112,
+      minHeight: isMobile ? 66 : 82,
+      borderRadius: isMobile ? 28 : 38,
       backgroundColor: colors.primary,
       borderWidth: 1,
       borderColor: colors.primaryDark,
       alignItems: "center",
       justifyContent: "center",
-      paddingVertical: 10,
+      paddingVertical: isMobile ? 8 : 10,
+      alignSelf: isMobile ? "flex-start" : "auto",
       boxShadow: "0px 12px 26px rgba(0,0,0,0.16)",
     },
     pointsNumber: {
-      fontSize: 34,
-      lineHeight: 37,
+      fontSize: isMobile ? 27 : 34,
+      lineHeight: isMobile ? 30 : 37,
       fontWeight: "900",
       color: colors.black,
       letterSpacing: -1,
     },
     pointsText: {
-      fontSize: 18,
-      lineHeight: 22,
+      fontSize: isMobile ? 14 : 18,
+      lineHeight: isMobile ? 18 : 22,
       fontWeight: "900",
       color: colors.black,
     },
     heroButton: {
-      alignSelf: "flex-start",
-      minWidth: 300,
+      alignSelf: "stretch",
+      minWidth: isMobile ? undefined : 300,
       borderRadius: 999,
       backgroundColor: colors.primary,
       borderWidth: 1,
       borderColor: colors.primaryDark,
-      paddingVertical: 16,
-      paddingHorizontal: 25,
+      paddingVertical: isMobile ? 14 : 16,
+      paddingHorizontal: isMobile ? 18 : 25,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "center",
-      gap: 20,
-      marginTop: 30,
+      gap: isMobile ? 12 : 20,
+      marginTop: isMobile ? 22 : 30,
     },
     heroButtonText: {
       color: colors.black,
-      fontSize: 17,
+      fontSize: isMobile ? 15 : 17,
       fontWeight: "900",
+      textAlign: "center",
     },
     heroButtonArrow: {
       color: colors.black,
-      fontSize: 34,
+      fontSize: isMobile ? 28 : 34,
       fontWeight: "600",
-      lineHeight: 28,
+      lineHeight: isMobile ? 24 : 28,
       marginTop: -2,
     },
     sectionHeader: {
-      paddingHorizontal: 24,
-      marginBottom: 14,
+      paddingHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
+      gap: 14,
     },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: 31,
-      lineHeight: 38,
+      fontSize: isMobile ? 25 : 31,
+      lineHeight: isMobile ? 31 : 38,
       color: colors.primary,
       letterSpacing: -0.5,
     },
     viewAllButton: {
       flexDirection: "row",
       alignItems: "center",
-      gap: 8,
+      gap: 6,
+      paddingVertical: 4,
+      paddingHorizontal: 2,
     },
     viewAllText: {
       color: colors.textSoft,
-      fontSize: 17,
+      fontSize: isMobile ? 14 : 17,
       fontWeight: "500",
     },
     viewAllArrow: {
       color: colors.primary,
-      fontSize: 32,
-      lineHeight: 30,
+      fontSize: isMobile ? 27 : 32,
+      lineHeight: isMobile ? 25 : 30,
       fontWeight: "500",
     },
     cardsRow: {
-      paddingLeft: 24,
-      paddingRight: 24,
-      gap: 14,
-      marginBottom: 30,
+      paddingLeft: horizontalPadding,
+      paddingRight: horizontalPadding,
+      gap: isMobile ? 12 : 14,
+      marginBottom: isMobile ? 26 : 30,
     },
     featureCard: {
-      width: 205,
-      minHeight: 205,
-      borderRadius: 24,
-      padding: 18,
+      width: isSmallMobile ? 158 : isMobile ? 172 : 205,
+      minHeight: isMobile ? 178 : 205,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 15 : 18,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
@@ -870,22 +892,22 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     featureTitle: {
       color: colors.text,
-      fontSize: 18,
-      lineHeight: 24,
+      fontSize: isMobile ? 16 : 18,
+      lineHeight: isMobile ? 21 : 24,
       fontWeight: "900",
-      marginTop: 18,
+      marginTop: isMobile ? 14 : 18,
     },
     featureText: {
       color: colors.textSoft,
-      fontSize: 15,
-      lineHeight: 21,
-      marginTop: 8,
-      paddingRight: 10,
+      fontSize: isMobile ? 13 : 15,
+      lineHeight: isMobile ? 18 : 21,
+      marginTop: isMobile ? 6 : 8,
+      paddingRight: isMobile ? 0 : 10,
     },
     arrowCircle: {
-      width: 36,
-      height: 36,
-      borderRadius: 18,
+      width: isMobile ? 32 : 36,
+      height: isMobile ? 32 : 36,
+      borderRadius: isMobile ? 16 : 18,
       backgroundColor: "rgba(255,255,255,0.11)",
       borderWidth: 1,
       borderColor: "rgba(255,255,255,0.12)",
@@ -896,8 +918,8 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     },
     arrowText: {
       color: colors.primary,
-      fontSize: 30,
-      lineHeight: 28,
+      fontSize: isMobile ? 26 : 30,
+      lineHeight: isMobile ? 24 : 28,
       fontWeight: "500",
       marginTop: -2,
     },
