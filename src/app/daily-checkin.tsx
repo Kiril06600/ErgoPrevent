@@ -14,6 +14,10 @@ import {
   AppStats,
   getAppStats,
 } from "../lib/storage";
+import {
+  addDailyCheckinCompletedNotificationIfNeeded,
+  markTodaysDailyPainNotificationsAsRead,
+} from "../lib/notifications";
 import BottomNav from "../components/BottomNav";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
@@ -784,6 +788,9 @@ export default function DailyCheckinScreen() {
     };
 
     saveNewCheckin(newCheckin);
+
+    markTodaysDailyPainNotificationsAsRead();
+    addDailyCheckinCompletedNotificationIfNeeded();
 
     const savedCheckins = getSavedCheckins();
 
