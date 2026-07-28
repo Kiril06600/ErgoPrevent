@@ -1,8 +1,9 @@
 import React from "react";
-import { View, Text, Pressable, StyleSheet, useWindowDimensions } from "react-native";
+import { View, Text, StyleSheet, useWindowDimensions } from "react-native";
 import { Link, usePathname, type Href } from "expo-router";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import PressableScale from "./PressableScale";
 import {
   HomeIcon,
   RoutineIcon,
@@ -82,7 +83,7 @@ export default function BottomNav() {
 
           return (
             <Link key={item.label} href={item.href} asChild>
-              <Pressable style={navItemStyle}>
+              <PressableScale style={navItemStyle} scaleTo={0.92}>
                 <IconBadge
                   size={isMobile ? 29 : 34}
                   backgroundColor={
@@ -97,7 +98,7 @@ export default function BottomNav() {
                 </IconBadge>
 
                 <Text style={navLabelStyle}>{item.label}</Text>
-              </Pressable>
+              </PressableScale>
             </Link>
           );
         })}

@@ -4,7 +4,6 @@ import {
   ScrollView,
   View,
   Text,
-  Pressable,
   StyleSheet,
 } from "react-native";
 import { Link } from "expo-router";
@@ -357,7 +356,7 @@ export default function HomeScreen() {
                             : null,
                         ]}
                       >
-                        <Pressable
+                        <PressableScale
                           style={styles.notificationMiniContent}
                           onPress={() =>
                             handleMarkNotificationAsRead(notification.id)
@@ -380,7 +379,7 @@ export default function HomeScreen() {
                           <Text style={styles.notificationMiniMessage}>
                             {notification.message}
                           </Text>
-                        </Pressable>
+                        </PressableScale>
 
                         <PressableScale
                           style={styles.deleteNotificationButton}
@@ -796,7 +795,7 @@ function createStyles(
       alignItems: "center",
       justifyContent: "center",
       paddingVertical: isMobile ? 8 : 10,
-      alignSelf: isMobile ? "flex-start" : "auto",
+      alignSelf: "flex-start",
       boxShadow: "0px 12px 26px rgba(0,0,0,0.16)",
     },
     pointsNumber: {
@@ -814,7 +813,7 @@ function createStyles(
     },
     heroButton: {
       alignSelf: "stretch",
-      minWidth: isMobile ? undefined : 300,
+      minWidth: isMobile ? 0 : 300,
       borderRadius: 999,
       backgroundColor: colors.primary,
       borderWidth: 1,
