@@ -201,13 +201,12 @@ export default function ExploreScreen() {
         </View>
 
         <View style={styles.heroCard}>
-          <View style={styles.heroShapeLarge} />
-          <View style={styles.heroShapeSmall} />
-
           <View style={styles.heroTopRow}>
             <View style={styles.heroTextBlock}>
               <Text style={styles.heroLabel}>Navigation</Text>
-              <Text style={styles.heroTitle}>Tout votre espace au même endroit.</Text>
+              <Text style={styles.heroTitle}>
+                Tout votre espace au même endroit.
+              </Text>
             </View>
 
             <IconBadge
@@ -312,9 +311,7 @@ export default function ExploreScreen() {
   );
 }
 
-function createStyles(colors: ThemeColors, mode: "light" | "dark") {
-  const isDark = mode === "dark";
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
@@ -347,12 +344,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       letterSpacing: 0.7,
     },
     pageTitle: {
+      fontFamily: "Georgia",
       fontSize: 38,
-      lineHeight: 43,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -1,
+      lineHeight: 45,
+      color: colors.primary,
+      letterSpacing: -0.8,
       marginBottom: 10,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     subtitle: {
       fontSize: 16,
@@ -373,28 +373,6 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       position: "relative",
       justifyContent: "space-between",
     },
-    heroShapeLarge: {
-      position: "absolute",
-      width: 210,
-      height: 210,
-      borderRadius: 105,
-      right: -70,
-      top: -42,
-      backgroundColor: isDark
-        ? "rgba(95,159,149,0.16)"
-        : "rgba(216,196,182,0.26)",
-    },
-    heroShapeSmall: {
-      position: "absolute",
-      width: 100,
-      height: 100,
-      borderRadius: 50,
-      left: -28,
-      bottom: -28,
-      backgroundColor: isDark
-        ? "rgba(245,238,223,0.08)"
-        : "rgba(95,159,149,0.12)",
-    },
     heroTopRow: {
       flexDirection: "row",
       justifyContent: "space-between",
@@ -414,12 +392,15 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 8,
     },
     heroTitle: {
-      fontSize: 32,
-      lineHeight: 38,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 34,
+      lineHeight: 41,
+      color: colors.primary,
       letterSpacing: -0.7,
       maxWidth: 390,
+      textShadowColor: "rgba(0,0,0,0.20)",
+      textShadowOffset: { width: 0, height: 2 },
+      textShadowRadius: 7,
     },
     heroText: {
       fontSize: 15,
@@ -452,7 +433,7 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
     statNumber: {
       fontSize: 23,
       fontWeight: "900",
-      color: colors.text,
+      color: colors.primary,
       lineHeight: 27,
     },
     statLabel: {
@@ -473,10 +454,11 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       gap: 16,
     },
     sectionTitle: {
-      fontSize: 24,
-      fontWeight: "900",
-      color: colors.text,
-      letterSpacing: -0.4,
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+      letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
@@ -511,10 +493,10 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 7,
     },
     cardTitle: {
-      fontSize: 19,
-      lineHeight: 24,
-      fontWeight: "900",
-      color: colors.text,
+      fontFamily: "Georgia",
+      fontSize: 20,
+      lineHeight: 25,
+      color: colors.primary,
       marginBottom: 6,
     },
     cardText: {
@@ -550,8 +532,9 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       marginBottom: 16,
     },
     tipTitle: {
-      fontSize: 15,
-      fontWeight: "900",
+      fontFamily: "Georgia",
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },

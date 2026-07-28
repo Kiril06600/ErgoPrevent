@@ -94,7 +94,7 @@ export default function BottomNav() {
                 >
                   <Icon
                     size={18}
-                    color={isActive ? colors.text : colors.textMuted}
+                    color={isActive ? colors.primary : colors.textMuted}
                   />
                 </IconBadge>
 
@@ -151,7 +151,8 @@ function createStyles(colors: ThemeColors, mode: "light" | "dark") {
       textAlign: "center",
     },
     navLabelActive: {
-      color: colors.text,
+      color: colors.primary,
+      fontWeight: "900",
     },
   });
 }
