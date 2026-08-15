@@ -8,8 +8,8 @@ import {
   HomeIcon,
   RoutineIcon,
   PlanIcon,
-  EducationIcon,
   ProfileIcon,
+  ProgressIcon,
   IconBadge,
 } from "./ErgoIcons";
 
@@ -39,10 +39,10 @@ const navItems: NavItem[] = [
     Icon: PlanIcon,
   },
   {
-    label: "Formation",
-    href: "/education",
-    activePaths: ["/education", "/explore", "/progress", "/dashboard"],
-    Icon: EducationIcon,
+    label: "Dashboard",
+    href: "/dashboard",
+    activePaths: ["/dashboard", "/progress", "/education", "/explore"],
+    Icon: ProgressIcon,
   },
   {
     label: "Profil",
