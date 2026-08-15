@@ -25,7 +25,6 @@ import {
 import BottomNav from "../components/BottomNav";
 import AnimatedScreen from "../components/AnimatedScreen";
 import PressableScale from "../components/PressableScale";
-import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { ThemeMode, useAppTheme } from "../theme/ThemeContext";
 import {
@@ -38,6 +37,14 @@ import {
   MoonIcon,
 } from "../components/ErgoIcons";
 
+type ExtendedProfileFields = {
+  dateOfBirth?: string;
+  sex?: string;
+  dominantHand?: string;
+  dominantEye?: string;
+  progressiveLenses?: string;
+};
+
 const statuses = ["Étudiant", "Travailleur", "Télétravailleur", "Autre"];
 
 const goals = [
@@ -47,6 +54,14 @@ const goals = [
   "Faire plus de pauses",
   "Bouger davantage",
 ];
+
+const sexOptions = ["Femme", "Homme", "Autre", "Préfère ne pas répondre"];
+
+const dominantHandOptions = ["Droite", "Gauche", "Ambidextre"];
+
+const dominantEyeOptions = ["Droit", "Gauche", "Je ne sais pas"];
+
+const progressiveLensesOptions = ["Oui", "Non", "Je ne sais pas"];
 
 const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
 const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
@@ -129,9 +144,41 @@ function removeExtraLocalData() {
   window.dispatchEvent(new Event(ROUTINE_UPDATED_EVENT));
 }
 
+function calculateAgeFromBirthDate(dateOfBirth: string) {
+  if (!dateOfBirth.trim()) {
+    return "";
+  }
+
+  const birthDate = new Date(`${dateOfBirth}T00:00:00`);
+
+  if (Number.isNaN(birthDate.getTime())) {
+    return "";
+  }
+
+  const today = new Date();
+
+  let age = today.getFullYear() - birthDate.getFullYear();
+
+  const birthdayAlreadyPassedThisYear =
+    today.getMonth() > birthDate.getMonth() ||
+    (today.getMonth() === birthDate.getMonth() &&
+      today.getDate() >= birthDate.getDate());
+
+  if (!birthdayAlreadyPassedThisYear) {
+    age -= 1;
+  }
+
+  if (age < 0 || age > 130) {
+    return "";
+  }
+
+  return `${age} an${age > 1 ? "s" : ""}`;
+}
+
 export default function ProfileScreen() {
   const initialStats = getAppStats();
   const savedProfile = initialStats.profile;
+  const savedExtraProfile = (savedProfile ?? {}) as ExtendedProfileFields;
 
   const [stats, setStats] = useState<AppStats>(initialStats);
   const [firstName, setFirstName] = useState(savedProfile?.firstName ?? "");
@@ -139,6 +186,20 @@ export default function ProfileScreen() {
   const [profession, setProfession] = useState(savedProfile?.profession ?? "");
   const [mainGoal, setMainGoal] = useState(
     savedProfile?.mainGoal ?? "Prévenir les douleurs"
+  );
+
+  const [dateOfBirth, setDateOfBirth] = useState(
+    savedExtraProfile.dateOfBirth ?? ""
+  );
+  const [sex, setSex] = useState(savedExtraProfile.sex ?? "");
+  const [dominantHand, setDominantHand] = useState(
+    savedExtraProfile.dominantHand ?? ""
+  );
+  const [dominantEye, setDominantEye] = useState(
+    savedExtraProfile.dominantEye ?? ""
+  );
+  const [progressiveLenses, setProgressiveLenses] = useState(
+    savedExtraProfile.progressiveLenses ?? ""
   );
 
   const [notificationSettings, setNotificationSettings] =
@@ -149,8 +210,7 @@ export default function ProfileScreen() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
   const { colors, mode, setThemeMode } = useAppTheme();
-  const layout = useResponsiveLayout();
-  const styles = createStyles(colors, mode, layout);
+  const styles = createStyles(colors, mode);
 
   useEffect(() => {
     function refreshStats() {
@@ -215,6 +275,8 @@ export default function ProfileScreen() {
   const avatarLetter =
     displayName.length > 0 ? displayName[0].toUpperCase() : "E";
 
+  const calculatedAge = calculateAgeFromBirthDate(dateOfBirth);
+
   const exportedData = JSON.stringify(
     {
       appStats: stats,
@@ -222,6 +284,18 @@ export default function ProfileScreen() {
       routine: readLocalStorageValue(ROUTINE_STORAGE_KEY),
       themeMode: mode,
       notificationSettings,
+      currentProfileForm: {
+        firstName,
+        status,
+        profession,
+        mainGoal,
+        dateOfBirth,
+        calculatedAge,
+        sex,
+        dominantHand,
+        dominantEye,
+        progressiveLenses,
+      },
     },
     null,
     2
@@ -233,7 +307,12 @@ export default function ProfileScreen() {
       status,
       profession,
       mainGoal,
-    });
+      dateOfBirth,
+      sex,
+      dominantHand,
+      dominantEye,
+      progressiveLenses,
+    } as any);
 
     setStats(updatedStats);
     setSavedMessage("Profil sauvegardé");
@@ -250,6 +329,11 @@ export default function ProfileScreen() {
     setStatus("Étudiant");
     setProfession("");
     setMainGoal("Prévenir les douleurs");
+    setDateOfBirth("");
+    setSex("");
+    setDominantHand("");
+    setDominantEye("");
+    setProgressiveLenses("");
     setSavedMessage("Données réinitialisées");
     setShowData(false);
     setShowResetConfirm(false);
@@ -332,12 +416,12 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <IconBadge
-                size={layout.isMobile ? 42 : 46}
+                size={46}
                 backgroundColor={colors.backgroundSoft}
                 borderColor={colors.border}
               >
                 <SunIcon
-                  size={layout.isMobile ? 20 : 22}
+                  size={22}
                   color={mode === "light" ? colors.text : colors.textSoft}
                 />
               </IconBadge>
@@ -359,7 +443,7 @@ export default function ProfileScreen() {
                 onPress={() => handleThemeChange("light")}
               >
                 <SunIcon
-                  size={layout.isMobile ? 23 : 25}
+                  size={25}
                   color={mode === "light" ? colors.black : colors.text}
                 />
 
@@ -381,7 +465,7 @@ export default function ProfileScreen() {
                 onPress={() => handleThemeChange("dark")}
               >
                 <MoonIcon
-                  size={layout.isMobile ? 25 : 27}
+                  size={27}
                   color={mode === "dark" ? colors.black : colors.text}
                 />
 
@@ -400,11 +484,11 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <IconBadge
-                size={layout.isMobile ? 42 : 46}
+                size={46}
                 backgroundColor={colors.backgroundSoft}
                 borderColor={colors.border}
               >
-                <RoutineIcon size={layout.isMobile ? 20 : 22} color={colors.text} />
+                <RoutineIcon size={22} color={colors.text} />
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
@@ -422,9 +506,7 @@ export default function ProfileScreen() {
                 onPress={handleToggleNotifications}
               >
                 <View style={styles.settingTextBlock}>
-                  <Text style={styles.settingTitle}>
-                    Notifications activées
-                  </Text>
+                  <Text style={styles.settingTitle}>Notifications activées</Text>
                   <Text style={styles.settingDescription}>
                     Active ou désactive tous les rappels internes de
                     l’application.
@@ -453,9 +535,7 @@ export default function ProfileScreen() {
               <PressableScale
                 style={[
                   styles.settingRow,
-                  !notificationSettings.enabled
-                    ? styles.settingRowDisabled
-                    : null,
+                  !notificationSettings.enabled ? styles.settingRowDisabled : null,
                 ]}
                 onPress={handleToggleDailyCheckinReminder}
               >
@@ -495,20 +575,15 @@ export default function ProfileScreen() {
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <IconBadge
-                size={layout.isMobile ? 42 : 46}
+                size={46}
                 backgroundColor={colors.backgroundSoft}
                 borderColor={colors.border}
               >
-                <ProfileIcon
-                  size={layout.isMobile ? 20 : 22}
-                  color={colors.text}
-                />
+                <ProfileIcon size={22} color={colors.text} />
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
-                <Text style={styles.sectionTitle}>
-                  Informations personnelles
-                </Text>
+                <Text style={styles.sectionTitle}>Informations personnelles</Text>
                 <Text style={styles.sectionSubtitle}>
                   Ces informations restent sauvegardées localement.
                 </Text>
@@ -518,14 +593,136 @@ export default function ProfileScreen() {
             <Text style={styles.label}>Prénom</Text>
             <TextInput
               style={styles.input}
-              placeholder="Ex. Antonia"
+              placeholder="Ex. Cyril"
               placeholderTextColor={colors.textMuted}
               value={firstName}
               onChangeText={setFirstName}
             />
 
-            <Text style={styles.label}>Statut</Text>
+            <Text style={styles.label}>Date de naissance</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="AAAA-MM-JJ"
+              placeholderTextColor={colors.textMuted}
+              value={dateOfBirth}
+              onChangeText={setDateOfBirth}
+            />
 
+            <View style={styles.agePreviewBox}>
+              <Text style={styles.agePreviewValue}>
+                {calculatedAge || "Ajoutez une date valide"}
+              </Text>
+            </View>
+
+            <Text style={styles.label}>Sexe</Text>
+            <View style={styles.optionsContainer}>
+              {sexOptions.map((item) => {
+                const selected = sex === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setSex(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <Text style={styles.label}>Main dominante</Text>
+            <View style={styles.optionsContainer}>
+              {dominantHandOptions.map((item) => {
+                const selected = dominantHand === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setDominantHand(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <Text style={styles.label}>Œil dominant</Text>
+            <View style={styles.optionsContainer}>
+              {dominantEyeOptions.map((item) => {
+                const selected = dominantEye === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setDominantEye(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <Text style={styles.label}>Verres à foyers progressifs</Text>
+            <View style={styles.optionsContainer}>
+              {progressiveLensesOptions.map((item) => {
+                const selected = progressiveLenses === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setProgressiveLenses(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+
+            <Text style={styles.label}>Statut</Text>
             <View style={styles.optionsContainer}>
               {statuses.map((item) => {
                 const selected = status === item;
@@ -562,7 +759,6 @@ export default function ProfileScreen() {
             />
 
             <Text style={styles.label}>Objectif principal</Text>
-
             <View style={styles.optionsContainer}>
               {goals.map((item) => {
                 const selected = mainGoal === item;
@@ -589,13 +785,8 @@ export default function ProfileScreen() {
               })}
             </View>
 
-            <PressableScale
-              style={styles.primaryButton}
-              onPress={handleSaveProfile}
-            >
-              <Text style={styles.primaryButtonText}>
-                Sauvegarder mon profil
-              </Text>
+            <PressableScale style={styles.primaryButton} onPress={handleSaveProfile}>
+              <Text style={styles.primaryButtonText}>Sauvegarder mon profil</Text>
               <Text style={styles.primaryButtonArrow}>→</Text>
             </PressableScale>
 
@@ -609,14 +800,11 @@ export default function ProfileScreen() {
           <View style={styles.summaryCard}>
             <View style={styles.summaryHeader}>
               <IconBadge
-                size={layout.isMobile ? 42 : 46}
+                size={46}
                 backgroundColor={colors.turquoiseSoft}
                 borderColor={colors.border}
               >
-                <ProgressIcon
-                  size={layout.isMobile ? 20 : 22}
-                  color={colors.text}
-                />
+                <ProgressIcon size={22} color={colors.text} />
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
@@ -651,6 +839,41 @@ export default function ProfileScreen() {
             </View>
 
             <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Âge</Text>
+              <Text style={styles.summaryValueSmall}>
+                {calculatedAge || "Non renseigné"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Sexe</Text>
+              <Text style={styles.summaryValueSmall}>
+                {sex || "Non renseigné"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Main dominante</Text>
+              <Text style={styles.summaryValueSmall}>
+                {dominantHand || "Non renseigné"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Œil dominant</Text>
+              <Text style={styles.summaryValueSmall}>
+                {dominantEye || "Non renseigné"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Foyers progressifs</Text>
+              <Text style={styles.summaryValueSmall}>
+                {progressiveLenses || "Non renseigné"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Pauses</Text>
               <Text style={styles.summaryValue}>{stats.completedBreaks}</Text>
             </View>
@@ -674,26 +897,22 @@ export default function ProfileScreen() {
           <View style={styles.healthBox}>
             <Text style={styles.healthTitle}>Avertissement santé</Text>
             <Text style={styles.healthText}>
-              ErgoPrevent est un outil d’éducation et de prévention.
-              L’application ne pose pas de diagnostic, ne remplace pas un
-              ergonome, un physiothérapeute, un médecin ou un autre
-              professionnel de la santé. Si vous ressentez une douleur
-              importante, persistante, inhabituelle ou accompagnée de symptômes
-              inquiétants, consultez un professionnel.
+              ErgoPrevent est un outil d’éducation et de prévention. L’application
+              ne pose pas de diagnostic, ne remplace pas un ergonome, un
+              physiothérapeute, un médecin ou un autre professionnel de la santé.
+              Si vous ressentez une douleur importante, persistante, inhabituelle
+              ou accompagnée de symptômes inquiétants, consultez un professionnel.
             </Text>
           </View>
 
           <View style={styles.card}>
             <View style={styles.cardHeader}>
               <IconBadge
-                size={layout.isMobile ? 42 : 46}
+                size={46}
                 backgroundColor={colors.backgroundSoft}
                 borderColor={colors.border}
               >
-                <ProfileIcon
-                  size={layout.isMobile ? 20 : 22}
-                  color={colors.text}
-                />
+                <ProfileIcon size={22} color={colors.text} />
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
@@ -705,9 +924,8 @@ export default function ProfileScreen() {
             </View>
 
             <Text style={styles.dataText}>
-              Vos données sont sauvegardées uniquement dans ce navigateur, sur
-              cet appareil. Elles ne sont pas envoyées vers une base de données
-              externe.
+              Vos données sont sauvegardées uniquement dans ce navigateur, sur cet
+              appareil. Elles ne sont pas envoyées vers une base de données externe.
             </Text>
 
             <PressableScale
@@ -746,9 +964,9 @@ export default function ProfileScreen() {
           <View style={styles.warningBox}>
             <Text style={styles.warningTitle}>Réinitialisation</Text>
             <Text style={styles.warningText}>
-              La réinitialisation supprime le profil, les scores, les pauses,
-              les exercices, les capsules, les points, les routines et les
-              check-ins sauvegardés sur cet appareil.
+              La réinitialisation supprime le profil, les scores, les pauses, les
+              exercices, les capsules, les points, les routines et les check-ins
+              sauvegardés sur cet appareil.
             </Text>
           </View>
 
@@ -763,9 +981,7 @@ export default function ProfileScreen() {
             </PressableScale>
           ) : (
             <View style={styles.confirmBox}>
-              <Text style={styles.confirmTitle}>
-                Confirmer la réinitialisation
-              </Text>
+              <Text style={styles.confirmTitle}>Confirmer la réinitialisation</Text>
               <Text style={styles.confirmText}>
                 Cette action supprimera toutes les données locales de
                 l’application sur cet appareil.
@@ -790,7 +1006,7 @@ export default function ProfileScreen() {
           )}
 
           <View style={styles.sectionHeaderRow}>
-            <View style={styles.sectionHeaderTextBlock}>
+            <View>
               <Text style={styles.sectionTitleLarge}>Actions rapides</Text>
               <Text style={styles.sectionSubtitle}>
                 Accédez rapidement à vos pages principales.
@@ -812,14 +1028,11 @@ export default function ProfileScreen() {
                 <Link key={item.href} href={item.href} asChild>
                   <PressableScale style={styles.quickCard}>
                     <IconBadge
-                      size={layout.isMobile ? 40 : 44}
+                      size={44}
                       backgroundColor={colors.backgroundSoft}
                       borderColor={colors.border}
                     >
-                      <QuickIcon
-                        size={layout.isMobile ? 19 : 21}
-                        color={colors.text}
-                      />
+                      <QuickIcon size={21} color={colors.text} />
                     </IconBadge>
 
                     <Text style={styles.quickLabel}>{item.label}</Text>
@@ -842,90 +1055,78 @@ export default function ProfileScreen() {
   );
 }
 
-function createStyles(
-  colors: ThemeColors,
-  mode: "light" | "dark",
-  layout: ReturnType<typeof useResponsiveLayout>
-) {
-  const isMobile = layout.isMobile;
-  const isSmallMobile = layout.isSmallMobile;
-  const horizontalPadding = layout.horizontalPadding;
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: isMobile ? 18 : 24,
-      paddingBottom: isMobile ? 38 : 48,
+      paddingTop: 24,
+      paddingBottom: 48,
     },
     pageHeader: {
-      paddingHorizontal: horizontalPadding,
-      marginTop: isMobile ? 6 : 10,
-      marginBottom: isMobile ? 18 : 22,
+      paddingHorizontal: 24,
+      marginTop: 10,
+      marginBottom: 22,
     },
     pagePill: {
       alignSelf: "flex-start",
       backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      paddingVertical: isMobile ? 7 : 8,
-      paddingHorizontal: isMobile ? 11 : 13,
+      paddingVertical: 8,
+      paddingHorizontal: 13,
       borderWidth: 1,
       borderColor: colors.border,
-      marginBottom: isMobile ? 12 : 14,
+      marginBottom: 14,
     },
     pagePillText: {
       color: colors.textSoft,
-      fontSize: isMobile ? 11 : 12,
+      fontSize: 12,
       fontWeight: "900",
       textTransform: "uppercase",
       letterSpacing: 0.7,
     },
     pageTitle: {
       fontFamily: "Georgia",
-      fontSize: isSmallMobile ? 31 : isMobile ? 34 : 38,
-      lineHeight: isSmallMobile ? 38 : isMobile ? 41 : 45,
+      fontSize: 38,
+      lineHeight: 45,
       color: colors.primary,
       letterSpacing: -0.8,
-      marginBottom: isMobile ? 8 : 10,
+      marginBottom: 10,
       textShadowColor: "rgba(0,0,0,0.20)",
       textShadowOffset: { width: 0, height: 2 },
       textShadowRadius: 7,
     },
     subtitle: {
-      fontSize: isMobile ? 14 : 16,
-      lineHeight: isMobile ? 21 : 24,
+      fontSize: 16,
+      lineHeight: 24,
       color: colors.textSoft,
       maxWidth: 520,
     },
     heroCard: {
-      marginHorizontal: horizontalPadding,
-      marginBottom: isMobile ? 16 : 18,
-      borderRadius: isMobile ? 28 : 36,
-      padding: isMobile ? 20 : 24,
-      minHeight: isMobile ? 188 : 210,
+      marginHorizontal: 24,
+      marginBottom: 18,
+      borderRadius: 36,
+      padding: 24,
+      minHeight: 210,
       backgroundColor: colors.card,
       borderWidth: 1,
       borderColor: colors.border,
       overflow: "hidden",
       position: "relative",
       justifyContent: "center",
-      boxShadow:
-        mode === "dark"
-          ? "0px 20px 42px rgba(0,0,0,0.16)"
-          : "0px 20px 42px rgba(0,0,0,0.10)",
     },
     heroTopRow: {
       flexDirection: "row",
       alignItems: "center",
-      gap: isMobile ? 13 : 16,
+      gap: 16,
       zIndex: 2,
     },
     avatarCircle: {
-      width: isMobile ? 62 : 70,
-      height: isMobile ? 62 : 70,
-      borderRadius: isMobile ? 31 : 35,
+      width: 70,
+      height: 70,
+      borderRadius: 35,
       backgroundColor: colors.primary,
       alignItems: "center",
       justifyContent: "center",
@@ -933,10 +1134,10 @@ function createStyles(
       borderColor: colors.primaryDark,
     },
     avatarText: {
-      fontSize: isMobile ? 27 : 30,
+      fontSize: 30,
       fontWeight: "900",
       color: colors.black,
-      lineHeight: isMobile ? 31 : 34,
+      lineHeight: 34,
     },
     heroTextContainer: {
       flex: 1,
@@ -951,8 +1152,8 @@ function createStyles(
     },
     heroTitle: {
       fontFamily: "Georgia",
-      fontSize: isSmallMobile ? 27 : isMobile ? 30 : 34,
-      lineHeight: isSmallMobile ? 33 : isMobile ? 36 : 41,
+      fontSize: 34,
+      lineHeight: 41,
       color: colors.primary,
       letterSpacing: -0.7,
       marginBottom: 6,
@@ -961,61 +1162,57 @@ function createStyles(
       textShadowRadius: 7,
     },
     heroText: {
-      fontSize: isMobile ? 14 : 15,
-      lineHeight: isMobile ? 21 : 22,
+      fontSize: 15,
+      lineHeight: 22,
       color: colors.textSoft,
       maxWidth: 440,
     },
     card: {
-      marginHorizontal: horizontalPadding,
+      marginHorizontal: 24,
       backgroundColor: colors.card,
-      borderRadius: isMobile ? 26 : 30,
-      padding: isMobile ? 17 : 20,
-      marginBottom: isMobile ? 14 : 16,
+      borderRadius: 30,
+      padding: 20,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      boxShadow:
-        mode === "dark"
-          ? "0px 18px 36px rgba(0,0,0,0.12)"
-          : "0px 18px 36px rgba(0,0,0,0.08)",
     },
     cardHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: isMobile ? 12 : 14,
-      marginBottom: isMobile ? 14 : 16,
+      gap: 14,
+      marginBottom: 16,
     },
     cardHeaderText: {
       flex: 1,
     },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: isMobile ? 21 : 24,
-      lineHeight: isMobile ? 26 : 30,
+      fontSize: 24,
+      lineHeight: 30,
       color: colors.primary,
       letterSpacing: -0.3,
       marginBottom: 4,
     },
     sectionTitleLarge: {
       fontFamily: "Georgia",
-      fontSize: isMobile ? 24 : 28,
-      lineHeight: isMobile ? 30 : 35,
+      fontSize: 28,
+      lineHeight: 35,
       color: colors.primary,
       letterSpacing: -0.5,
       marginBottom: 4,
     },
     sectionSubtitle: {
-      fontSize: isMobile ? 13 : 14,
-      lineHeight: isMobile ? 19 : 20,
+      fontSize: 14,
+      lineHeight: 20,
       color: colors.textSoft,
     },
     settingsList: {
       gap: 10,
     },
     settingRow: {
-      minHeight: isMobile ? 78 : 82,
-      borderRadius: isMobile ? 20 : 22,
-      paddingVertical: isMobile ? 13 : 14,
+      minHeight: 82,
+      borderRadius: 22,
+      paddingVertical: 14,
       paddingHorizontal: 14,
       backgroundColor: colors.cardWarm,
       borderWidth: 1,
@@ -1033,15 +1230,15 @@ function createStyles(
     },
     settingTitle: {
       color: colors.text,
-      fontSize: isMobile ? 14 : 15,
-      lineHeight: isMobile ? 19 : 20,
+      fontSize: 15,
+      lineHeight: 20,
       fontWeight: "900",
       marginBottom: 4,
     },
     settingDescription: {
       color: colors.textSoft,
-      fontSize: isMobile ? 12 : 13,
-      lineHeight: isMobile ? 17 : 18,
+      fontSize: 13,
+      lineHeight: 18,
       fontWeight: "600",
     },
     switchTrack: {
@@ -1070,7 +1267,7 @@ function createStyles(
       backgroundColor: colors.black,
     },
     label: {
-      fontSize: isMobile ? 12 : 13,
+      fontSize: 13,
       fontWeight: "900",
       color: colors.textSoft,
       marginBottom: 8,
@@ -1082,26 +1279,39 @@ function createStyles(
       borderWidth: 1,
       borderColor: colors.border,
       borderRadius: 18,
-      paddingVertical: isMobile ? 13 : 14,
+      paddingVertical: 14,
       paddingHorizontal: 14,
-      fontSize: isMobile ? 15 : 16,
+      fontSize: 16,
       color: colors.text,
       backgroundColor: colors.cardWarm,
       marginBottom: 10,
+    },
+    agePreviewBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 18,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 10,
+    },
+    agePreviewValue: {
+      fontSize: 15,
+      fontWeight: "900",
+      color: colors.text,
     },
     optionsContainer: {
       gap: 8,
       marginBottom: 10,
     },
     optionButton: {
-      paddingVertical: isMobile ? 12 : 13,
+      paddingVertical: 13,
       paddingHorizontal: 14,
       borderRadius: 999,
       borderWidth: 1,
       borderColor: colors.border,
       backgroundColor: colors.cardWarm,
       alignItems: "center",
-      justifyContent: "center",
     },
     optionButtonSelected: {
       backgroundColor: colors.primary,
@@ -1109,7 +1319,7 @@ function createStyles(
     },
     optionText: {
       color: colors.text,
-      fontSize: isMobile ? 13 : 14,
+      fontSize: 14,
       fontWeight: "900",
       textAlign: "center",
     },
@@ -1118,7 +1328,7 @@ function createStyles(
     },
     themeOptions: {
       flexDirection: "row",
-      gap: isMobile ? 10 : 12,
+      gap: 12,
       marginTop: 4,
     },
     themeChoice: {
@@ -1126,9 +1336,9 @@ function createStyles(
       backgroundColor: colors.cardWarm,
       borderWidth: 1,
       borderColor: colors.border,
-      borderRadius: isMobile ? 22 : 24,
-      paddingVertical: isMobile ? 16 : 18,
-      paddingHorizontal: isMobile ? 12 : 14,
+      borderRadius: 24,
+      paddingVertical: 18,
+      paddingHorizontal: 14,
       alignItems: "center",
       gap: 9,
     },
@@ -1137,7 +1347,7 @@ function createStyles(
       borderColor: colors.primaryDark,
     },
     themeChoiceText: {
-      fontSize: isMobile ? 13 : 14,
+      fontSize: 14,
       fontWeight: "900",
       color: colors.text,
       textAlign: "center",
@@ -1148,8 +1358,8 @@ function createStyles(
     primaryButton: {
       marginTop: 8,
       backgroundColor: colors.primary,
-      paddingVertical: isMobile ? 14 : 15,
-      paddingHorizontal: isMobile ? 16 : 18,
+      paddingVertical: 15,
+      paddingHorizontal: 18,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -1159,9 +1369,9 @@ function createStyles(
       gap: 10,
     },
     primaryButtonOutside: {
-      marginHorizontal: horizontalPadding,
+      marginHorizontal: 24,
       backgroundColor: colors.primary,
-      paddingVertical: isMobile ? 14 : 15,
+      paddingVertical: 15,
       paddingHorizontal: 18,
       borderRadius: 999,
       alignItems: "center",
@@ -1174,9 +1384,8 @@ function createStyles(
     },
     primaryButtonText: {
       color: colors.black,
-      fontSize: isMobile ? 14 : 15,
+      fontSize: 15,
       fontWeight: "900",
-      textAlign: "center",
     },
     primaryButtonArrow: {
       color: colors.black,
@@ -1199,43 +1408,43 @@ function createStyles(
       textAlign: "center",
     },
     summaryCard: {
-      marginHorizontal: horizontalPadding,
+      marginHorizontal: 24,
       backgroundColor: colors.secondaryLight,
-      borderRadius: isMobile ? 26 : 30,
-      padding: isMobile ? 17 : 20,
-      marginBottom: isMobile ? 14 : 16,
+      borderRadius: 30,
+      padding: 20,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
     summaryHeader: {
       flexDirection: "row",
       alignItems: "center",
-      gap: isMobile ? 12 : 14,
-      marginBottom: isMobile ? 14 : 16,
+      gap: 14,
+      marginBottom: 16,
     },
     summaryGrid: {
       flexDirection: "row",
-      gap: isMobile ? 8 : 10,
+      gap: 10,
       marginBottom: 14,
     },
     summaryMiniCard: {
       flex: 1,
       backgroundColor: colors.cardWarm,
-      borderRadius: isMobile ? 18 : 20,
-      padding: isMobile ? 11 : 13,
+      borderRadius: 20,
+      padding: 13,
       borderWidth: 1,
       borderColor: colors.border,
       alignItems: "center",
     },
     summaryMiniNumber: {
-      fontSize: isMobile ? 20 : 24,
+      fontSize: 24,
       fontWeight: "900",
       color: colors.primary,
-      lineHeight: isMobile ? 24 : 28,
+      lineHeight: 28,
     },
     summaryMiniLabel: {
       marginTop: 5,
-      fontSize: isMobile ? 8 : 10,
+      fontSize: 10,
       color: colors.textMuted,
       fontWeight: "900",
       textAlign: "center",
@@ -1245,18 +1454,18 @@ function createStyles(
     summaryRow: {
       borderTopWidth: 1,
       borderTopColor: colors.border,
-      paddingVertical: isMobile ? 11 : 12,
+      paddingVertical: 12,
       flexDirection: "row",
       justifyContent: "space-between",
       gap: 14,
     },
     summaryLabel: {
-      fontSize: isMobile ? 13 : 14,
+      fontSize: 14,
       fontWeight: "900",
       color: colors.textSoft,
     },
     summaryValue: {
-      fontSize: isMobile ? 13 : 14,
+      fontSize: 14,
       fontWeight: "900",
       color: colors.text,
       textAlign: "right",
@@ -1264,23 +1473,23 @@ function createStyles(
     summaryValueSmall: {
       flex: 1,
       textAlign: "right",
-      fontSize: isMobile ? 13 : 14,
+      fontSize: 14,
       fontWeight: "900",
       color: colors.text,
     },
     healthBox: {
-      marginHorizontal: horizontalPadding,
+      marginHorizontal: 24,
       backgroundColor: colors.secondaryLight,
-      borderRadius: isMobile ? 22 : 24,
-      padding: isMobile ? 16 : 18,
-      marginBottom: isMobile ? 14 : 16,
+      borderRadius: 24,
+      padding: 18,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
     },
     healthTitle: {
       fontFamily: "Georgia",
-      fontSize: isMobile ? 19 : 20,
-      lineHeight: isMobile ? 25 : 26,
+      fontSize: 20,
+      lineHeight: 26,
       color: colors.primary,
       marginBottom: 8,
     },
@@ -1291,8 +1500,8 @@ function createStyles(
       fontWeight: "700",
     },
     dataText: {
-      fontSize: isMobile ? 13 : 14,
-      lineHeight: isMobile ? 20 : 21,
+      fontSize: 14,
+      lineHeight: 21,
       color: colors.textSoft,
       marginBottom: 14,
     },
@@ -1303,19 +1512,19 @@ function createStyles(
       marginTop: 12,
       borderWidth: 1,
       borderColor: colors.border,
-      height: isMobile ? 260 : 320,
+      height: 320,
       overflow: "hidden",
     },
     dataScroll: {
-      maxHeight: isMobile ? 232 : 292,
+      maxHeight: 292,
     },
     dataCode: {
-      fontSize: isMobile ? 11 : 12,
-      lineHeight: isMobile ? 17 : 18,
+      fontSize: 12,
+      lineHeight: 18,
       color: colors.text,
     },
     secondaryButtonInside: {
-      paddingVertical: isMobile ? 12 : 13,
+      paddingVertical: 13,
       paddingHorizontal: 16,
       borderRadius: 999,
       alignItems: "center",
@@ -1326,23 +1535,23 @@ function createStyles(
     },
     secondaryButtonText: {
       color: colors.text,
-      fontSize: isMobile ? 13 : 14,
+      fontSize: 14,
       fontWeight: "900",
       textAlign: "center",
     },
     warningBox: {
-      marginHorizontal: horizontalPadding,
+      marginHorizontal: 24,
       backgroundColor: colors.warning,
-      borderRadius: isMobile ? 20 : 22,
-      padding: isMobile ? 15 : 16,
+      borderRadius: 22,
+      padding: 16,
       borderWidth: 1,
       borderColor: colors.warningBorder,
       marginBottom: 14,
     },
     warningTitle: {
       fontFamily: "Georgia",
-      fontSize: isMobile ? 17 : 18,
-      lineHeight: isMobile ? 22 : 23,
+      fontSize: 18,
+      lineHeight: 23,
       color: colors.warningText,
       marginBottom: 5,
     },
@@ -1352,64 +1561,58 @@ function createStyles(
       color: colors.warningText,
     },
     dangerButton: {
-      marginHorizontal: horizontalPadding,
+      marginHorizontal: 24,
       backgroundColor: colors.danger,
-      paddingVertical: isMobile ? 14 : 15,
+      paddingVertical: 15,
       borderRadius: 999,
       alignItems: "center",
-      justifyContent: "center",
       marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
     },
     dangerButtonInside: {
       backgroundColor: colors.danger,
-      paddingVertical: isMobile ? 14 : 15,
+      paddingVertical: 15,
       borderRadius: 999,
       alignItems: "center",
-      justifyContent: "center",
       marginBottom: 12,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
     },
     dangerButtonText: {
       color: colors.white,
-      fontSize: isMobile ? 14 : 15,
+      fontSize: 15,
       fontWeight: "900",
-      textAlign: "center",
     },
     confirmBox: {
-      marginHorizontal: horizontalPadding,
+      marginHorizontal: 24,
       backgroundColor: colors.card,
-      borderRadius: isMobile ? 24 : 26,
-      padding: isMobile ? 16 : 18,
+      borderRadius: 26,
+      padding: 18,
       marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.dangerBorder,
     },
     confirmTitle: {
       fontFamily: "Georgia",
-      fontSize: isMobile ? 20 : 21,
-      lineHeight: isMobile ? 26 : 27,
+      fontSize: 21,
+      lineHeight: 27,
       color: colors.primary,
       marginBottom: 8,
     },
     confirmText: {
-      fontSize: isMobile ? 13 : 14,
-      lineHeight: isMobile ? 19 : 20,
+      fontSize: 14,
+      lineHeight: 20,
       color: colors.textSoft,
       marginBottom: 14,
     },
     sectionHeaderRow: {
-      paddingHorizontal: horizontalPadding,
-      marginBottom: isMobile ? 12 : 14,
+      paddingHorizontal: 24,
+      marginBottom: 14,
       flexDirection: "row",
       justifyContent: "space-between",
       alignItems: "flex-end",
       gap: 16,
-    },
-    sectionHeaderTextBlock: {
-      flex: 1,
     },
     sectionAction: {
       fontSize: 12,
@@ -1418,17 +1621,17 @@ function createStyles(
       marginBottom: 4,
     },
     quickActionsRow: {
-      paddingLeft: horizontalPadding,
-      paddingRight: horizontalPadding,
+      paddingLeft: 24,
+      paddingRight: 24,
       gap: 12,
-      marginBottom: isMobile ? 22 : 24,
+      marginBottom: 24,
     },
     quickCard: {
-      width: isSmallMobile ? 155 : isMobile ? 165 : 165,
-      minHeight: isMobile ? 185 : 200,
+      width: 165,
+      minHeight: 200,
       backgroundColor: colors.card,
-      borderRadius: isMobile ? 24 : 28,
-      padding: isMobile ? 15 : 17,
+      borderRadius: 28,
+      padding: 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
@@ -1439,26 +1642,26 @@ function createStyles(
       color: colors.textMuted,
       textTransform: "uppercase",
       letterSpacing: 0.7,
-      marginTop: isMobile ? 12 : 14,
+      marginTop: 14,
       marginBottom: 7,
     },
     quickTitle: {
       fontFamily: "Georgia",
-      fontSize: isMobile ? 17 : 19,
-      lineHeight: isMobile ? 22 : 24,
+      fontSize: 19,
+      lineHeight: 24,
       color: colors.primary,
       marginBottom: 6,
     },
     quickText: {
-      fontSize: isMobile ? 12 : 13,
-      lineHeight: isMobile ? 18 : 19,
+      fontSize: 13,
+      lineHeight: 19,
       color: colors.textSoft,
       marginBottom: 12,
     },
     quickArrowCircle: {
-      width: isMobile ? 34 : 38,
-      height: isMobile ? 34 : 38,
-      borderRadius: isMobile ? 17 : 19,
+      width: 38,
+      height: 38,
+      borderRadius: 19,
       backgroundColor: colors.primaryLight,
       borderWidth: 1,
       borderColor: colors.border,
