@@ -1589,9 +1589,9 @@ export default function DailyCheckinScreen() {
             <Text style={styles.warningTitle}>À retenir</Text>
             <Text style={styles.warningText}>
               Ce suivi est un outil personnel d’éducation et de prévention. Il
-              ne remplace pas une consultation médicale. Si une douleur est
-              forte, persistante, inhabituelle ou inquiétante, consultez un
-              professionnel de la santé.
+              ne remplace pas une consultation avec un professionnel. Si une
+              douleur est forte, persistante, inhabituelle ou inquiétante,
+              consultez un professionnel de la santé.
             </Text>
           </View>
 
