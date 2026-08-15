@@ -28,10 +28,11 @@ import {
   PlanIcon,
 } from "../components/ErgoIcons";
 
-const WORK_DURATION = 25 * 60;
+const WORK_DURATION = 30 * 60;
+const LONG_WORK_DURATION = 60 * 60;
 const BREAK_DURATION = 2 * 60;
 
-type TimerMode = "work" | "break";
+type TimerMode = "work" | "longWork" | "break";
 
 type AppRoute = "/routine" | "/exercises" | "/progress" | "/dashboard";
 
@@ -88,6 +89,18 @@ function formatTime(totalSeconds: number) {
   )}`;
 }
 
+function getDurationForMode(mode: TimerMode) {
+  if (mode === "work") {
+    return WORK_DURATION;
+  }
+
+  if (mode === "longWork") {
+    return LONG_WORK_DURATION;
+  }
+
+  return BREAK_DURATION;
+}
+
 export default function TimerScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [secondsRemaining, setSecondsRemaining] = useState(WORK_DURATION);
@@ -140,7 +153,7 @@ export default function TimerScreen() {
           return currentSeconds - 1;
         }
 
-        if (timerMode === "work") {
+        if (timerMode === "work" || timerMode === "longWork") {
           setTimerMode("break");
           setMessage("Temps de pause. Prenez 2 minutes pour bouger.");
           return BREAK_DURATION;
@@ -163,19 +176,30 @@ export default function TimerScreen() {
   const completedBreaks = stats.completedBreaks ?? 0;
   const points = stats.points ?? 0;
 
-  const totalDuration = timerMode === "work" ? WORK_DURATION : BREAK_DURATION;
+  const totalDuration = getDurationForMode(timerMode);
   const progressPercent = Math.round(
     ((totalDuration - secondsRemaining) / totalDuration) * 100
   );
 
-  const modeLabel = timerMode === "work" ? "Travail" : "Pause active";
+  const modeLabel =
+    timerMode === "work"
+      ? "Travail 30 min"
+      : timerMode === "longWork"
+      ? "Travail 1 h"
+      : "Pause active";
 
   const modeTitle =
-    timerMode === "work" ? "Session de concentration" : "Temps de bouger";
+    timerMode === "work"
+      ? "Session de concentration"
+      : timerMode === "longWork"
+      ? "Session longue"
+      : "Temps de bouger";
 
   const modeText =
     timerMode === "work"
-      ? "Travaillez pendant 25 minutes, puis prenez une courte pause."
+      ? "Travaillez pendant 30 minutes, puis prenez une courte pause."
+      : timerMode === "longWork"
+      ? "Travaillez pendant 1 heure, puis prenez une courte pause active."
       : "Levez-vous, marchez, respirez ou faites un mouvement doux.";
 
   function handleStartPause() {
@@ -194,6 +218,13 @@ export default function TimerScreen() {
     setIsRunning(false);
     setTimerMode("work");
     setSecondsRemaining(WORK_DURATION);
+    setMessage("");
+  }
+
+  function handleSwitchToLongWork() {
+    setIsRunning(false);
+    setTimerMode("longWork");
+    setSecondsRemaining(LONG_WORK_DURATION);
     setMessage("");
   }
 
@@ -262,7 +293,26 @@ export default function TimerScreen() {
                     timerMode === "work" ? styles.modeButtonTextActive : null,
                   ]}
                 >
-                  Travail
+                  30 min
+                </Text>
+              </PressableScale>
+
+              <PressableScale
+                style={[
+                  styles.modeButton,
+                  timerMode === "longWork" ? styles.modeButtonActive : null,
+                ]}
+                onPress={handleSwitchToLongWork}
+              >
+                <Text
+                  style={[
+                    styles.modeButtonText,
+                    timerMode === "longWork"
+                      ? styles.modeButtonTextActive
+                      : null,
+                  ]}
+                >
+                  1 heure
                 </Text>
               </PressableScale>
 
@@ -298,7 +348,7 @@ export default function TimerScreen() {
                 </IconBadge>
 
                 <Text style={styles.timerLabel}>
-                  {timerMode === "work" ? "Focus" : "Pause"}
+                  {timerMode === "break" ? "Pause" : "Focus"}
                 </Text>
 
                 <Text style={styles.timerText}>
@@ -597,10 +647,12 @@ function createStyles(
       marginBottom: isMobile ? 20 : 24,
       borderWidth: 1,
       borderColor: colors.border,
+      gap: 4,
     },
     modeButton: {
       flex: 1,
-      paddingVertical: isMobile ? 11 : 12,
+      paddingVertical: isMobile ? 10 : 12,
+      paddingHorizontal: isMobile ? 4 : 8,
       borderRadius: 999,
       alignItems: "center",
       justifyContent: "center",
@@ -611,7 +663,7 @@ function createStyles(
       borderColor: colors.primaryDark,
     },
     modeButtonText: {
-      fontSize: isMobile ? 13 : 14,
+      fontSize: isSmallMobile ? 11 : isMobile ? 12 : 14,
       fontWeight: "900",
       color: colors.textSoft,
       textAlign: "center",
