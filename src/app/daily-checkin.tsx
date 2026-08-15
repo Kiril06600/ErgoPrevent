@@ -70,10 +70,16 @@ const fatigueOptions = ["Faible", "Moyenne", "Élevée"];
 
 const zoneOptions = [
   "Cou",
+  "Maux de tête",
   "Dos",
   "Épaules",
+  "Bras",
+  "Coude",
   "Poignets",
+  "Doigts",
+  "Bassin",
   "Jambes",
+  "Pieds",
   "Aucune zone",
 ];
 
@@ -356,6 +362,79 @@ function NeckIcon({
   );
 }
 
+function HeadacheIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: CheckinIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.3,
+          top: size * 0.12,
+          width: size * 0.4,
+          height: size * 0.4,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.42,
+          top: size * 0.5,
+          width: size * 0.16,
+          height: size * 0.18,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.2,
+          top: size * 0.2,
+          width: size * 0.14,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-30deg" }],
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.2,
+          top: size * 0.2,
+          width: size * 0.14,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "30deg" }],
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.38,
+          top: size * 0.3,
+          width: size * 0.24,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
 function BackIcon({
   size = 22,
   color = "#163028",
@@ -502,6 +581,104 @@ function ShoulderIcon({
   );
 }
 
+function ArmIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: CheckinIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.28,
+          top: size * 0.22,
+          width: size * 0.44,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "28deg" }],
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.5,
+          top: size * 0.42,
+          width: size * 0.34,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "28deg" }],
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.44,
+          top: size * 0.34,
+          width: size * 0.18,
+          height: size * 0.18,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
+function ElbowIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: CheckinIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.22,
+          top: size * 0.3,
+          width: size * 0.34,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "20deg" }],
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.48,
+          top: size * 0.42,
+          width: size * 0.34,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-35deg" }],
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.44,
+          top: size * 0.34,
+          width: size * 0.2,
+          height: size * 0.2,
+          borderRadius: size,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
 function WristIcon({
   size = 22,
   color = "#163028",
@@ -569,6 +746,125 @@ function WristIcon({
           backgroundColor: color,
           borderRadius: 999,
           transform: [{ rotate: "10deg" }],
+        }}
+      />
+    </View>
+  );
+}
+
+function FingersIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: CheckinIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.22,
+          top: size * 0.54,
+          width: size * 0.5,
+          height: strokeWidth,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.26,
+          top: size * 0.26,
+          width: strokeWidth,
+          height: size * 0.28,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.38,
+          top: size * 0.18,
+          width: strokeWidth,
+          height: size * 0.36,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.5,
+          top: size * 0.2,
+          width: strokeWidth,
+          height: size * 0.34,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.62,
+          top: size * 0.3,
+          width: strokeWidth,
+          height: size * 0.24,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+    </View>
+  );
+}
+
+function PelvisIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: CheckinIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.28,
+          top: size * 0.28,
+          width: size * 0.44,
+          height: size * 0.32,
+          borderRadius: size * 0.18,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.38,
+          top: size * 0.56,
+          width: strokeWidth,
+          height: size * 0.2,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "18deg" }],
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.38,
+          top: size * 0.56,
+          width: strokeWidth,
+          height: size * 0.2,
+          backgroundColor: color,
+          borderRadius: 999,
+          transform: [{ rotate: "-18deg" }],
         }}
       />
     </View>
@@ -647,6 +943,66 @@ function LegsIcon({
   );
 }
 
+function FeetIcon({
+  size = 22,
+  color = "#163028",
+  strokeWidth = 2,
+}: CheckinIconProps) {
+  return (
+    <View style={{ width: size, height: size, position: "relative" }}>
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.26,
+          top: size * 0.18,
+          width: strokeWidth,
+          height: size * 0.38,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.26,
+          top: size * 0.18,
+          width: strokeWidth,
+          height: size * 0.38,
+          backgroundColor: color,
+          borderRadius: 999,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          left: size * 0.18,
+          top: size * 0.58,
+          width: size * 0.28,
+          height: size * 0.14,
+          borderRadius: 999,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+
+      <View
+        style={{
+          position: "absolute",
+          right: size * 0.18,
+          top: size * 0.58,
+          width: size * 0.28,
+          height: size * 0.14,
+          borderRadius: 999,
+          borderWidth: strokeWidth,
+          borderColor: color,
+        }}
+      />
+    </View>
+  );
+}
+
 function CalmIcon({
   size = 22,
   color = "#163028",
@@ -683,17 +1039,31 @@ function CalmIcon({
 }
 
 function getZoneIcon(zone: string): CheckinIcon {
-  switch (zone) {
+  const firstZone = zone.split(",")[0]?.trim() ?? zone;
+
+  switch (firstZone) {
     case "Cou":
       return NeckIcon;
+    case "Maux de tête":
+      return HeadacheIcon;
     case "Dos":
       return BackIcon;
     case "Épaules":
       return ShoulderIcon;
+    case "Bras":
+      return ArmIcon;
+    case "Coude":
+      return ElbowIcon;
     case "Poignets":
       return WristIcon;
+    case "Doigts":
+      return FingersIcon;
+    case "Bassin":
+      return PelvisIcon;
     case "Jambes":
       return LegsIcon;
+    case "Pieds":
+      return FeetIcon;
     default:
       return CalmIcon;
   }
@@ -705,7 +1075,7 @@ export default function DailyCheckinScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [painLevel, setPainLevel] = useState(0);
   const [fatigueLevel, setFatigueLevel] = useState("Moyenne");
-  const [mainZone, setMainZone] = useState("Aucune zone");
+  const [mainZones, setMainZones] = useState<string[]>(["Aucune zone"]);
   const [note, setNote] = useState("");
   const [date, setDate] = useState(currentDateAndTime.date);
   const [time, setTime] = useState(currentDateAndTime.time);
@@ -752,7 +1122,10 @@ export default function DailyCheckinScreen() {
   }, []);
 
   const profile = stats.profile ?? null;
-  const SelectedZoneIcon = getZoneIcon(mainZone);
+  const selectedMainZone = mainZones[0] ?? "Aucune zone";
+  const selectedZonesText =
+    mainZones.length > 0 ? mainZones.join(", ") : "Aucune zone";
+  const SelectedZoneIcon = getZoneIcon(selectedMainZone);
 
   function getPainMessage() {
     if (painLevel === 0) {
@@ -778,6 +1151,30 @@ export default function DailyCheckinScreen() {
     setSavedMessage("");
   }
 
+  function handleToggleZone(zone: string) {
+    setSavedMessage("");
+
+    setMainZones((currentZones) => {
+      if (zone === "Aucune zone") {
+        return ["Aucune zone"];
+      }
+
+      const zonesWithoutNone = currentZones.filter(
+        (currentZone) => currentZone !== "Aucune zone"
+      );
+
+      if (zonesWithoutNone.includes(zone)) {
+        const updatedZones = zonesWithoutNone.filter(
+          (currentZone) => currentZone !== zone
+        );
+
+        return updatedZones.length > 0 ? updatedZones : ["Aucune zone"];
+      }
+
+      return [...zonesWithoutNone, zone];
+    });
+  }
+
   function handleSaveCheckin() {
     const newCheckin: DailyCheckin = {
       id: `${Date.now()}`,
@@ -786,7 +1183,7 @@ export default function DailyCheckinScreen() {
       time,
       painLevel,
       fatigueLevel,
-      mainZone,
+      mainZone: selectedZonesText,
       note,
     };
 
@@ -805,6 +1202,7 @@ export default function DailyCheckinScreen() {
     setDate(now.date);
     setTime(now.time);
     setNote("");
+    setMainZones(["Aucune zone"]);
   }
 
   return (
@@ -1026,14 +1424,14 @@ export default function DailyCheckinScreen() {
               <View style={styles.cardHeaderText}>
                 <Text style={styles.sectionTitle}>Zone principale</Text>
                 <Text style={styles.sectionSubtitle}>
-                  Indiquez la zone la plus présente maintenant.
+                  Indiquez la ou les zones les plus sensibles maintenant.
                 </Text>
               </View>
             </View>
 
             <View style={styles.zoneGrid}>
               {zoneOptions.map((item) => {
-                const selected = mainZone === item;
+                const selected = mainZones.includes(item);
                 const ZoneIcon = getZoneIcon(item);
 
                 return (
@@ -1043,7 +1441,7 @@ export default function DailyCheckinScreen() {
                       styles.zoneButton,
                       selected ? styles.zoneButtonSelected : null,
                     ]}
-                    onPress={() => setMainZone(item)}
+                    onPress={() => handleToggleZone(item)}
                   >
                     <IconBadge
                       size={layout.isMobile ? 32 : 34}
@@ -1141,7 +1539,7 @@ export default function DailyCheckinScreen() {
 
             <View style={styles.summaryRow}>
               <Text style={styles.summaryLabel}>Zone</Text>
-              <Text style={styles.summaryValue}>{mainZone}</Text>
+              <Text style={styles.summaryValue}>{selectedZonesText}</Text>
             </View>
           </View>
 
@@ -1642,6 +2040,7 @@ function createStyles(
       color: colors.textSoft,
     },
     summaryValue: {
+      flex: 1,
       fontSize: isMobile ? 13 : 14,
       fontWeight: "900",
       color: colors.text,
