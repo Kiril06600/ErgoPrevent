@@ -145,6 +145,12 @@ const essentialItems = [
 
 const toolItems = [
   {
+    title: "Audit du poste",
+    text: "Analysez écran, chaise, clavier et souris.",
+    href: "/workstation-audit",
+    Icon: PlanIcon,
+  },
+  {
     title: "Étirements",
     text: "Exercices guidés pour chaque besoin.",
     href: "/exercises",
@@ -403,12 +409,12 @@ export default function HomeScreen() {
                 <Text style={styles.greeting}>Bonjour, {firstName}</Text>
 
                 <Text style={styles.heroTitle}>
-  Prévenir aujourd’hui,{"\n"}mieux travailler demain.
-</Text>
+                  Prévenir aujourd’hui,{"\n"}mieux travailler demain.
+                </Text>
 
-<Text style={styles.heroSubtitle}>
-  Restez constant, restez sans douleur.
-</Text>
+                <Text style={styles.heroSubtitle}>
+                  Restez constant, restez sans douleur.
+                </Text>
               </View>
 
               <View style={styles.pointsBadge}>
