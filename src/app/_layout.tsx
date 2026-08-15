@@ -1,5 +1,6 @@
 import { Stack } from "expo-router";
 import { ThemeProvider } from "../theme/ThemeContext";
+import BottomNav from "../components/BottomNav";
 
 export default function RootLayout() {
   return (
@@ -14,6 +15,8 @@ export default function RootLayout() {
           },
         }}
       />
+
+      <BottomNav fixed />
     </ThemeProvider>
   );
 }

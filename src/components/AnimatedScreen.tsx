@@ -8,28 +8,14 @@ type AnimatedScreenProps = {
 
 export default function AnimatedScreen({ children, style }: AnimatedScreenProps) {
   const opacity = useRef(new Animated.Value(0)).current;
-  const translateY = useRef(new Animated.Value(22)).current;
-  const scale = useRef(new Animated.Value(0.988)).current;
 
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(opacity, {
-        toValue: 1,
-        duration: 360,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: 360,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scale, {
-        toValue: 1,
-        duration: 360,
-        useNativeDriver: true,
-      }),
-    ]).start();
-  }, [opacity, translateY, scale]);
+    Animated.timing(opacity, {
+      toValue: 1,
+      duration: 320,
+      useNativeDriver: true,
+    }).start();
+  }, [opacity]);
 
   return (
     <Animated.View
@@ -37,7 +23,6 @@ export default function AnimatedScreen({ children, style }: AnimatedScreenProps)
         {
           flex: 1,
           opacity,
-          transform: [{ translateY }, { scale }],
         },
         style,
       ]}
