@@ -403,12 +403,12 @@ export default function HomeScreen() {
                 <Text style={styles.greeting}>Bonjour, {firstName}</Text>
 
                 <Text style={styles.heroTitle}>
-                  De petits pas aujourd’hui,{"\n"}plus fort demain.
-                </Text>
+  Prévenir aujourd’hui,{"\n"}mieux travailler demain.
+</Text>
 
-                <Text style={styles.heroSubtitle}>
-                  Restez constant, restez sans douleur.
-                </Text>
+<Text style={styles.heroSubtitle}>
+  Restez constant, restez sans douleur.
+</Text>
               </View>
 
               <View style={styles.pointsBadge}>
