@@ -6,521 +6,267 @@ import {
   Text,
   StyleSheet,
 } from "react-native";
-import { Link } from "expo-router";
-import BottomNav from "../components/BottomNav";
-import AppLogo from "../components/AppLogo";
+import { Link, type Href } from "expo-router";
 import AnimatedScreen from "../components/AnimatedScreen";
+import AppLogo from "../components/AppLogo";
+import BottomNav from "../components/BottomNav";
 import PressableScale from "../components/PressableScale";
-import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
-import { useAppTheme } from "../theme/ThemeContext";
 import { ThemeColors } from "../theme/colors";
-import { APP_STATS_UPDATED_EVENT, getAppStats } from "../lib/storage";
+import { useAppTheme } from "../theme/ThemeContext";
 import {
-  AppNotification,
-  deleteNotification,
-  getNotificationSettings,
-  getNotifications,
-  getUnreadNotificationCount,
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-  NOTIFICATION_SETTINGS_UPDATED_EVENT,
-  NOTIFICATIONS_UPDATED_EVENT,
-  seedInitialNotificationsIfNeeded,
-} from "../lib/notifications";
-import {
-  IconBadge,
-  RoutineIcon,
-  PlanIcon,
-  EducationIcon,
-  ProfileIcon,
-  ProgressIcon,
-  BreakIcon,
-  ExerciseIcon,
-} from "../components/ErgoIcons";
+  ERGONOMIC_SYSTEM_UPDATED_EVENT,
+  getCurrentWorkstation,
+  getDiscomfortCountsByZone,
+  getErgonomicEvents,
+  getErgonomicProfile,
+  getReferenceSettings,
+  getWorkstations,
+} from "../lib/ergonomicSystem";
 
-type BellIconProps = {
-  size?: number;
-  color?: string;
+type MainAction = {
+  title: string;
+  text: string;
+  href: Href;
 };
 
-function BellIcon({ size = 22, color = "#F5EEDF" }: BellIconProps) {
-  return (
-    <View style={{ width: size, height: size, position: "relative" }}>
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.28,
-          top: size * 0.22,
-          width: size * 0.44,
-          height: size * 0.5,
-          borderTopLeftRadius: size * 0.24,
-          borderTopRightRadius: size * 0.24,
-          borderBottomLeftRadius: size * 0.1,
-          borderBottomRightRadius: size * 0.1,
-          borderWidth: 2,
-          borderColor: color,
-        }}
-      />
-
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.21,
-          top: size * 0.68,
-          width: size * 0.58,
-          height: 2,
-          backgroundColor: color,
-          borderRadius: 999,
-        }}
-      />
-
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.44,
-          top: size * 0.1,
-          width: size * 0.12,
-          height: size * 0.12,
-          borderRadius: size,
-          backgroundColor: color,
-        }}
-      />
-
-      <View
-        style={{
-          position: "absolute",
-          left: size * 0.42,
-          top: size * 0.78,
-          width: size * 0.16,
-          height: size * 0.16,
-          borderRadius: size,
-          backgroundColor: color,
-        }}
-      />
-    </View>
-  );
-}
-
-function formatNotificationDate(dateString: string) {
-  const date = new Date(dateString);
-
-  if (Number.isNaN(date.getTime())) {
-    return "Date inconnue";
-  }
-
-  return date.toLocaleDateString("fr-CA", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
-const essentialItems = [
+const mainActions: MainAction[] = [
   {
-    title: "Bilan du jour",
-    text: "Suivez comment votre corps va.",
-    href: "/daily-checkin",
-    Icon: ProgressIcon,
+    title: "Reset",
+    text: "Repartir confortablement en 2 min",
+    href: "/ergonomic-reset",
   },
   {
-    title: "Posture",
-    text: "Analysez votre poste de travail.",
-    href: "/workstation-audit",
-    Icon: PlanIcon,
+    title: "Ajuster",
+    text: "Vérifier un inconfort ou un changement",
+    href: "/adjust-discomfort",
   },
   {
-    title: "Rappels Pauses",
-    text: "Restez actif et bougez souvent.",
-    href: "/timer",
-    Icon: BreakIcon,
+    title: "Installer",
+    text: "Configurer ou revérifier un poste",
+    href: "/install-workstation",
   },
-  {
-    title: "Objectifs",
-    text: "Consultez votre plan personnalisé.",
-    href: "/personal-plan",
-    Icon: RoutineIcon,
-  },
-] as const;
+];
 
-const toolItems = [
+const secondaryActions: MainAction[] = [
   {
-    title: "Audit du poste",
-    text: "Analysez écran, chaise, clavier et souris.",
-    href: "/workstation-audit",
-    Icon: PlanIcon,
+    title: "Mes postes",
+    text: "Voir la mémoire de vos espaces de travail.",
+    href: "/workstations",
   },
   {
-    title: "Étirements",
-    text: "Exercices guidés pour chaque besoin.",
+    title: "Profil ergonomique",
+    text: "Mensurations et réglages de référence.",
+    href: "/ergonomic-profile",
+  },
+  {
+    title: "Exercices",
+    text: "Bouger et relâcher les tensions.",
     href: "/exercises",
-    Icon: ExerciseIcon,
   },
   {
     title: "Progression",
-    text: "Suivez vos progrès dans le temps.",
+    text: "Voir votre historique et vos points.",
     href: "/progress",
-    Icon: ProgressIcon,
   },
   {
-    title: "Formation",
-    text: "Conseils et astuces pour votre bien-être.",
-    href: "/education",
-    Icon: EducationIcon,
+    title: "Questionnaire",
+    text: "Évaluer vos risques TMS.",
+    href: "/questionnaire",
   },
-  {
-    title: "Profil",
-    text: "Gérez vos données et préférences.",
-    href: "/profile",
-    Icon: ProfileIcon,
-  },
-] as const;
+];
 
 export default function HomeScreen() {
-  const [stats, setStats] = useState(() => getAppStats());
-  const [notifications, setNotifications] = useState<AppNotification[]>([]);
-  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [areNotificationsEnabled, setAreNotificationsEnabled] = useState(() =>
-    getNotificationSettings().enabled
-  );
-
   const { colors, mode } = useAppTheme();
-  const layout = useResponsiveLayout();
-  const styles = createStyles(colors, mode, layout);
+  const styles = createStyles(colors, mode);
+
+  const [, setRefreshKey] = useState(0);
 
   useEffect(() => {
-    function refreshStats() {
-      setStats(getAppStats());
+    function refresh() {
+      setRefreshKey((currentValue) => currentValue + 1);
     }
-
-    refreshStats();
 
     if (typeof window === "undefined") {
       return;
     }
 
-    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-    window.addEventListener("focus", refreshStats);
-    window.addEventListener("storage", refreshStats);
+    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refresh);
+    window.addEventListener("focus", refresh);
+    window.addEventListener("storage", refresh);
 
     return () => {
-      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-      window.removeEventListener("focus", refreshStats);
-      window.removeEventListener("storage", refreshStats);
+      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refresh);
+      window.removeEventListener("focus", refresh);
+      window.removeEventListener("storage", refresh);
     };
   }, []);
 
-  useEffect(() => {
-    function refreshNotifications() {
-      const settings = getNotificationSettings();
+  const profile = getErgonomicProfile();
+  const references = getReferenceSettings(profile);
+  const currentWorkstation = getCurrentWorkstation();
+  const workstations = getWorkstations();
+  const events = getErgonomicEvents();
+  const discomfortCounts = getDiscomfortCountsByZone(currentWorkstation?.id);
 
-      setAreNotificationsEnabled(settings.enabled);
+  const resetCount = events.filter((event) => event.type === "reset").length;
+  const adjustmentCount = events.filter(
+    (event) => event.type === "adjustment" || event.type === "discomfort"
+  ).length;
 
-      if (!settings.enabled) {
-        setIsNotificationsOpen(false);
-        setNotifications(getNotifications());
-        return;
-      }
-
-      seedInitialNotificationsIfNeeded();
-      setNotifications(getNotifications());
-    }
-
-    refreshNotifications();
-
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.addEventListener(NOTIFICATIONS_UPDATED_EVENT, refreshNotifications);
-    window.addEventListener(
-      NOTIFICATION_SETTINGS_UPDATED_EVENT,
-      refreshNotifications
-    );
-    window.addEventListener("focus", refreshNotifications);
-    window.addEventListener("storage", refreshNotifications);
-
-    return () => {
-      window.removeEventListener(
-        NOTIFICATIONS_UPDATED_EVENT,
-        refreshNotifications
-      );
-      window.removeEventListener(
-        NOTIFICATION_SETTINGS_UPDATED_EVENT,
-        refreshNotifications
-      );
-      window.removeEventListener("focus", refreshNotifications);
-      window.removeEventListener("storage", refreshNotifications);
-    };
-  }, []);
-
-  function handleToggleNotifications() {
-    setIsNotificationsOpen((currentValue) => !currentValue);
-  }
-
-  function handleMarkNotificationAsRead(notificationId: string) {
-    const updatedNotifications = markNotificationAsRead(notificationId);
-    setNotifications(updatedNotifications);
-  }
-
-  function handleMarkAllNotificationsAsRead() {
-    const updatedNotifications = markAllNotificationsAsRead();
-    setNotifications(updatedNotifications);
-  }
-
-  function handleDeleteNotification(notificationId: string) {
-    const updatedNotifications = deleteNotification(notificationId);
-    setNotifications(updatedNotifications);
-  }
-
-  const firstName = stats.profile?.firstName?.trim() || "Alex";
-  const points = stats.points;
-  const notificationCount = areNotificationsEnabled
-    ? getUnreadNotificationCount()
-    : 0;
+  const mostFrequentZone = Object.entries(discomfortCounts).sort(
+    (a, b) => b[1] - a[1]
+  )[0];
 
   return (
     <AnimatedScreen>
       <SafeAreaView style={styles.safeArea}>
         <ScrollView contentContainerStyle={styles.container}>
-          <View style={styles.topBar}>
-            <AppLogo height={layout.isMobile ? 78 : 100} />
-
-            <PressableScale
-              style={styles.notificationButton}
-              onPress={handleToggleNotifications}
-            >
-              <BellIcon size={layout.isMobile ? 21 : 23} color={colors.primary} />
-
-              {notificationCount > 0 && (
-                <View style={styles.notificationBadge}>
-                  <Text style={styles.notificationBadgeText}>
-                    {notificationCount > 9 ? "9+" : notificationCount}
-                  </Text>
-                </View>
-              )}
-            </PressableScale>
-
-            {isNotificationsOpen && (
-              <View style={styles.notificationsPanel}>
-                <View style={styles.notificationsPanelHeader}>
-                  <View>
-                    <Text style={styles.notificationsPanelTitle}>
-                      Notifications
-                    </Text>
-
-                    <Text style={styles.notificationsPanelSubtitle}>
-                      {areNotificationsEnabled
-                        ? `${notificationCount} non lue${
-                            notificationCount > 1 ? "s" : ""
-                          }`
-                        : "désactivées"}
-                    </Text>
-                  </View>
-
-                  {areNotificationsEnabled && notificationCount > 0 && (
-                    <PressableScale
-                      style={styles.markAllSmallButton}
-                      onPress={handleMarkAllNotificationsAsRead}
-                    >
-                      <Text style={styles.markAllSmallText}>Tout lire</Text>
-                    </PressableScale>
-                  )}
-                </View>
-
-                <ScrollView
-                  style={styles.notificationsPanelScroll}
-                  contentContainerStyle={styles.notificationsPanelContent}
-                  showsVerticalScrollIndicator={false}
-                >
-                  {!areNotificationsEnabled ? (
-                    <View style={styles.emptyNotificationBox}>
-                      <Text style={styles.emptyNotificationTitle}>
-                        Notifications désactivées
-                      </Text>
-                      <Text style={styles.emptyNotificationText}>
-                        Vous pouvez les réactiver dans la page Profil.
-                      </Text>
-                    </View>
-                  ) : notifications.length === 0 ? (
-                    <View style={styles.emptyNotificationBox}>
-                      <Text style={styles.emptyNotificationTitle}>
-                        Aucune notification
-                      </Text>
-                      <Text style={styles.emptyNotificationText}>
-                        Vos rappels apparaîtront ici.
-                      </Text>
-                    </View>
-                  ) : (
-                    notifications.map((notification) => (
-                      <View
-                        key={notification.id}
-                        style={[
-                          styles.notificationMiniCard,
-                          !notification.read
-                            ? styles.notificationMiniCardUnread
-                            : null,
-                        ]}
-                      >
-                        <PressableScale
-                          style={styles.notificationMiniContent}
-                          onPress={() =>
-                            handleMarkNotificationAsRead(notification.id)
-                          }
-                        >
-                          <View style={styles.notificationMiniTitleRow}>
-                            {!notification.read && (
-                              <View style={styles.unreadDot} />
-                            )}
-
-                            <Text style={styles.notificationMiniTitle}>
-                              {notification.title}
-                            </Text>
-                          </View>
-
-                          <Text style={styles.notificationMiniDate}>
-                            {formatNotificationDate(notification.createdAt)}
-                          </Text>
-
-                          <Text style={styles.notificationMiniMessage}>
-                            {notification.message}
-                          </Text>
-                        </PressableScale>
-
-                        <PressableScale
-                          style={styles.deleteNotificationButton}
-                          onPress={() =>
-                            handleDeleteNotification(notification.id)
-                          }
-                        >
-                          <Text style={styles.deleteNotificationText}>×</Text>
-                        </PressableScale>
-                      </View>
-                    ))
-                  )}
-                </ScrollView>
-              </View>
-            )}
+          <View style={styles.logoArea}>
+            <AppLogo height={92} />
           </View>
 
-          <View style={styles.heroCard}>
-            <View style={styles.heroTopRow}>
-              <View style={styles.heroTextBlock}>
-                <Text style={styles.greeting}>Bonjour, {firstName}</Text>
+          <View style={styles.workspaceCard}>
+            <Text style={styles.workspaceLabel}>Mon espace de travail</Text>
 
-                <Text style={styles.heroTitle}>
-                  Prévenir aujourd’hui,{"\n"}mieux travailler demain.
-                </Text>
+            <Text style={styles.workspaceTitle}>
+              {currentWorkstation?.name ?? "Aucun poste enregistré"}
+            </Text>
 
-                <Text style={styles.heroSubtitle}>
-                  Restez constant, restez sans douleur.
+            <Text style={styles.workspaceText}>
+              {currentWorkstation
+                ? "Configuration enregistrée. Vous pouvez faire un reset, ajuster un inconfort ou revérifier votre poste."
+                : "Commencez par créer votre profil ergonomique, puis installez votre premier poste."}
+            </Text>
+
+            <View style={styles.statusRow}>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusPillText}>
+                  {profile ? "Profil ✓" : "Profil à compléter"}
                 </Text>
               </View>
 
-              <View style={styles.pointsBadge}>
-                <Text style={styles.pointsNumber}>{points}</Text>
-                <Text style={styles.pointsText}>points</Text>
+              <View style={styles.statusPill}>
+                <Text style={styles.statusPillText}>
+                  {currentWorkstation ? "Poste ✓" : "Poste à créer"}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          <View style={styles.actionsCard}>
+            <Text style={styles.actionsTitle}>Interventions rapides</Text>
+
+            <View style={styles.actionsList}>
+              {mainActions.map((action) => (
+                <Link key={action.href.toString()} href={action.href} asChild>
+                  <PressableScale style={styles.mainActionCard}>
+                    <View style={styles.mainActionTextBlock}>
+                      <Text style={styles.mainActionTitle}>{action.title}</Text>
+                      <Text style={styles.mainActionText}>{action.text}</Text>
+                    </View>
+
+                    <View style={styles.arrowCircle}>
+                      <Text style={styles.arrowText}>→</Text>
+                    </View>
+                  </PressableScale>
+                </Link>
+              ))}
+            </View>
+          </View>
+
+          <View style={styles.profileCard}>
+            <Text style={styles.sectionTitle}>Mon profil ergonomique</Text>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Assise</Text>
+              <Text style={styles.summaryValue}>{references.seatHeightRange}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Bureau</Text>
+              <Text style={styles.summaryValue}>{references.deskHeightRange}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Main dominante</Text>
+              <Text style={styles.summaryValue}>
+                {profile?.dominantHand || "À compléter"}
+              </Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Verres progressifs</Text>
+              <Text style={styles.summaryValue}>
+                {profile?.progressiveLenses || "À compléter"}
+              </Text>
+            </View>
+
+            <Link href="/ergonomic-profile" asChild>
+              <PressableScale style={styles.secondaryButton}>
+                <Text style={styles.secondaryButtonText}>
+                  Modifier mon profil ergonomique
+                </Text>
+              </PressableScale>
+            </Link>
+          </View>
+
+          <View style={styles.historyCard}>
+            <Text style={styles.sectionTitle}>Mémoire ErgoPrevent</Text>
+
+            <View style={styles.statsGrid}>
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{workstations.length}</Text>
+                <Text style={styles.statLabel}>postes</Text>
+              </View>
+
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{resetCount}</Text>
+                <Text style={styles.statLabel}>resets</Text>
+              </View>
+
+              <View style={styles.statBox}>
+                <Text style={styles.statNumber}>{adjustmentCount}</Text>
+                <Text style={styles.statLabel}>ajustements</Text>
               </View>
             </View>
 
-            <Link href="/daily-checkin" asChild>
-              <PressableScale style={styles.heroButton}>
-                <Text style={styles.heroButtonText}>
-                  Commencer le bilan du jour
+            {mostFrequentZone ? (
+              <View style={styles.insightBox}>
+                <Text style={styles.insightTitle}>Vérification ciblée</Text>
+                <Text style={styles.insightText}>
+                  Vous avez signalé {mostFrequentZone[0]} {mostFrequentZone[1]}{" "}
+                  fois sur ce poste. ErgoPrevent pourra vous proposer de
+                  revérifier seulement les éléments liés à cette zone.
                 </Text>
-                <Text style={styles.heroButtonArrow}>›</Text>
-              </PressableScale>
-            </Link>
+              </View>
+            ) : (
+              <Text style={styles.emptyText}>
+                Aucun inconfort enregistré pour ce poste pour le moment.
+              </Text>
+            )}
           </View>
 
           <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Vos essentiels</Text>
-
-            <Link href="/explore" asChild>
-              <PressableScale style={styles.viewAllButton}>
-                <Text style={styles.viewAllText}>Voir tout</Text>
-                <Text style={styles.viewAllArrow}>›</Text>
-              </PressableScale>
-            </Link>
+            <Text style={styles.sectionTitleLarge}>Autres outils</Text>
           </View>
 
           <ScrollView
             horizontal
             showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.cardsRow}
+            contentContainerStyle={styles.secondaryActionsRow}
           >
-            {essentialItems.map((item) => {
-              const ItemIcon = item.Icon;
+            {secondaryActions.map((action) => (
+              <Link key={action.href.toString()} href={action.href} asChild>
+                <PressableScale style={styles.secondaryActionCard}>
+                  <Text style={styles.secondaryActionTitle}>{action.title}</Text>
+                  <Text style={styles.secondaryActionText}>{action.text}</Text>
 
-              return (
-                <Link key={item.href} href={item.href} asChild>
-                  <PressableScale style={styles.featureCard}>
-                    <IconBadge
-                      size={layout.isMobile ? 58 : 70}
-                      backgroundColor="rgba(0, 48, 38, 0.26)"
-                      borderColor="rgba(245, 238, 223, 0.18)"
-                    >
-                      <ItemIcon
-                        size={layout.isMobile ? 27 : 32}
-                        color={colors.primary}
-                      />
-                    </IconBadge>
-
-                    <Text style={styles.featureTitle}>{item.title}</Text>
-                    <Text style={styles.featureText}>{item.text}</Text>
-
-                    <View style={styles.arrowCircle}>
-                      <Text style={styles.arrowText}>›</Text>
-                    </View>
-                  </PressableScale>
-                </Link>
-              );
-            })}
-          </ScrollView>
-
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Outils</Text>
-
-            <Link href="/explore" asChild>
-              <PressableScale style={styles.viewAllButton}>
-                <Text style={styles.viewAllText}>Voir tout</Text>
-                <Text style={styles.viewAllArrow}>›</Text>
-              </PressableScale>
-            </Link>
-          </View>
-
-          <ScrollView
-            horizontal
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={styles.cardsRow}
-          >
-            {toolItems.map((item) => {
-              const ItemIcon = item.Icon;
-
-              return (
-                <Link key={item.href} href={item.href} asChild>
-                  <PressableScale style={styles.featureCard}>
-                    <IconBadge
-                      size={layout.isMobile ? 58 : 70}
-                      backgroundColor="rgba(0, 48, 38, 0.26)"
-                      borderColor="rgba(245, 238, 223, 0.18)"
-                    >
-                      <ItemIcon
-                        size={layout.isMobile ? 27 : 32}
-                        color={colors.primary}
-                      />
-                    </IconBadge>
-
-                    <Text style={styles.featureTitle}>{item.title}</Text>
-                    <Text style={styles.featureText}>{item.text}</Text>
-
-                    <View style={styles.arrowCircle}>
-                      <Text style={styles.arrowText}>›</Text>
-                    </View>
-                  </PressableScale>
-                </Link>
-              );
-            })}
+                  <View style={styles.smallArrowCircle}>
+                    <Text style={styles.smallArrowText}>→</Text>
+                  </View>
+                </PressableScale>
+              </Link>
+            ))}
           </ScrollView>
 
           <BottomNav />
@@ -530,403 +276,306 @@ export default function HomeScreen() {
   );
 }
 
-function createStyles(
-  colors: ThemeColors,
-  mode: "light" | "dark",
-  layout: ReturnType<typeof useResponsiveLayout>
-) {
-  const isMobile = layout.isMobile;
-  const isSmallMobile = layout.isSmallMobile;
-  const horizontalPadding = layout.horizontalPadding;
-
+function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
   return StyleSheet.create({
     safeArea: {
       flex: 1,
       backgroundColor: colors.background,
     },
     container: {
-      paddingTop: isMobile ? 18 : 28,
-      paddingBottom: isMobile ? 34 : 42,
+      paddingTop: 24,
+      paddingBottom: 48,
     },
-    topBar: {
-      paddingHorizontal: horizontalPadding,
-      marginBottom: isMobile ? 16 : 28,
-      flexDirection: "row",
-      alignItems: "flex-start",
-      justifyContent: "space-between",
-      position: "relative",
-      minHeight: isMobile ? 82 : 105,
-      zIndex: 1000,
-      overflow: "visible",
+    logoArea: {
+      paddingHorizontal: 24,
+      marginBottom: 12,
     },
-    notificationButton: {
-      position: "absolute",
-      top: isMobile ? 8 : 12,
-      right: horizontalPadding,
-      zIndex: 70,
-      width: isMobile ? 44 : 48,
-      height: isMobile ? 44 : 48,
-      borderRadius: isMobile ? 22 : 24,
-      backgroundColor: colors.cardWarm,
+    workspaceCard: {
+      marginHorizontal: 24,
+      backgroundColor: colors.card,
+      borderRadius: 34,
+      padding: 22,
+      marginBottom: 16,
       borderWidth: 1,
       borderColor: colors.border,
-      alignItems: "center",
-      justifyContent: "center",
-      boxShadow:
-        mode === "dark"
-          ? "0px 12px 26px rgba(0,0,0,0.22)"
-          : "0px 12px 26px rgba(8,45,36,0.12)",
     },
-    notificationBadge: {
-      position: "absolute",
-      top: -4,
-      right: -4,
-      minWidth: 20,
-      height: 20,
-      borderRadius: 10,
-      backgroundColor: colors.primary,
-      borderWidth: 1,
-      borderColor: colors.card,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingHorizontal: 5,
-    },
-    notificationBadgeText: {
-      color: colors.black,
-      fontSize: 10,
-      fontWeight: "900",
-      lineHeight: 13,
-    },
-    notificationsPanel: {
-      position: "absolute",
-      top: isMobile ? 58 : 68,
-      right: horizontalPadding,
-      left: isMobile ? horizontalPadding : undefined,
-      zIndex: 2000,
-      width: isMobile ? undefined : 310,
-      maxHeight: isMobile ? 285 : 250,
-      borderRadius: isMobile ? 22 : 26,
-      backgroundColor: mode === "dark" ? "#243E37" : "#F7F1E7",
-      borderWidth: 1,
-      borderColor: colors.border,
-      overflow: "hidden",
-      boxShadow:
-        mode === "dark"
-          ? "0px 24px 48px rgba(0,0,0,0.42)"
-          : "0px 24px 48px rgba(8,45,36,0.18)",
-    },
-    notificationsPanelHeader: {
-      padding: isMobile ? 15 : 18,
-      borderBottomWidth: 1,
-      borderBottomColor: colors.border,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "space-between",
-      gap: 12,
-    },
-    notificationsPanelTitle: {
-      fontFamily: "Georgia",
-      color: colors.primary,
-      fontSize: isMobile ? 20 : 23,
-      lineHeight: isMobile ? 25 : 28,
-    },
-    notificationsPanelSubtitle: {
-      marginTop: 3,
+    workspaceLabel: {
       color: colors.textMuted,
       fontSize: 12,
-      fontWeight: "800",
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginBottom: 8,
     },
-    markAllSmallButton: {
+    workspaceTitle: {
+      fontFamily: "Georgia",
+      fontSize: 30,
+      lineHeight: 36,
+      color: colors.primary,
+      marginBottom: 8,
+    },
+    workspaceText: {
+      color: colors.textSoft,
+      fontSize: 15,
+      lineHeight: 23,
+      fontWeight: "700",
+      marginBottom: 16,
+    },
+    statusRow: {
+      flexDirection: "row",
+      gap: 8,
+      flexWrap: "wrap",
+    },
+    statusPill: {
+      backgroundColor: colors.backgroundSoft,
       borderRadius: 999,
-      backgroundColor: colors.primary,
       paddingVertical: 8,
-      paddingHorizontal: 11,
+      paddingHorizontal: 12,
       borderWidth: 1,
-      borderColor: colors.primaryDark,
+      borderColor: colors.border,
     },
-    markAllSmallText: {
-      color: colors.black,
-      fontSize: 11,
+    statusPillText: {
+      color: colors.text,
+      fontSize: 12,
       fontWeight: "900",
     },
-    notificationsPanelScroll: {
-      maxHeight: isMobile ? 210 : 165,
+    actionsCard: {
+      marginHorizontal: 24,
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 18,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
     },
-    notificationsPanelContent: {
-      padding: 12,
+    actionsTitle: {
+      fontFamily: "Georgia",
+      fontSize: 22,
+      lineHeight: 28,
+      color: colors.primary,
+      marginBottom: 12,
+    },
+    actionsList: {
       gap: 10,
     },
-    emptyNotificationBox: {
-      padding: 16,
-      borderRadius: 18,
+    mainActionCard: {
       backgroundColor: colors.cardWarm,
+      borderRadius: 22,
+      paddingVertical: 14,
+      paddingHorizontal: 15,
+      minHeight: 74,
       borderWidth: 1,
       borderColor: colors.border,
-    },
-    emptyNotificationTitle: {
-      color: colors.primary,
-      fontSize: 15,
-      fontWeight: "900",
-      marginBottom: 5,
-    },
-    emptyNotificationText: {
-      color: colors.textSoft,
-      fontSize: 13,
-      lineHeight: 18,
-    },
-    notificationMiniCard: {
-      position: "relative",
-      borderRadius: 18,
-      padding: 13,
-      paddingRight: 40,
-      backgroundColor: mode === "dark" ? "#314C44" : "#EFE6D8",
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    notificationMiniCardUnread: {
-      borderColor: colors.primary,
-      backgroundColor: mode === "dark" ? "#3A554D" : "#E7DCCB",
-    },
-    notificationMiniContent: {
-      gap: 4,
-    },
-    notificationMiniTitleRow: {
-      flexDirection: "row",
-      alignItems: "center",
-      gap: 8,
-    },
-    unreadDot: {
-      width: 7,
-      height: 7,
-      borderRadius: 4,
-      backgroundColor: colors.primary,
-    },
-    notificationMiniTitle: {
-      flex: 1,
-      color: colors.text,
-      fontSize: 14,
-      lineHeight: 19,
-      fontWeight: "900",
-    },
-    notificationMiniDate: {
-      color: colors.textMuted,
-      fontSize: 11,
-      lineHeight: 16,
-      fontWeight: "700",
-    },
-    notificationMiniMessage: {
-      color: colors.textSoft,
-      fontSize: 13,
-      lineHeight: 18,
-      marginTop: 3,
-    },
-    deleteNotificationButton: {
-      position: "absolute",
-      top: 10,
-      right: 10,
-      width: 24,
-      height: 24,
-      borderRadius: 12,
-      alignItems: "center",
-      justifyContent: "center",
-      backgroundColor: colors.backgroundSoft,
-      borderWidth: 1,
-      borderColor: colors.border,
-    },
-    deleteNotificationText: {
-      color: colors.textSoft,
-      fontSize: 18,
-      lineHeight: 20,
-      fontWeight: "700",
-      marginTop: -2,
-    },
-    heroCard: {
-      zIndex: 1,
-      marginHorizontal: horizontalPadding,
-      marginBottom: isMobile ? 24 : 28,
-      minHeight: isMobile ? 300 : 320,
-      borderRadius: isMobile ? 28 : 36,
-      padding: isMobile ? 20 : 28,
-      backgroundColor: colors.card,
-      borderWidth: 1,
-      borderColor: colors.border,
-      justifyContent: "space-between",
-      overflow: "hidden",
-      boxShadow:
-        mode === "dark"
-          ? "0px 26px 52px rgba(0,0,0,0.18)"
-          : "0px 26px 52px rgba(0,0,0,0.14)",
-    },
-    heroTopRow: {
-      flexDirection: isMobile ? "column" : "row",
-      justifyContent: "space-between",
-      alignItems: isMobile ? "stretch" : "flex-start",
-      gap: isMobile ? 18 : 18,
-    },
-    heroTextBlock: {
-      flex: 1,
-      paddingTop: isMobile ? 2 : 8,
-    },
-    greeting: {
-      fontSize: isMobile ? 15 : 17,
-      lineHeight: isMobile ? 21 : 24,
-      color: colors.textSoft,
-      marginBottom: isMobile ? 15 : 24,
-      fontWeight: "500",
-    },
-    heroTitle: {
-      fontFamily: "Georgia",
-      fontSize: isSmallMobile ? 29 : isMobile ? 32 : 39,
-      lineHeight: isSmallMobile ? 36 : isMobile ? 39 : 48,
-      color: colors.primary,
-      letterSpacing: -1,
-      marginBottom: isMobile ? 12 : 18,
-      textShadowColor: "rgba(0,0,0,0.22)",
-      textShadowOffset: { width: 0, height: 2 },
-      textShadowRadius: 8,
-    },
-    heroSubtitle: {
-      fontSize: isMobile ? 15 : 18,
-      lineHeight: isMobile ? 23 : 27,
-      color: colors.textSoft,
-      fontWeight: "400",
-    },
-    pointsBadge: {
-      width: isMobile ? 92 : 112,
-      minHeight: isMobile ? 66 : 82,
-      borderRadius: isMobile ? 28 : 38,
-      backgroundColor: colors.primary,
-      borderWidth: 1,
-      borderColor: colors.primaryDark,
-      alignItems: "center",
-      justifyContent: "center",
-      paddingVertical: isMobile ? 8 : 10,
-      alignSelf: "flex-start",
-      boxShadow: "0px 12px 26px rgba(0,0,0,0.16)",
-    },
-    pointsNumber: {
-      fontSize: isMobile ? 27 : 34,
-      lineHeight: isMobile ? 30 : 37,
-      fontWeight: "900",
-      color: colors.black,
-      letterSpacing: -1,
-    },
-    pointsText: {
-      fontSize: isMobile ? 14 : 18,
-      lineHeight: isMobile ? 18 : 22,
-      fontWeight: "900",
-      color: colors.black,
-    },
-    heroButton: {
-      alignSelf: "stretch",
-      minWidth: isMobile ? 0 : 300,
-      borderRadius: 999,
-      backgroundColor: colors.primary,
-      borderWidth: 1,
-      borderColor: colors.primaryDark,
-      paddingVertical: isMobile ? 14 : 16,
-      paddingHorizontal: isMobile ? 18 : 25,
-      flexDirection: "row",
-      alignItems: "center",
-      justifyContent: "center",
-      gap: isMobile ? 12 : 20,
-      marginTop: isMobile ? 22 : 30,
-    },
-    heroButtonText: {
-      color: colors.black,
-      fontSize: isMobile ? 15 : 17,
-      fontWeight: "900",
-      textAlign: "center",
-    },
-    heroButtonArrow: {
-      color: colors.black,
-      fontSize: isMobile ? 28 : 34,
-      fontWeight: "600",
-      lineHeight: isMobile ? 24 : 28,
-      marginTop: -2,
-    },
-    sectionHeader: {
-      paddingHorizontal: horizontalPadding,
-      marginBottom: isMobile ? 12 : 14,
       flexDirection: "row",
       alignItems: "center",
       justifyContent: "space-between",
       gap: 14,
     },
+    mainActionTextBlock: {
+      flex: 1,
+    },
+    mainActionTitle: {
+      color: colors.primary,
+      fontSize: 17,
+      lineHeight: 22,
+      fontWeight: "900",
+      marginBottom: 3,
+    },
+    mainActionText: {
+      color: colors.textSoft,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "700",
+    },
+    arrowCircle: {
+      width: 34,
+      height: 34,
+      borderRadius: 17,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    arrowText: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: "900",
+      lineHeight: 18,
+    },
+    profileCard: {
+      marginHorizontal: 24,
+      backgroundColor: colors.card,
+      borderRadius: 30,
+      padding: 20,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    historyCard: {
+      marginHorizontal: 24,
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 30,
+      padding: 20,
+      marginBottom: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
     sectionTitle: {
       fontFamily: "Georgia",
-      fontSize: isMobile ? 25 : 31,
-      lineHeight: isMobile ? 31 : 38,
+      fontSize: 24,
+      lineHeight: 30,
       color: colors.primary,
-      letterSpacing: -0.5,
+      marginBottom: 14,
     },
-    viewAllButton: {
+    sectionTitleLarge: {
+      fontFamily: "Georgia",
+      fontSize: 28,
+      lineHeight: 35,
+      color: colors.primary,
+    },
+    summaryRow: {
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingVertical: 12,
       flexDirection: "row",
-      alignItems: "center",
-      gap: 6,
-      paddingVertical: 4,
-      paddingHorizontal: 2,
+      justifyContent: "space-between",
+      gap: 14,
     },
-    viewAllText: {
+    summaryLabel: {
       color: colors.textSoft,
-      fontSize: isMobile ? 14 : 17,
-      fontWeight: "500",
+      fontSize: 14,
+      fontWeight: "900",
     },
-    viewAllArrow: {
+    summaryValue: {
+      flex: 1,
+      textAlign: "right",
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "900",
+    },
+    secondaryButton: {
+      marginTop: 12,
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: colors.cardWarm,
+    },
+    secondaryButtonText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+    statsGrid: {
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 14,
+    },
+    statBox: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      padding: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+    },
+    statNumber: {
       color: colors.primary,
-      fontSize: isMobile ? 27 : 32,
-      lineHeight: isMobile ? 25 : 30,
-      fontWeight: "500",
+      fontSize: 25,
+      fontWeight: "900",
+      lineHeight: 29,
     },
-    cardsRow: {
-      paddingLeft: horizontalPadding,
-      paddingRight: horizontalPadding,
-      gap: isMobile ? 12 : 14,
-      marginBottom: isMobile ? 26 : 30,
+    statLabel: {
+      marginTop: 4,
+      color: colors.textMuted,
+      fontSize: 10,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+      textAlign: "center",
     },
-    featureCard: {
-      width: isSmallMobile ? 158 : isMobile ? 172 : 205,
-      minHeight: isMobile ? 178 : 205,
-      borderRadius: isMobile ? 22 : 24,
-      padding: isMobile ? 15 : 18,
+    insightBox: {
+      backgroundColor: colors.turquoiseSoft,
+      borderRadius: 20,
+      padding: 15,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    insightTitle: {
+      fontFamily: "Georgia",
+      fontSize: 19,
+      lineHeight: 24,
+      color: colors.primary,
+      marginBottom: 6,
+    },
+    insightText: {
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 21,
+      fontWeight: "700",
+    },
+    emptyText: {
+      color: colors.textSoft,
+      fontSize: 14,
+      lineHeight: 21,
+      fontWeight: "700",
+    },
+    sectionHeader: {
+      paddingHorizontal: 24,
+      marginBottom: 14,
+    },
+    secondaryActionsRow: {
+      paddingLeft: 24,
+      paddingRight: 24,
+      gap: 12,
+      marginBottom: 24,
+    },
+    secondaryActionCard: {
+      width: 170,
+      minHeight: 190,
       backgroundColor: colors.card,
+      borderRadius: 28,
+      padding: 17,
       borderWidth: 1,
       borderColor: colors.border,
       justifyContent: "space-between",
-      overflow: "hidden",
     },
-    featureTitle: {
-      color: colors.text,
-      fontSize: isMobile ? 16 : 18,
-      lineHeight: isMobile ? 21 : 24,
-      fontWeight: "900",
-      marginTop: isMobile ? 14 : 18,
+    secondaryActionTitle: {
+      fontFamily: "Georgia",
+      color: colors.primary,
+      fontSize: 20,
+      lineHeight: 25,
+      marginBottom: 8,
     },
-    featureText: {
+    secondaryActionText: {
       color: colors.textSoft,
-      fontSize: isMobile ? 13 : 15,
-      lineHeight: isMobile ? 18 : 21,
-      marginTop: isMobile ? 6 : 8,
-      paddingRight: isMobile ? 0 : 10,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "700",
+      marginBottom: 12,
     },
-    arrowCircle: {
-      width: isMobile ? 32 : 36,
-      height: isMobile ? 32 : 36,
-      borderRadius: isMobile ? 16 : 18,
-      backgroundColor: "rgba(255,255,255,0.11)",
+    smallArrowCircle: {
+      width: 38,
+      height: 38,
+      borderRadius: 19,
+      backgroundColor: colors.primaryLight,
       borderWidth: 1,
-      borderColor: "rgba(255,255,255,0.12)",
+      borderColor: colors.border,
       alignItems: "center",
       justifyContent: "center",
       alignSelf: "flex-end",
-      marginTop: 8,
     },
-    arrowText: {
-      color: colors.primary,
-      fontSize: isMobile ? 26 : 30,
-      lineHeight: isMobile ? 24 : 28,
-      fontWeight: "500",
-      marginTop: -2,
+    smallArrowText: {
+      color: colors.text,
+      fontSize: 19,
+      fontWeight: "900",
+      lineHeight: 19,
     },
   });
 }

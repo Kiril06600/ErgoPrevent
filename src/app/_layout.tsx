@@ -1,10 +1,16 @@
-import { Stack } from "expo-router";
+import { Stack, usePathname } from "expo-router";
 import { ThemeProvider } from "../theme/ThemeContext";
 import BottomNav from "../components/BottomNav";
+import OnboardingGate from "../components/OnboardingGate";
 
 export default function RootLayout() {
+  const pathname = usePathname();
+  const hideBottomNav = pathname === "/onboarding";
+
   return (
     <ThemeProvider>
+      <OnboardingGate />
+
       <Stack
         screenOptions={{
           headerShown: false,
@@ -16,7 +22,7 @@ export default function RootLayout() {
         }}
       />
 
-      <BottomNav fixed />
+      {!hideBottomNav && <BottomNav fixed />}
     </ThemeProvider>
   );
 }
