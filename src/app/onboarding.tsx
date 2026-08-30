@@ -290,8 +290,21 @@ export default function OnboardingScreen() {
 
               <Text style={styles.label}>Priorités actuelles</Text>
               <Text style={styles.helperText}>
-                Vous pouvez sélectionner plusieurs réponses.
+                Plusieurs choix sont possibles. Touchez une priorité pour
+                l’ajouter ou la retirer.
               </Text>
+
+              <View style={styles.selectedCountBox}>
+                <Text style={styles.selectedCountText}>
+                  {selectedPriorities.includes("Je ne sais pas encore")
+                    ? "Aucune priorité précise sélectionnée"
+                    : `${selectedPriorities.length} priorité${
+                        selectedPriorities.length > 1 ? "s" : ""
+                      } sélectionnée${
+                        selectedPriorities.length > 1 ? "s" : ""
+                      }`}
+                </Text>
+              </View>
 
               <View style={styles.optionsContainer}>
                 {priorities.map((item) => {
@@ -544,6 +557,22 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontWeight: "700",
       marginTop: -2,
       marginBottom: 10,
+    },
+    selectedCountBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 18,
+      paddingVertical: 11,
+      paddingHorizontal: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 12,
+    },
+    selectedCountText: {
+      color: colors.text,
+      fontSize: 13,
+      lineHeight: 18,
+      fontWeight: "900",
+      textAlign: "center",
     },
     input: {
       borderWidth: 1,
