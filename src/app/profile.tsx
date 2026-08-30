@@ -417,6 +417,35 @@ export default function ProfileScreen() {
             <View style={styles.cardHeader}>
               <IconBadge
                 size={46}
+                backgroundColor={colors.turquoiseSoft}
+                borderColor={colors.border}
+              >
+                <PlanIcon size={22} color={colors.text} />
+              </IconBadge>
+
+              <View style={styles.cardHeaderText}>
+                <Text style={styles.sectionTitle}>Questionnaire complet</Text>
+                <Text style={styles.sectionSubtitle}>
+                  Répondez aux questions détaillées quand vous serez prêt. Le
+                  résultat servira à personnaliser vos priorités.
+                </Text>
+              </View>
+            </View>
+
+            <Link href="/questionnaire" asChild>
+              <PressableScale style={styles.primaryButton}>
+                <Text style={styles.primaryButtonText}>
+                  Faire le questionnaire complet
+                </Text>
+                <Text style={styles.primaryButtonArrow}>→</Text>
+              </PressableScale>
+            </Link>
+          </View>
+
+          <View style={styles.card}>
+            <View style={styles.cardHeader}>
+              <IconBadge
+                size={46}
                 backgroundColor={colors.backgroundSoft}
                 borderColor={colors.border}
               >
