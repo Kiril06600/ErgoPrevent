@@ -85,6 +85,17 @@ export default function InstallWorkstationScreen() {
 
   const progressText = `${step + 1}/${installationSteps.length}`;
 
+  const profileStatusText = profile
+    ? "Profil ergonomique utilisé"
+    : "Profil ergonomique à compléter";
+
+  const workstationMemoryText = `${savedWorkstations.length} poste${
+    savedWorkstations.length > 1 ? "s" : ""
+  } enregistré${savedWorkstations.length > 1 ? "s" : ""}`;
+
+  const currentWorkstationText =
+    currentWorkstation?.name ?? "Aucun poste actuel";
+
   function updateWorkstation(field: keyof Workstation, value: string) {
     setWorkstation((currentWorkstation) => ({
       ...currentWorkstation,
@@ -156,6 +167,77 @@ export default function InstallWorkstationScreen() {
               Suivez les étapes comme une intervention ergonomique guidée. Les
               mesures sont entrées manuellement par l’utilisateur.
             </Text>
+          </View>
+
+          <View style={styles.interventionCard}>
+            <View style={styles.interventionHeaderRow}>
+              <View style={styles.interventionTextBlock}>
+                <Text style={styles.interventionLabel}>
+                  Intervention ergonomique guidée
+                </Text>
+
+                <Text style={styles.interventionTitle}>
+                  Configurez votre poste dans le bon ordre.
+                </Text>
+
+                <Text style={styles.interventionText}>
+                  Cette installation reprend la logique d’une intervention
+                  ergonomique simple : chaise, assise, dossier, accoudoirs,
+                  bureau, clavier, souris et écran. Les mesures sont entrées
+                  manuellement et restent enregistrées localement.
+                </Text>
+              </View>
+
+              <View style={styles.interventionTimeBadge}>
+                <Text style={styles.interventionTimeNumber}>3–8</Text>
+                <Text style={styles.interventionTimeText}>min</Text>
+              </View>
+            </View>
+
+            <View style={styles.interventionStatsRow}>
+              <View style={styles.interventionStatBox}>
+                <Text style={styles.interventionStatValue}>
+                  {installationSteps.length}
+                </Text>
+                <Text style={styles.interventionStatLabel}>étapes</Text>
+              </View>
+
+              <View style={styles.interventionStatBox}>
+                <Text style={styles.interventionStatValue}>
+                  {profile ? "✓" : "!"}
+                </Text>
+                <Text style={styles.interventionStatLabel}>
+                  {profileStatusText}
+                </Text>
+              </View>
+
+              <View style={styles.interventionStatBox}>
+                <Text style={styles.interventionStatValue}>
+                  {savedWorkstations.length}
+                </Text>
+                <Text style={styles.interventionStatLabel}>
+                  {workstationMemoryText}
+                </Text>
+              </View>
+            </View>
+
+            <View style={styles.interventionCurrentBox}>
+              <Text style={styles.interventionCurrentLabel}>Poste actuel</Text>
+              <Text style={styles.interventionCurrentText}>
+                {currentWorkstationText}
+              </Text>
+            </View>
+
+            <View style={styles.interventionPreviewList}>
+              <Text style={styles.interventionPreviewTitle}>
+                Ce qui sera mémorisé
+              </Text>
+
+              <Text style={styles.interventionPreviewText}>
+                ✓ Hauteur d’assise · ✓ Profondeur d’assise · ✓ Dossier · ✓
+                Lombaires · ✓ Accoudoirs · ✓ Bureau · ✓ Clavier/souris · ✓ Écran
+              </Text>
+            </View>
           </View>
 
           <View style={styles.progressBox}>
@@ -738,6 +820,48 @@ export default function InstallWorkstationScreen() {
                   <Text style={styles.messageText}>{message}</Text>
                 </View>
               )}
+
+              {message.length > 0 && (
+                <View style={styles.nextActionsBox}>
+                  <Text style={styles.nextActionsTitle}>
+                    Votre poste est maintenant dans la mémoire ErgoPrevent.
+                  </Text>
+
+                  <Text style={styles.nextActionsText}>
+                    Vous pourrez retrouver ses réglages, refaire une vérification
+                    ou utiliser ce poste comme référence pour les prochains resets
+                    et ajustements.
+                  </Text>
+
+                  <View style={styles.nextActionsList}>
+                    <Link href="/workstations" asChild>
+                      <PressableScale style={styles.nextActionButton}>
+                        <Text style={styles.nextActionButtonText}>
+                          Voir mes postes
+                        </Text>
+                        <Text style={styles.nextActionArrow}>→</Text>
+                      </PressableScale>
+                    </Link>
+
+                    <Link href="/ergonomic-reset" asChild>
+                      <PressableScale style={styles.nextActionButton}>
+                        <Text style={styles.nextActionButtonText}>
+                          Faire un reset
+                        </Text>
+                        <Text style={styles.nextActionArrow}>→</Text>
+                      </PressableScale>
+                    </Link>
+
+                    <Link href="/" asChild>
+                      <PressableScale style={styles.nextActionButtonSecondary}>
+                        <Text style={styles.nextActionButtonSecondaryText}>
+                          Retour à l’accueil
+                        </Text>
+                      </PressableScale>
+                    </Link>
+                  </View>
+                </View>
+              )}
             </View>
           )}
 
@@ -842,6 +966,148 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontSize: 16,
       lineHeight: 24,
       maxWidth: 560,
+    },
+    interventionCard: {
+      marginHorizontal: 24,
+      backgroundColor: colors.card,
+      borderRadius: 34,
+      padding: 22,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    interventionHeaderRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 16,
+      marginBottom: 16,
+    },
+    interventionTextBlock: {
+      flex: 1,
+    },
+    interventionLabel: {
+      color: colors.textMuted,
+      fontSize: 12,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginBottom: 8,
+    },
+    interventionTitle: {
+      fontFamily: "Georgia",
+      color: colors.primary,
+      fontSize: 31,
+      lineHeight: 38,
+      letterSpacing: -0.6,
+      marginBottom: 8,
+    },
+    interventionText: {
+      color: colors.textSoft,
+      fontSize: 15,
+      lineHeight: 23,
+      fontWeight: "700",
+    },
+    interventionTimeBadge: {
+      width: 76,
+      height: 76,
+      borderRadius: 38,
+      backgroundColor: colors.turquoiseSoft,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    interventionTimeNumber: {
+      color: colors.primary,
+      fontSize: 22,
+      lineHeight: 26,
+      fontWeight: "900",
+    },
+    interventionTimeText: {
+      color: colors.textSoft,
+      fontSize: 11,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    interventionStatsRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 12,
+    },
+    interventionStatBox: {
+      flex: 1,
+      backgroundColor: colors.cardWarm,
+      borderRadius: 20,
+      paddingVertical: 13,
+      paddingHorizontal: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 82,
+    },
+    interventionStatValue: {
+      color: colors.primary,
+      fontSize: 23,
+      lineHeight: 27,
+      fontWeight: "900",
+      marginBottom: 4,
+      textAlign: "center",
+    },
+    interventionStatLabel: {
+      color: colors.textMuted,
+      fontSize: 10,
+      lineHeight: 14,
+      fontWeight: "900",
+      textAlign: "center",
+      textTransform: "uppercase",
+      letterSpacing: 0.4,
+    },
+    interventionCurrentBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 20,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 12,
+    },
+    interventionCurrentLabel: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginBottom: 4,
+    },
+    interventionCurrentText: {
+      color: colors.text,
+      fontSize: 15,
+      lineHeight: 20,
+      fontWeight: "900",
+    },
+    interventionPreviewList: {
+      backgroundColor: colors.backgroundSoft,
+      borderRadius: 20,
+      paddingVertical: 13,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    interventionPreviewTitle: {
+      color: colors.primary,
+      fontSize: 15,
+      lineHeight: 20,
+      fontWeight: "900",
+      marginBottom: 5,
+    },
+    interventionPreviewText: {
+      color: colors.textSoft,
+      fontSize: 13,
+      lineHeight: 20,
+      fontWeight: "700",
     },
     progressBox: {
       marginHorizontal: 24,
@@ -1128,6 +1394,71 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       marginTop: 14,
     },
     messageText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+    nextActionsBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 22,
+      padding: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginTop: 14,
+    },
+    nextActionsTitle: {
+      fontFamily: "Georgia",
+      color: colors.primary,
+      fontSize: 21,
+      lineHeight: 27,
+      marginBottom: 7,
+    },
+    nextActionsText: {
+      color: colors.textSoft,
+      fontSize: 14,
+      lineHeight: 21,
+      fontWeight: "700",
+      marginBottom: 13,
+    },
+    nextActionsList: {
+      gap: 9,
+    },
+    nextActionButton: {
+      backgroundColor: colors.primary,
+      borderRadius: 999,
+      paddingVertical: 13,
+      paddingHorizontal: 15,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "center",
+      gap: 8,
+    },
+    nextActionButtonText: {
+      color: colors.black,
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+    nextActionArrow: {
+      color: colors.black,
+      fontSize: 18,
+      fontWeight: "900",
+      lineHeight: 18,
+    },
+    nextActionButtonSecondary: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 999,
+      paddingVertical: 13,
+      paddingHorizontal: 15,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    nextActionButtonSecondaryText: {
       color: colors.text,
       fontSize: 14,
       fontWeight: "900",
