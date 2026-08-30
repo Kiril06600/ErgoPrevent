@@ -60,7 +60,7 @@ export default function ErgonomicResetScreen() {
   const currentWorkstation = getCurrentWorkstation();
 
   const progressText = `${step + 1}/${resetSteps.length}`;
-  const progressPercent = `${((step + 1) / resetSteps.length) * 100}%`;
+  const progressPercent = `${((step + 1) / resetSteps.length) * 100}%` as `${number}%`;
 
   function handleNext() {
     if (step < resetSteps.length - 1) {
