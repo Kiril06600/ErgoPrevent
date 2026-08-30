@@ -39,6 +39,8 @@ type AppRoute =
   | "/progress"
   | "/dashboard"
   | "/profile"
+  | "/ergonomic-profile"
+  | "/install-workstation"
   | "/export-data";
 
 type ExploreItem = {
@@ -58,6 +60,37 @@ type ExploreSection = {
   subtitle: string;
   items: ExploreItem[];
 };
+
+const guidedSteps: ExploreItem[] = [
+  {
+    label: "Étape 1",
+    title: "Profil ergonomique",
+    text: "Compléter les informations qui aideront à personnaliser les réglages.",
+    href: "/ergonomic-profile",
+    Icon: ProfileIcon,
+  },
+  {
+    label: "Étape 2",
+    title: "Installer un poste",
+    text: "Créer la mémoire du premier espace de travail.",
+    href: "/install-workstation",
+    Icon: PostureIcon,
+  },
+  {
+    label: "Étape 3",
+    title: "Questionnaire complet",
+    text: "Répondre aux questions détaillées quand vous êtes prêt.",
+    href: "/questionnaire",
+    Icon: ProgressIcon,
+  },
+  {
+    label: "Étape 4",
+    title: "Routine",
+    text: "Commencer à utiliser les rappels, pauses et actions du jour.",
+    href: "/routine",
+    Icon: RoutineIcon,
+  },
+];
 
 const sections: ExploreSection[] = [
   {
@@ -230,6 +263,68 @@ export default function ExploreScreen() {
               retrouver les questionnaires, les exercices, le suivi et les
               paramètres.
             </Text>
+          </View>
+
+          <View style={styles.pathCard}>
+            <View style={styles.pathHeaderRow}>
+              <View style={styles.pathHeaderText}>
+                <Text style={styles.pathLabel}>Parcours conseillé</Text>
+                <Text style={styles.pathTitle}>Commencer dans le bon ordre.</Text>
+                <Text style={styles.pathText}>
+                  Après les questions de départ, voici le chemin simple pour
+                  configurer l’application sans se perdre.
+                </Text>
+              </View>
+
+              <IconBadge
+                size={layout.isMobile ? 48 : 54}
+                backgroundColor={colors.turquoiseSoft}
+                borderColor={colors.border}
+              >
+                <PlanIcon
+                  size={layout.isMobile ? 22 : 25}
+                  color={colors.text}
+                />
+              </IconBadge>
+            </View>
+
+            <View style={styles.pathStepsList}>
+              {guidedSteps.map((item, index) => {
+                const StepIcon = item.Icon;
+
+                return (
+                  <Link key={item.href} href={item.href} asChild>
+                    <PressableScale style={styles.pathStepButton}>
+                      <View style={styles.pathStepNumber}>
+                        <Text style={styles.pathStepNumberText}>
+                          {index + 1}
+                        </Text>
+                      </View>
+
+                      <IconBadge
+                        size={layout.isMobile ? 38 : 42}
+                        backgroundColor={colors.backgroundSoft}
+                        borderColor={colors.border}
+                      >
+                        <StepIcon
+                          size={layout.isMobile ? 18 : 20}
+                          color={colors.text}
+                        />
+                      </IconBadge>
+
+                      <View style={styles.pathStepTextBlock}>
+                        <Text style={styles.pathStepTitle}>{item.title}</Text>
+                        <Text style={styles.pathStepText}>{item.text}</Text>
+                      </View>
+
+                      <View style={styles.pathStepArrowCircle}>
+                        <Text style={styles.pathStepArrowText}>→</Text>
+                      </View>
+                    </PressableScale>
+                  </Link>
+                );
+              })}
+            </View>
           </View>
 
           <View style={styles.statsPanel}>
@@ -436,6 +531,114 @@ function createStyles(
       maxWidth: 500,
       zIndex: 2,
       marginTop: isMobile ? 18 : 22,
+    },
+    pathCard: {
+      marginHorizontal: horizontalPadding,
+      marginBottom: isMobile ? 18 : 22,
+      backgroundColor: colors.secondaryLight,
+      borderRadius: isMobile ? 28 : 34,
+      padding: isMobile ? 18 : 22,
+      borderWidth: 1,
+      borderColor: colors.border,
+      boxShadow:
+        mode === "dark"
+          ? "0px 18px 38px rgba(0,0,0,0.12)"
+          : "0px 18px 38px rgba(0,0,0,0.08)",
+    },
+    pathHeaderRow: {
+      flexDirection: "row",
+      alignItems: "flex-start",
+      justifyContent: "space-between",
+      gap: 14,
+      marginBottom: 16,
+    },
+    pathHeaderText: {
+      flex: 1,
+    },
+    pathLabel: {
+      fontSize: isMobile ? 11 : 12,
+      fontWeight: "900",
+      color: colors.textMuted,
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginBottom: 7,
+    },
+    pathTitle: {
+      fontFamily: "Georgia",
+      fontSize: isSmallMobile ? 25 : isMobile ? 28 : 31,
+      lineHeight: isSmallMobile ? 31 : isMobile ? 34 : 38,
+      color: colors.primary,
+      letterSpacing: -0.6,
+      marginBottom: 7,
+    },
+    pathText: {
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 20 : 21,
+      color: colors.textSoft,
+      fontWeight: "700",
+      maxWidth: 520,
+    },
+    pathStepsList: {
+      gap: 10,
+    },
+    pathStepButton: {
+      backgroundColor: colors.card,
+      borderRadius: isMobile ? 20 : 22,
+      paddingVertical: isMobile ? 12 : 13,
+      paddingHorizontal: isMobile ? 12 : 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      alignItems: "center",
+      gap: isSmallMobile ? 9 : 11,
+    },
+    pathStepNumber: {
+      width: isMobile ? 28 : 30,
+      height: isMobile ? 28 : 30,
+      borderRadius: isMobile ? 14 : 15,
+      backgroundColor: colors.primary,
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pathStepNumberText: {
+      color: colors.black,
+      fontSize: 13,
+      fontWeight: "900",
+      lineHeight: 15,
+    },
+    pathStepTextBlock: {
+      flex: 1,
+    },
+    pathStepTitle: {
+      color: colors.primary,
+      fontSize: isMobile ? 14 : 15,
+      lineHeight: isMobile ? 19 : 20,
+      fontWeight: "900",
+      marginBottom: 3,
+    },
+    pathStepText: {
+      color: colors.textSoft,
+      fontSize: isMobile ? 12 : 13,
+      lineHeight: isMobile ? 17 : 18,
+      fontWeight: "700",
+    },
+    pathStepArrowCircle: {
+      width: isMobile ? 30 : 34,
+      height: isMobile ? 30 : 34,
+      borderRadius: isMobile ? 15 : 17,
+      backgroundColor: colors.primaryLight,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    pathStepArrowText: {
+      color: colors.text,
+      fontSize: 17,
+      fontWeight: "900",
+      lineHeight: 17,
     },
     statsPanel: {
       marginHorizontal: horizontalPadding,
