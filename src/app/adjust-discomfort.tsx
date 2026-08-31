@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { SafeAreaView, ScrollView, View, Text, StyleSheet } from "react-native";
+import { Link } from "expo-router";
 import AnimatedScreen from "../components/AnimatedScreen";
 import BottomNav from "../components/BottomNav";
 import PressableScale from "../components/PressableScale";
@@ -46,14 +47,27 @@ export default function AdjustDiscomfortScreen() {
   const currentWorkstation = getCurrentWorkstation();
 
   const [step, setStep] = useState(0);
-  const [selectedZone, setSelectedZone] = useState("");
+  const [selectedZones, setSelectedZones] = useState<string[]>([]);
   const [selectedActivity, setSelectedActivity] = useState("Ordinateur");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
 
-  const targetedChecks = selectedZone
-    ? getTargetedChecksForZone(selectedZone)
-    : [];
+  const targetedChecks = getCombinedTargetedChecks(selectedZones);
+  const selectedZonesText =
+    selectedZones.length > 0 ? selectedZones.join(", ") : "Non précisé";
+  const progressPercent = `${((step + 1) / 4) * 100}%` as `${number}%`;
+
+  const canContinueFromZone = selectedZones.length > 0;
+
+  function handleToggleZone(zone: string) {
+    setSelectedZones((currentZones) => {
+      if (currentZones.includes(zone)) {
+        return currentZones.filter((currentZone) => currentZone !== zone);
+      }
+
+      return [...currentZones, zone];
+    });
+  }
 
   function handleSelectAnswer(check: string, answer: string) {
     setAnswers((currentAnswers) => ({
@@ -75,24 +89,28 @@ export default function AdjustDiscomfortScreen() {
       .map((check) => `${check} : ${answers[check] ?? "Non répondu"}`)
       .join(" · ");
 
-    addErgonomicEvent({
-      type: "discomfort",
-      workstationId: currentWorkstation?.id ?? "",
-      workstationName: currentWorkstation?.name ?? "Poste non défini",
-      zone: selectedZone,
-      activity: selectedActivity,
-      action: `Vérification ciblée : ${targetedChecks.join(", ")}`,
-      note: answersText,
+    selectedZones.forEach((zone) => {
+      addErgonomicEvent({
+        type: "discomfort",
+        workstationId: currentWorkstation?.id ?? "",
+        workstationName: currentWorkstation?.name ?? "Poste non défini",
+        zone,
+        activity: selectedActivity,
+        action: `Inconfort signalé : ${zone}`,
+        note: `Activité : ${selectedActivity} · Vérifications : ${answersText}`,
+      });
     });
 
     addErgonomicEvent({
       type: "adjustment",
       workstationId: currentWorkstation?.id ?? "",
       workstationName: currentWorkstation?.name ?? "Poste non défini",
-      zone: selectedZone,
+      zone: selectedZonesText,
       activity: selectedActivity,
-      action: `Ajustement guidé pour ${selectedZone}`,
-      note: `Activité : ${selectedActivity}`,
+      action: `Ajustement guidé pour ${selectedZonesText}`,
+      note: `Activité : ${selectedActivity} · Vérifications ciblées : ${targetedChecks.join(
+        ", "
+      )}`,
     });
 
     setCompleted(true);
@@ -100,13 +118,11 @@ export default function AdjustDiscomfortScreen() {
 
   function handleRestart() {
     setStep(0);
-    setSelectedZone("");
+    setSelectedZones([]);
     setSelectedActivity("Ordinateur");
     setAnswers({});
     setCompleted(false);
   }
-
-  const canContinueFromZone = selectedZone.length > 0;
 
   return (
     <AnimatedScreen>
@@ -120,8 +136,8 @@ export default function AdjustDiscomfortScreen() {
             <Text style={styles.pageTitle}>J’ai un inconfort</Text>
 
             <Text style={styles.subtitle}>
-              ErgoPrevent vous guide avec quelques vérifications ciblées selon la
-              zone ressentie, votre poste et votre profil ergonomique.
+              ErgoPrevent vous guide avec quelques vérifications ciblées selon
+              les zones ressenties, votre poste et votre profil ergonomique.
             </Text>
           </View>
 
@@ -157,7 +173,7 @@ export default function AdjustDiscomfortScreen() {
               <Text style={styles.progressLabel}>Étape {step + 1}/4</Text>
               <Text style={styles.progressTitle}>
                 {step === 0
-                  ? "Zone d’inconfort"
+                  ? "Zones d’inconfort"
                   : step === 1
                     ? "Activité"
                     : step === 2
@@ -170,7 +186,7 @@ export default function AdjustDiscomfortScreen() {
                   style={[
                     styles.progressFill,
                     {
-                      width: `${((step + 1) / 4) * 100}%`,
+                      width: progressPercent,
                     },
                   ]}
                 />
@@ -185,14 +201,14 @@ export default function AdjustDiscomfortScreen() {
               </Text>
 
               <Text style={styles.sectionText}>
-                Choisissez la zone principale. L’application ne pose pas de
+                Choisissez une ou plusieurs zones. L’application ne pose pas de
                 diagnostic : elle vous aide seulement à vérifier les causes
                 ergonomiques simples.
               </Text>
 
               <View style={styles.optionsContainer}>
                 {zones.map((zone) => {
-                  const selected = selectedZone === zone;
+                  const selected = selectedZones.includes(zone);
 
                   return (
                     <PressableScale
@@ -201,7 +217,7 @@ export default function AdjustDiscomfortScreen() {
                         styles.optionButton,
                         selected ? styles.optionButtonSelected : null,
                       ]}
-                      onPress={() => setSelectedZone(zone)}
+                      onPress={() => handleToggleZone(zone)}
                     >
                       <Text
                         style={[
@@ -215,6 +231,18 @@ export default function AdjustDiscomfortScreen() {
                   );
                 })}
               </View>
+
+              <View style={styles.selectedZonesBox}>
+                <Text style={styles.selectedZonesText}>
+                  {selectedZones.length === 0
+                    ? "Aucune zone sélectionnée"
+                    : `${selectedZones.length} zone${
+                        selectedZones.length > 1 ? "s" : ""
+                      } sélectionnée${
+                        selectedZones.length > 1 ? "s" : ""
+                      } : ${selectedZonesText}`}
+                </Text>
+              </View>
             </View>
           )}
 
@@ -225,8 +253,8 @@ export default function AdjustDiscomfortScreen() {
               </Text>
 
               <Text style={styles.sectionText}>
-                Cette information permet de relier l’inconfort à une situation de
-                travail précise.
+                Cette information permet de relier l’inconfort à une situation
+                de travail précise.
               </Text>
 
               <View style={styles.optionsContainer}>
@@ -264,8 +292,8 @@ export default function AdjustDiscomfortScreen() {
               </Text>
 
               <Text style={styles.sectionText}>
-                Pour {selectedZone.toLowerCase()}, ErgoPrevent vous propose de
-                vérifier seulement les éléments les plus pertinents.
+                Pour {selectedZonesText.toLowerCase()}, ErgoPrevent vous
+                propose de vérifier seulement les éléments les plus pertinents.
               </Text>
 
               {targetedChecks.map((check) => (
@@ -273,7 +301,7 @@ export default function AdjustDiscomfortScreen() {
                   <Text style={styles.checkTitle}>{check}</Text>
 
                   <Text style={styles.checkText}>
-                    {getCheckInstruction(check, selectedZone)}
+                    {getCheckInstruction(check, selectedZonesText)}
                   </Text>
 
                   <View style={styles.answerRow}>
@@ -317,18 +345,18 @@ export default function AdjustDiscomfortScreen() {
 
               <View style={styles.actionBox}>
                 <Text style={styles.actionTitle}>
-                  {getImmediateActionTitle(selectedZone)}
+                  {getImmediateActionTitleForZones(selectedZones)}
                 </Text>
 
                 <Text style={styles.actionText}>
-                  {getImmediateActionText(selectedZone)}
+                  {getImmediateActionTextForZones(selectedZones)}
                 </Text>
               </View>
 
               <View style={styles.recapBox}>
                 <Text style={styles.recapTitle}>Résumé</Text>
 
-                <Text style={styles.recapText}>Zone : {selectedZone}</Text>
+                <Text style={styles.recapText}>Zones : {selectedZonesText}</Text>
                 <Text style={styles.recapText}>
                   Activité : {selectedActivity}
                 </Text>
@@ -363,7 +391,7 @@ export default function AdjustDiscomfortScreen() {
 
               <View style={styles.successBox}>
                 <Text style={styles.successTitle}>Ce qui a été enregistré</Text>
-                <Text style={styles.successText}>Zone : {selectedZone}</Text>
+                <Text style={styles.successText}>Zones : {selectedZonesText}</Text>
                 <Text style={styles.successText}>
                   Activité : {selectedActivity}
                 </Text>
@@ -372,15 +400,43 @@ export default function AdjustDiscomfortScreen() {
                 </Text>
               </View>
 
-              <PressableScale
-                style={styles.primaryButton}
-                onPress={handleRestart}
-              >
-                <Text style={styles.primaryButtonText}>
-                  Signaler un autre inconfort
-                </Text>
-                <Text style={styles.primaryButtonArrow}>→</Text>
-              </PressableScale>
+              <View style={styles.nextActionsList}>
+                <PressableScale
+                  style={styles.nextActionPrimaryButton}
+                  onPress={handleRestart}
+                >
+                  <Text style={styles.nextActionPrimaryButtonText}>
+                    Signaler un autre inconfort
+                  </Text>
+                  <Text style={styles.nextActionPrimaryArrow}>→</Text>
+                </PressableScale>
+
+                <Link href="/ergonomic-reset" asChild>
+                  <PressableScale style={styles.nextActionSecondaryButton}>
+                    <Text style={styles.nextActionSecondaryButtonText}>
+                      Faire un reset
+                    </Text>
+                    <Text style={styles.nextActionSecondaryArrow}>→</Text>
+                  </PressableScale>
+                </Link>
+
+                <Link href="/workstations" asChild>
+                  <PressableScale style={styles.nextActionSecondaryButton}>
+                    <Text style={styles.nextActionSecondaryButtonText}>
+                      Voir mes postes
+                    </Text>
+                    <Text style={styles.nextActionSecondaryArrow}>→</Text>
+                  </PressableScale>
+                </Link>
+
+                <Link href="/" asChild>
+                  <PressableScale style={styles.nextActionGhostButton}>
+                    <Text style={styles.nextActionGhostButtonText}>
+                      Retour à l’accueil
+                    </Text>
+                  </PressableScale>
+                </Link>
+              </View>
             </View>
           )}
 
@@ -427,6 +483,30 @@ export default function AdjustDiscomfortScreen() {
       </SafeAreaView>
     </AnimatedScreen>
   );
+}
+
+function getCombinedTargetedChecks(selectedZones: string[]) {
+  const combinedChecks = selectedZones.flatMap((zone) =>
+    getTargetedChecksForZone(zone)
+  );
+
+  return Array.from(new Set(combinedChecks));
+}
+
+function getImmediateActionTitleForZones(selectedZones: string[]) {
+  if (selectedZones.length > 1) {
+    return "Reset ciblé des zones sélectionnées";
+  }
+
+  return getImmediateActionTitle(selectedZones[0] ?? "");
+}
+
+function getImmediateActionTextForZones(selectedZones: string[]) {
+  if (selectedZones.length > 1) {
+    return "Commencez par relâcher les épaules, changer de position, regarder au loin, puis vérifiez les éléments ciblés pour les zones sélectionnées.";
+  }
+
+  return getImmediateActionText(selectedZones[0] ?? "");
 }
 
 function getCheckInstruction(check: string, zone: string) {
@@ -713,6 +793,21 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
     optionTextSelected: {
       color: colors.black,
     },
+    selectedZonesBox: {
+      backgroundColor: colors.secondaryLight,
+      borderRadius: 18,
+      padding: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginTop: 4,
+    },
+    selectedZonesText: {
+      color: colors.textSoft,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "800",
+      textAlign: "center",
+    },
     checkCard: {
       backgroundColor: colors.cardWarm,
       borderRadius: 22,
@@ -825,6 +920,71 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontSize: 14,
       lineHeight: 22,
       fontWeight: "800",
+    },
+    nextActionsList: {
+      gap: 10,
+    },
+    nextActionPrimaryButton: {
+      backgroundColor: colors.primary,
+      paddingVertical: 15,
+      paddingHorizontal: 18,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primaryDark,
+      flexDirection: "row",
+      gap: 10,
+    },
+    nextActionPrimaryButtonText: {
+      color: colors.black,
+      fontSize: 15,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+    nextActionPrimaryArrow: {
+      color: colors.black,
+      fontSize: 20,
+      fontWeight: "900",
+      lineHeight: 20,
+    },
+    nextActionSecondaryButton: {
+      backgroundColor: colors.cardWarm,
+      paddingVertical: 14,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.border,
+      flexDirection: "row",
+      gap: 8,
+    },
+    nextActionSecondaryButtonText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+    nextActionSecondaryArrow: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: "900",
+      lineHeight: 18,
+    },
+    nextActionGhostButton: {
+      backgroundColor: "transparent",
+      paddingVertical: 13,
+      paddingHorizontal: 16,
+      borderRadius: 999,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    nextActionGhostButtonText: {
+      color: colors.textSoft,
+      fontSize: 14,
+      fontWeight: "900",
+      textAlign: "center",
     },
     buttonsRow: {
       paddingHorizontal: 24,
