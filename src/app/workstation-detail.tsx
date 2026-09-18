@@ -11,7 +11,7 @@ import {
   getCurrentWorkstation,
   getDiscomfortCountsByZone,
   getErgonomicEvents,
-  getTargetedChecksForZone,
+  getWorkstationErgonomicInsight,
 } from "../lib/ergonomicSystem";
 
 export default function WorkstationDetailScreen() {
@@ -64,9 +64,9 @@ export default function WorkstationDetailScreen() {
     (event) => event.type === "adjustment"
   ).length;
 
-  const mostFrequentZone = Object.entries(discomfortCounts).sort(
-    (a, b) => b[1] - a[1]
-  )[0];
+  const workstationInsight = workstation
+    ? getWorkstationErgonomicInsight(workstation.id)
+    : null;
 
   function goToInstall() {
     router.push("/install-workstation" as any);
@@ -74,6 +74,19 @@ export default function WorkstationDetailScreen() {
 
   function goToAdjust() {
     router.push("/adjust-discomfort" as any);
+  }
+
+  function goToTargetedAdjust() {
+    if (!workstationInsight) {
+      goToAdjust();
+      return;
+    }
+
+    router.push(
+      `/adjust-discomfort?zones=${encodeURIComponent(
+        workstationInsight.zone
+      )}&targeted=true` as any
+    );
   }
 
   function goToReset() {
@@ -263,23 +276,31 @@ export default function WorkstationDetailScreen() {
             )}
           </View>
 
-          {mostFrequentZone && (
+          {workstationInsight && (
             <View style={styles.insightBox}>
-              <Text style={styles.insightTitle}>Vérification ciblée</Text>
+              <Text style={styles.insightTitle}>
+                {workstationInsight.title}
+              </Text>
 
               <Text style={styles.insightText}>
-                Vous avez signalé {mostFrequentZone[0]} {mostFrequentZone[1]}{" "}
-                fois sur ce poste.
+                {workstationInsight.message}
               </Text>
 
               <Text style={styles.insightText}>
                 À revérifier en priorité :{" "}
-                {getTargetedChecksForZone(mostFrequentZone[0]).join(", ")}.
+                {workstationInsight.checks.join(", ")}.
               </Text>
 
-              <PressableScale style={styles.primaryButton} onPress={goToAdjust}>
+              <Text style={styles.insightText}>
+                Références ergonomiques : CNESST · INRS · IRSST
+              </Text>
+
+              <PressableScale
+                style={styles.primaryButton}
+                onPress={goToTargetedAdjust}
+              >
                 <Text style={styles.primaryButtonText}>
-                  Lancer l’ajustement ciblé
+                  Lancer la vérification ciblée
                 </Text>
                 <Text style={styles.primaryButtonArrow}>→</Text>
               </PressableScale>

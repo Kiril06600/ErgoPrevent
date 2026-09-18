@@ -18,6 +18,25 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import ContextInsightCard from "../components/ContextInsightCard";
+import {
+  CHECKINS_UPDATED_EVENT,
+  getDailyCheckins,
+  type DailyCheckin,
+} from "../lib/checkinSystem";
+import {
+  getPrimaryContextInsight,
+} from "../lib/contextEngine";
+import {
+  ERGONOMIC_SYSTEM_UPDATED_EVENT,
+  getCurrentWorkstation,
+  getErgonomicEvents,
+  type ErgonomicEvent,
+} from "../lib/ergonomicSystem";
+import {
+  CONTEXT_EVIDENCE_LABEL,
+  getEvidenceBasedPlanRecommendations,
+} from "../lib/evidenceContent";
 import {
   IconBadge,
   RoutineIcon,
@@ -43,13 +62,6 @@ type PlanIconProps = {
 };
 
 type PlanIconType = React.ComponentType<PlanIconProps>;
-
-type Recommendation = {
-  title: string;
-  text: string;
-  href: AppRoute;
-  buttonText: string;
-};
 
 type QuickAction = {
   label: string;
@@ -92,232 +104,6 @@ function getPriorityIcon(priority: string): PlanIconType {
   return PlanIcon;
 }
 
-function getRecommendations(priority: string): Recommendation[] {
-  const recommendationsByPriority: Record<string, Recommendation[]> = {
-    Cou: [
-      {
-        title: "Surélever l’écran",
-        text: "Placez l’écran plus près de la hauteur des yeux pour limiter la flexion prolongée du cou.",
-        href: "/workstation-audit",
-        buttonText: "Revoir l’audit",
-      },
-      {
-        title: "Faire une pause cervicale",
-        text: "Ajoutez une mobilisation douce du cou pendant vos pauses actives.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-      {
-        title: "Limiter le portable seul",
-        text: "Pour une longue période de travail, utilisez idéalement un support, un clavier et une souris externes.",
-        href: "/education",
-        buttonText: "Lire une capsule",
-      },
-    ],
-    Dos: [
-      {
-        title: "Varier les positions",
-        text: "Le plus important n’est pas une posture parfaite, mais d’éviter de rester immobile trop longtemps.",
-        href: "/timer",
-        buttonText: "Démarrer",
-      },
-      {
-        title: "Ajouter une pause active",
-        text: "Levez-vous régulièrement, marchez un peu et changez de position pendant la journée.",
-        href: "/timer",
-        buttonText: "Faire une pause",
-      },
-      {
-        title: "Mobiliser le haut du dos",
-        text: "Essayez des extensions thoraciques douces pour contrebalancer la posture assise prolongée.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-    ],
-    Épaules: [
-      {
-        title: "Rapprocher la souris",
-        text: "Gardez la souris proche de votre corps pour éviter de maintenir l’épaule en tension.",
-        href: "/workstation-audit",
-        buttonText: "Faire l’audit",
-      },
-      {
-        title: "Relâcher les épaules",
-        text: "Pendant vos pauses, faites quelques cercles d’épaules ou relâchez volontairement les trapèzes.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-      {
-        title: "Ajuster la zone de travail",
-        text: "Placez les objets utilisés souvent à portée confortable pour limiter les mouvements répétitifs éloignés.",
-        href: "/education",
-        buttonText: "Lire une capsule",
-      },
-    ],
-    Poignets: [
-      {
-        title: "Réduire les appuis prolongés",
-        text: "Évitez de garder les poignets appuyés longtemps sur une surface dure pendant l’utilisation du clavier ou de la souris.",
-        href: "/education",
-        buttonText: "Lire une capsule",
-      },
-      {
-        title: "Garder clavier et souris proches",
-        text: "Un clavier et une souris proches permettent souvent de réduire les tensions dans les avant-bras et les poignets.",
-        href: "/workstation-audit",
-        buttonText: "Faire l’audit",
-      },
-      {
-        title: "Mobiliser les mains",
-        text: "Ajoutez une courte mobilité des doigts et des poignets dans votre routine.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-    ],
-    Jambes: [
-      {
-        title: "Se lever régulièrement",
-        text: "Évitez les longues périodes assises sans interruption. Une courte marche peut déjà aider.",
-        href: "/timer",
-        buttonText: "Démarrer",
-      },
-      {
-        title: "Vérifier l’appui des pieds",
-        text: "Assurez-vous que vos pieds touchent le sol ou un repose-pieds pour améliorer le confort en position assise.",
-        href: "/workstation-audit",
-        buttonText: "Faire l’audit",
-      },
-      {
-        title: "Ajouter une marche active",
-        text: "Une marche de 2 minutes est une pause simple et efficace à intégrer dans la journée.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-    ],
-    Habitudes: [
-      {
-        title: "Installer une routine 25/2",
-        text: "Travaillez 25 minutes, puis prenez 2 minutes pour bouger ou changer de position.",
-        href: "/timer",
-        buttonText: "Démarrer",
-      },
-      {
-        title: "Commencer petit",
-        text: "Visez d’abord 2 ou 3 pauses actives par jour. L’objectif est de créer une habitude réaliste.",
-        href: "/dashboard",
-        buttonText: "Voir ma progression",
-      },
-      {
-        title: "Lire une capsule par jour",
-        text: "Une courte capsule peut vous aider à comprendre pourquoi une habitude est utile.",
-        href: "/education",
-        buttonText: "Lire une capsule",
-      },
-    ],
-    Écran: [
-      {
-        title: "Ajuster la hauteur de l’écran",
-        text: "Un écran trop bas peut favoriser une flexion prolongée du cou. Essayez de le rapprocher de la hauteur des yeux.",
-        href: "/education",
-        buttonText: "Lire une capsule",
-      },
-      {
-        title: "Placer l’écran devant vous",
-        text: "Évitez de travailler longtemps avec l’écran décalé sur le côté.",
-        href: "/workstation-audit",
-        buttonText: "Refaire l’audit",
-      },
-    ],
-    Chaise: [
-      {
-        title: "Stabiliser les appuis",
-        text: "Les pieds devraient idéalement être bien appuyés au sol ou sur un repose-pieds.",
-        href: "/workstation-audit",
-        buttonText: "Refaire l’audit",
-      },
-      {
-        title: "Changer de posture",
-        text: "Même une bonne chaise ne remplace pas le mouvement. Variez régulièrement votre position.",
-        href: "/timer",
-        buttonText: "Démarrer une pause",
-      },
-    ],
-    Souris: [
-      {
-        title: "Rapprocher la souris",
-        text: "Gardez la souris près du corps pour limiter la tension dans l’épaule et le bras.",
-        href: "/workstation-audit",
-        buttonText: "Refaire l’audit",
-      },
-      {
-        title: "Relâcher l’épaule",
-        text: "Ajoutez des cercles d’épaules ou une rétraction scapulaire douce dans vos pauses.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-    ],
-    Clavier: [
-      {
-        title: "Rapprocher le clavier",
-        text: "Un clavier trop éloigné peut augmenter les contraintes aux épaules, bras et poignets.",
-        href: "/workstation-audit",
-        buttonText: "Refaire l’audit",
-      },
-      {
-        title: "Réduire les tensions des poignets",
-        text: "Essayez une courte mobilité des poignets et des doigts pendant les pauses.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-    ],
-    "Ordinateur portable": [
-      {
-        title: "Éviter le portable seul longtemps",
-        text: "Pour de longues périodes, un support, un clavier externe et une souris externe sont souvent préférables.",
-        href: "/workstation-audit",
-        buttonText: "Refaire l’audit",
-      },
-      {
-        title: "Surélever l’écran",
-        text: "Surélever le portable peut aider à réduire la flexion du cou, surtout pendant les longues sessions.",
-        href: "/education",
-        buttonText: "Lire une capsule",
-      },
-    ],
-    Mouvement: [
-      {
-        title: "Utiliser la minuterie 25/2",
-        text: "La meilleure action immédiate est d’intégrer de courtes pauses actives dans votre journée.",
-        href: "/timer",
-        buttonText: "Démarrer",
-      },
-      {
-        title: "Faire une marche active",
-        text: "Une marche de 2 minutes suffit pour changer de position et relancer le mouvement.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-    ],
-  };
-
-  return (
-    recommendationsByPriority[priority] ?? [
-      {
-        title: "Bouger régulièrement",
-        text: "Commencez par intégrer de petites pauses actives dans votre journée.",
-        href: "/timer",
-        buttonText: "Démarrer",
-      },
-      {
-        title: "Faire un exercice simple",
-        text: "Choisissez un exercice facile et court pour créer une première habitude.",
-        href: "/exercises",
-        buttonText: "Voir les exercices",
-      },
-    ]
-  );
-}
-
 const quickActions: QuickAction[] = [
   {
     label: "Poste",
@@ -329,7 +115,7 @@ const quickActions: QuickAction[] = [
   {
     label: "Pause",
     title: "Minuterie",
-    text: "Installez une routine 25/2.",
+    text: "Planifiez de courtes pauses régulières.",
     href: "/timer",
     Icon: BreakIcon,
   },
@@ -351,6 +137,12 @@ const quickActions: QuickAction[] = [
 
 export default function PersonalPlanScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
+  const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
+    getDailyCheckins()
+  );
+  const [ergonomicEvents, setErgonomicEvents] = useState<ErgonomicEvent[]>(() =>
+    getErgonomicEvents()
+  );
 
   const { colors, mode } = useAppTheme();
   const layout = useResponsiveLayout();
@@ -359,6 +151,8 @@ export default function PersonalPlanScreen() {
   useEffect(() => {
     function refreshStats() {
       setStats(getAppStats());
+      setCheckins(getDailyCheckins());
+      setErgonomicEvents(getErgonomicEvents());
     }
 
     refreshStats();
@@ -368,11 +162,15 @@ export default function PersonalPlanScreen() {
     }
 
     window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
+    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshStats);
     window.addEventListener("focus", refreshStats);
     window.addEventListener("storage", refreshStats);
 
     return () => {
       window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshStats);
       window.removeEventListener("focus", refreshStats);
       window.removeEventListener("storage", refreshStats);
     };
@@ -385,11 +183,28 @@ export default function PersonalPlanScreen() {
   const tmsPriorities = questionnaireResult?.priorities ?? [];
   const workstationPriorities = workstationAuditResult?.priorities ?? [];
 
+  const currentWorkstation = getCurrentWorkstation();
+  const contextInsight = currentWorkstation
+    ? getPrimaryContextInsight(
+        checkins,
+        ergonomicEvents,
+        currentWorkstation.id
+      )
+    : null;
+
   const mainPriorities = Array.from(
-    new Set([...tmsPriorities, ...workstationPriorities])
+    new Set([
+      ...(contextInsight ? [contextInsight.zone] : []),
+      ...tmsPriorities,
+      ...workstationPriorities,
+    ])
   ).slice(0, 4);
 
-  const hasEnoughData = Boolean(questionnaireResult || workstationAuditResult);
+  const hasEnoughData = Boolean(
+    questionnaireResult ||
+      workstationAuditResult ||
+      contextInsight
+  );
   const firstPriority = mainPriorities[0] ?? "Habitudes";
   const FirstPriorityIcon = getPriorityIcon(firstPriority);
 
@@ -494,9 +309,18 @@ export default function PersonalPlanScreen() {
                 </Text>
               </View>
 
+              {contextInsight && (
+                <View style={{ marginHorizontal: layout.horizontalPadding }}>
+                  <ContextInsightCard
+                    insight={contextInsight}
+                    heading="Contexte prioritaire"
+                  />
+                </View>
+              )}
+
               <View style={styles.scoreRow}>
                 <View style={styles.scoreMiniCard}>
-                  <Text style={styles.scoreLabel}>Score TMS</Text>
+                  <Text style={styles.scoreLabel}>Indice déclaratif</Text>
                   <Text style={styles.scoreValue}>
                     {questionnaireResult ? questionnaireResult.score : "--"}
                   </Text>
@@ -504,7 +328,7 @@ export default function PersonalPlanScreen() {
                 </View>
 
                 <View style={styles.scoreMiniCard}>
-                  <Text style={styles.scoreLabel}>Score poste</Text>
+                  <Text style={styles.scoreLabel}>Indice poste</Text>
                   <Text style={styles.scoreValue}>
                     {workstationAuditResult
                       ? workstationAuditResult.score
@@ -617,7 +441,7 @@ export default function PersonalPlanScreen() {
                         </View>
                       </View>
 
-                      {getRecommendations(priority).map((recommendation) => (
+                      {getEvidenceBasedPlanRecommendations(priority).map((recommendation) => (
                         <View
                           key={`${priority}-${recommendation.title}`}
                           style={styles.recommendationCard}
@@ -630,7 +454,7 @@ export default function PersonalPlanScreen() {
                             {recommendation.text}
                           </Text>
 
-                          <Link href={recommendation.href} asChild>
+                          <Link href={recommendation.href as any} asChild>
                             <PressableScale style={styles.smallButton}>
                               <Text style={styles.smallButtonText}>
                                 {recommendation.buttonText}
@@ -705,8 +529,12 @@ export default function PersonalPlanScreen() {
               <View style={styles.warningBox}>
                 <Text style={styles.warningTitle}>À retenir</Text>
                 <Text style={styles.warningText}>
-                  Ce plan est un outil d’éducation et de prévention. Il ne
-                  remplace pas une évaluation personnalisée par un professionnel.
+                  Les conseils ergonomiques affichés ici s’appuient sur des
+                  recommandations et travaux de la CNESST, de l’INRS et de
+                  l’IRSST. L’indice déclaratif du questionnaire est un outil
+                  interne de priorisation d’ErgoPrevent; ce n’est ni un score
+                  clinique ni une estimation validée du risque de TMS.
+                  Références : {CONTEXT_EVIDENCE_LABEL}.
                 </Text>
               </View>
 

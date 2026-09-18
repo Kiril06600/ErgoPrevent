@@ -370,6 +370,16 @@ export const ERGONOMIC_EVIDENCE_SOURCES: ErgonomicEvidenceSource[] = [
     url: "https://www.inrs.fr/risques/travail-ecran/prevention-risques",
   },
   {
+    organization: "CNESST",
+    title: "Identifier les risques ergonomiques dans le milieu de travail",
+    url: "https://www.cnesst.gouv.qc.ca/fr/prevention-securite/ergonomie-troubles-musculosquelettiques/prevenir-risques-ergonomiques-au-travail/identifier-risques-ergonomiques-dans-milieu",
+  },
+  {
+    organization: "INRS",
+    title: "TMS — facteurs de risque",
+    url: "https://www.inrs.fr/risques/tms-troubles-musculosquelettiques/facteurs-risque",
+  },
+  {
     organization: "IRSST",
     title:
       "Impact du mobilier de bureau sur la posture et la sollicitation musculaire du membre supérieur",

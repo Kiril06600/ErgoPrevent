@@ -18,6 +18,21 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import ContextInsightCard from "../components/ContextInsightCard";
+import {
+  CHECKINS_UPDATED_EVENT,
+  getDailyCheckins,
+  type DailyCheckin,
+} from "../lib/checkinSystem";
+import {
+  getPrimaryContextInsight,
+} from "../lib/contextEngine";
+import {
+  ERGONOMIC_SYSTEM_UPDATED_EVENT,
+  getCurrentWorkstation,
+  getErgonomicEvents,
+  type ErgonomicEvent,
+} from "../lib/ergonomicSystem";
 import {
   IconBadge,
   RoutineIcon,
@@ -80,7 +95,7 @@ const routineTasks: RoutineTask[] = [
     id: "pause",
     label: "Pause",
     title: "Faire une pause active",
-    text: "Prenez 2 minutes pour bouger, marcher ou changer de position.",
+    text: "Prenez une courte pause pour changer de position, marcher ou alterner avec une autre tâche lorsque c’est possible.",
     href: "/timer",
     buttonText: "Démarrer",
     Icon: BreakIcon,
@@ -192,6 +207,12 @@ export default function RoutineScreen() {
   const [completedTaskIds, setCompletedTaskIds] = useState<string[]>(() =>
     getCompletedTasksForToday()
   );
+  const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
+    getDailyCheckins()
+  );
+  const [ergonomicEvents, setErgonomicEvents] = useState<ErgonomicEvent[]>(() =>
+    getErgonomicEvents()
+  );
 
   const { colors, mode } = useAppTheme();
   const layout = useResponsiveLayout();
@@ -201,6 +222,8 @@ export default function RoutineScreen() {
     function refreshData() {
       setStats(getAppStats());
       setCompletedTaskIds(getCompletedTasksForToday());
+      setCheckins(getDailyCheckins());
+      setErgonomicEvents(getErgonomicEvents());
     }
 
     refreshData();
@@ -211,18 +234,32 @@ export default function RoutineScreen() {
 
     window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
     window.addEventListener(ROUTINE_UPDATED_EVENT, refreshData);
+    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
     window.addEventListener("focus", refreshData);
     window.addEventListener("storage", refreshData);
 
     return () => {
       window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
       window.removeEventListener(ROUTINE_UPDATED_EVENT, refreshData);
+      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
       window.removeEventListener("focus", refreshData);
       window.removeEventListener("storage", refreshData);
     };
   }, []);
 
   const profile = stats.profile ?? null;
+
+  const currentWorkstation = getCurrentWorkstation();
+  const contextInsight = currentWorkstation
+    ? getPrimaryContextInsight(
+        checkins,
+        ergonomicEvents,
+        currentWorkstation.id
+      )
+    : null;
+
   const completedCount = completedTaskIds.length;
   const totalTasks = routineTasks.length;
   const progressPercent = Math.round((completedCount / totalTasks) * 100);
@@ -306,6 +343,15 @@ export default function RoutineScreen() {
               </View>
             </View>
           </View>
+
+          {contextInsight && (
+            <View style={{ marginHorizontal: layout.horizontalPadding }}>
+              <ContextInsightCard
+                insight={contextInsight}
+                heading="Priorité contextuelle"
+              />
+            </View>
+          )}
 
           {nextTask && (
             <View style={styles.nextCard}>
@@ -482,10 +528,12 @@ export default function RoutineScreen() {
           </ScrollView>
 
           <View style={styles.tipBox}>
-            <Text style={styles.tipTitle}>Conseil du jour</Text>
+            <Text style={styles.tipTitle}>Repère de prévention</Text>
             <Text style={styles.tipText}>
-              Même si vous ne complétez qu’une seule action aujourd’hui, c’est
-              déjà utile. La régularité compte plus que la perfection.
+              Lors d’un travail continu sur écran, privilégiez des pauses courtes
+              et régulières et profitez-en pour changer de posture ou alterner
+              avec une tâche hors écran lorsque c’est possible. Références :
+              CNESST · INRS · IRSST.
             </Text>
           </View>
 

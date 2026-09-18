@@ -20,6 +20,10 @@ import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
+  getDeclarativeIndexLabel,
+  getDeclarativeIndexMessage,
+} from "../lib/evidenceContent";
+import {
   IconBadge,
   ProgressIcon,
   PlanIcon,
@@ -127,30 +131,6 @@ function calculateScore(answers: Record<string, number>) {
   const maxScore = questions.length * 3;
 
   return Math.round((total / maxScore) * 100);
-}
-
-function getRiskLevel(score: number) {
-  if (score < 30) {
-    return "Risque faible";
-  }
-
-  if (score < 60) {
-    return "Risque modéré";
-  }
-
-  return "Risque élevé";
-}
-
-function getRiskMessage(score: number) {
-  if (score < 30) {
-    return "Votre risque semble plutôt faible. Continuez à maintenir de bonnes habitudes et à varier vos positions.";
-  }
-
-  if (score < 60) {
-    return "Votre risque semble modéré. Des ajustements simples, des pauses et des exercices réguliers peuvent être utiles.";
-  }
-
-  return "Votre risque semble élevé. Il serait pertinent de prioriser les pauses, les ajustements du poste et de consulter un professionnel si les douleurs persistent.";
 }
 
 function getPriorities(answers: Record<string, number>) {
@@ -933,7 +913,7 @@ export default function QuestionnaireScreen() {
   const allQuestionsCompleted = completedQuestions === totalQuestions;
 
   const score = calculateScore(answers);
-  const level = getRiskLevel(score);
+  const level = getDeclarativeIndexLabel(score);
   const priorities = getPriorities(answers);
 
   const previousResult = stats.questionnaireResult ?? null;
@@ -977,7 +957,7 @@ export default function QuestionnaireScreen() {
         <ScrollView contentContainerStyle={styles.container}>
           <View style={styles.pageHeader}>
             <View style={styles.pagePill}>
-              <Text style={styles.pagePillText}>Évaluation TMS</Text>
+              <Text style={styles.pagePillText}>Auto-évaluation ergonomique</Text>
             </View>
 
             <Text style={styles.pageTitle}>Questionnaire</Text>
@@ -1004,8 +984,9 @@ export default function QuestionnaireScreen() {
             </View>
 
             <Text style={styles.heroText}>
-              Ce questionnaire ne pose pas de diagnostic. Il sert à orienter vos
-              prochaines actions de prévention.
+              Ce questionnaire interne ne pose pas de diagnostic et ne calcule
+              pas un risque clinique de TMS. Il sert uniquement à repérer les
+              thèmes que vous déclarez le plus souvent.
             </Text>
           </View>
 
@@ -1026,7 +1007,7 @@ export default function QuestionnaireScreen() {
                 <View style={styles.previousTextBlock}>
                   <Text style={styles.previousLabel}>Dernier résultat</Text>
                   <Text style={styles.previousLevel}>
-                    {previousResult.level}
+                    {getDeclarativeIndexLabel(previousResult.score)}
                   </Text>
                 </View>
 
@@ -1140,7 +1121,7 @@ export default function QuestionnaireScreen() {
             <View style={styles.infoBox}>
               <Text style={styles.infoTitle}>À compléter</Text>
               <Text style={styles.infoText}>
-                Répondez à toutes les questions pour calculer votre score.
+                Répondez à toutes les questions pour calculer votre indice déclaratif.
               </Text>
             </View>
           )}
@@ -1159,14 +1140,14 @@ export default function QuestionnaireScreen() {
 
           {showResult && (
             <View style={styles.resultCard}>
-              <Text style={styles.resultLabel}>Résultat</Text>
+              <Text style={styles.resultLabel}>Indice déclaratif</Text>
 
               <Text style={styles.resultScore}>{score}</Text>
               <Text style={styles.resultScoreSmall}>/100</Text>
 
               <Text style={styles.resultLevel}>{level}</Text>
 
-              <Text style={styles.resultText}>{getRiskMessage(score)}</Text>
+              <Text style={styles.resultText}>{getDeclarativeIndexMessage(score)}</Text>
 
               {priorities.length > 0 ? (
                 <>

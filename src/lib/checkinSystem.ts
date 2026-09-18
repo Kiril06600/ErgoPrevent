@@ -13,6 +13,8 @@ export type DailyCheckin = {
   workstationId: string;
   workstationName: string;
   linkedEventId: string;
+  activity: string;
+  durationCategory: string;
 };
 
 export type FollowUpDirection =
@@ -41,6 +43,25 @@ const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
 
 export const CHECKINS_UPDATED_EVENT =
   "ergoprevent_checkins_updated";
+
+export const CHECKIN_ACTIVITY_OPTIONS = [
+  "Ordinateur",
+  "Téléphone",
+  "Debout",
+  "Manutention",
+  "Conduite",
+  "Études / lecture",
+  "Autre",
+  "Non précisée",
+];
+
+export const CHECKIN_DURATION_OPTIONS = [
+  "Moins de 30 min",
+  "30–60 min",
+  "1–2 h",
+  "2 h ou plus",
+  "Non précisée",
+];
 
 export function parseZoneText(value: string) {
   return Array.from(
@@ -126,6 +147,12 @@ function normalizeCheckin(
 
     linkedEventId:
       checkin.linkedEventId ?? "",
+
+    activity:
+      checkin.activity ?? "Non précisée",
+
+    durationCategory:
+      checkin.durationCategory ?? "Non précisée",
   };
 }
 

@@ -16,7 +16,7 @@ import { useAppTheme } from "../theme/ThemeContext";
 import {
   ERGONOMIC_SYSTEM_UPDATED_EVENT,
   getCurrentWorkstation,
-  getDiscomfortCountsByZone,
+  getWorkstationErgonomicInsight,
   getErgonomicEvents,
   getErgonomicProfile,
   getReferenceSettings,
@@ -106,16 +106,20 @@ export default function HomeScreen() {
   const currentWorkstation = getCurrentWorkstation();
   const workstations = getWorkstations();
   const events = getErgonomicEvents();
-  const discomfortCounts = getDiscomfortCountsByZone(currentWorkstation?.id);
+  const workstationInsight = currentWorkstation
+    ? getWorkstationErgonomicInsight(currentWorkstation.id)
+    : null;
+
+  const targetedAdjustHref = workstationInsight
+    ? (`/adjust-discomfort?zones=${encodeURIComponent(
+        workstationInsight.zone
+      )}&targeted=true` as Href)
+    : null;
 
   const resetCount = events.filter((event) => event.type === "reset").length;
   const adjustmentCount = events.filter(
-    (event) => event.type === "adjustment" || event.type === "discomfort"
+    (event) => event.type === "adjustment"
   ).length;
-
-  const mostFrequentZone = Object.entries(discomfortCounts).sort(
-    (a, b) => b[1] - a[1]
-  )[0];
 
   return (
     <AnimatedScreen>
@@ -230,14 +234,31 @@ export default function HomeScreen() {
               </View>
             </View>
 
-            {mostFrequentZone ? (
+            {workstationInsight && targetedAdjustHref ? (
               <View style={styles.insightBox}>
-                <Text style={styles.insightTitle}>Vérification ciblée</Text>
-                <Text style={styles.insightText}>
-                  Vous avez signalé {mostFrequentZone[0]} {mostFrequentZone[1]}{" "}
-                  fois sur ce poste. ErgoPrevent pourra vous proposer de
-                  revérifier seulement les éléments liés à cette zone.
+                <Text style={styles.insightTitle}>
+                  {workstationInsight.title}
                 </Text>
+
+                <Text style={styles.insightText}>
+                  {workstationInsight.message}
+                </Text>
+
+                <Text style={styles.insightText}>
+                  À revérifier : {workstationInsight.checks.join(", ")}.
+                </Text>
+
+                <Text style={styles.insightSource}>
+                  Références ergonomiques : CNESST · INRS · IRSST
+                </Text>
+
+                <Link href={targetedAdjustHref} asChild>
+                  <PressableScale style={styles.secondaryButton}>
+                    <Text style={styles.secondaryButtonText}>
+                      Faire la vérification ciblée
+                    </Text>
+                  </PressableScale>
+                </Link>
               </View>
             ) : (
               <Text style={styles.emptyText}>
@@ -519,6 +540,13 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontSize: 14,
       lineHeight: 21,
       fontWeight: "700",
+    },
+    insightSource: {
+      color: colors.textMuted,
+      fontSize: 11,
+      lineHeight: 17,
+      fontWeight: "800",
+      marginTop: 8,
     },
     emptyText: {
       color: colors.textSoft,

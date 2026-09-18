@@ -25,13 +25,19 @@ import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
   CHECKINS_UPDATED_EVENT,
+  CHECKIN_ACTIVITY_OPTIONS,
+  CHECKIN_DURATION_OPTIONS,
   getDailyCheckins,
   parseZoneText,
   saveDailyCheckin,
   type DailyCheckin,
 } from "../lib/checkinSystem";
 import {
+  getPainTrackingMessage,
+} from "../lib/evidenceContent";
+import {
   getCurrentWorkstation,
+  getErgonomicEvents,
   getWorkstations,
 } from "../lib/ergonomicSystem";
 import {
@@ -1021,6 +1027,8 @@ export default function DailyCheckinScreen() {
     workstationId?: string;
     zones?: string;
     linkedEventId?: string;
+    activity?: string;
+    durationCategory?: string;
   }>();
 
   const workstations = getWorkstations();
@@ -1035,6 +1043,26 @@ export default function DailyCheckinScreen() {
 
   const linkedEventId =
     getParamValue(params.linkedEventId);
+
+  const linkedEvent =
+    getErgonomicEvents().find(
+      (event) => event.id === linkedEventId
+    ) ?? null;
+
+  const requestedActivity =
+    getParamValue(params.activity);
+
+  const requestedDurationCategory =
+    getParamValue(params.durationCategory);
+
+  const initialActivity =
+    requestedActivity ||
+    linkedEvent?.activity ||
+    "Non précisée";
+
+  const initialDurationCategory =
+    requestedDurationCategory ||
+    "Non précisée";
 
   const initialWorkstationId =
     workstations.some(
@@ -1062,6 +1090,14 @@ export default function DailyCheckinScreen() {
 
   const [fatigueLevel, setFatigueLevel] =
     useState("Moyenne");
+
+  const [activity, setActivity] =
+    useState(initialActivity);
+
+  const [
+    durationCategory,
+    setDurationCategory,
+  ] = useState(initialDurationCategory);
 
   const [mainZones, setMainZones] =
     useState<string[]>(
@@ -1150,19 +1186,7 @@ export default function DailyCheckinScreen() {
     getZoneIcon(selectedMainZone);
 
   function getPainMessage() {
-    if (painLevel === 0) {
-      return "Aucune douleur rapportée pour ce check-in.";
-    }
-
-    if (painLevel <= 3) {
-      return "Douleur légère : continuez à bouger régulièrement.";
-    }
-
-    if (painLevel <= 6) {
-      return "Douleur modérée : privilégiez les pauses, les ajustements et les mouvements doux.";
-    }
-
-    return "Douleur élevée : évitez de forcer et consultez un professionnel si la douleur persiste ou vous inquiète.";
+    return getPainTrackingMessage(painLevel);
   }
 
   function handleUseCurrentTime() {
@@ -1228,6 +1252,8 @@ export default function DailyCheckinScreen() {
         "Poste non précisé",
 
       linkedEventId,
+      activity,
+      durationCategory,
     };
 
     saveDailyCheckin(newCheckin);
@@ -1257,6 +1283,8 @@ export default function DailyCheckinScreen() {
 
     if (!followUpMode) {
       setMainZones(["Aucune zone"]);
+      setActivity("Non précisée");
+      setDurationCategory("Non précisée");
     }
   }
 
@@ -1515,6 +1543,81 @@ export default function DailyCheckinScreen() {
           </View>
 
           <View style={styles.card}>
+            <Text style={styles.sectionTitle}>
+              Activité actuelle
+            </Text>
+
+            <Text style={styles.sectionSubtitle}>
+              Indiquez ce que vous faisiez lorsque vous avez évalué votre état.
+              Cette information sert à repérer vos contextes récurrents.
+            </Text>
+
+            <View style={styles.optionsContainer}>
+              {CHECKIN_ACTIVITY_OPTIONS.map((item) => {
+                const selected = activity === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setActivity(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>
+              Durée du contexte
+            </Text>
+
+            <Text style={styles.sectionSubtitle}>
+              Choisissez une catégorie de suivi personnel. Ces catégories servent
+              à comparer vos propres situations et ne sont pas des seuils
+              scientifiques ou cliniques de risque.
+            </Text>
+
+            <View style={styles.optionsContainer}>
+              {CHECKIN_DURATION_OPTIONS.map((item) => {
+                const selected = durationCategory === item;
+
+                return (
+                  <PressableScale
+                    key={item}
+                    style={[
+                      styles.optionButton,
+                      selected ? styles.optionButtonSelected : null,
+                    ]}
+                    onPress={() => setDurationCategory(item)}
+                  >
+                    <Text
+                      style={[
+                        styles.optionText,
+                        selected ? styles.optionTextSelected : null,
+                      ]}
+                    >
+                      {item}
+                    </Text>
+                  </PressableScale>
+                );
+              })}
+            </View>
+          </View>
+
+          <View style={styles.card}>
             <View style={styles.cardHeader}>
               <IconBadge
                 size={layout.isMobile ? 42 : 46}
@@ -1576,7 +1679,7 @@ export default function DailyCheckinScreen() {
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
-                <Text style={styles.sectionTitle}>Zone principale</Text>
+                <Text style={styles.sectionTitle}>Zones sensibles</Text>
                 <Text style={styles.sectionSubtitle}>
                   Indiquez la ou les zones les plus sensibles maintenant.
                 </Text>
@@ -1693,7 +1796,17 @@ export default function DailyCheckinScreen() {
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Zone</Text>
+              <Text style={styles.summaryLabel}>Activité</Text>
+              <Text style={styles.summaryValue}>{activity}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Durée</Text>
+              <Text style={styles.summaryValue}>{durationCategory}</Text>
+            </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Zones</Text>
               <Text style={styles.summaryValue}>{selectedZonesText}</Text>
             </View>
 
@@ -1739,6 +1852,10 @@ export default function DailyCheckinScreen() {
 
                         <Text style={styles.historyText}>
                           Poste : {checkin.workstationName}
+                        </Text>
+
+                        <Text style={styles.historyText}>
+                          Contexte : {checkin.activity} · {checkin.durationCategory}
                         </Text>
                       </View>
                     </View>

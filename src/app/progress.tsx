@@ -18,6 +18,10 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import ContextInsightCard from "../components/ContextInsightCard";
+import {
+  getContextInsights,
+} from "../lib/contextEngine";
 import {
   CHECKINS_UPDATED_EVENT,
   deleteDailyCheckin,
@@ -26,7 +30,10 @@ import {
   type DailyCheckin,
 } from "../lib/checkinSystem";
 import {
+  ERGONOMIC_SYSTEM_UPDATED_EVENT,
+  getCurrentWorkstation,
   getErgonomicEvents,
+  type ErgonomicEvent,
 } from "../lib/ergonomicSystem";
 import {
   IconBadge,
@@ -202,6 +209,9 @@ export default function ProgressScreen() {
   const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
     getDailyCheckins()
   );
+  const [ergonomicEvents, setErgonomicEvents] = useState<ErgonomicEvent[]>(() =>
+    getErgonomicEvents()
+  );
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
   const { colors, mode } = useAppTheme();
@@ -212,6 +222,7 @@ export default function ProgressScreen() {
     function refreshData() {
       setStats(getAppStats());
       setCheckins(getDailyCheckins());
+      setErgonomicEvents(getErgonomicEvents());
     }
 
     refreshData();
@@ -222,12 +233,14 @@ export default function ProgressScreen() {
 
     window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
     window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
     window.addEventListener("focus", refreshData);
     window.addEventListener("storage", refreshData);
 
     return () => {
       window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
       window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
+      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
       window.removeEventListener("focus", refreshData);
       window.removeEventListener("storage", refreshData);
     };
@@ -246,9 +259,21 @@ export default function ProgressScreen() {
 
   const followUpInsights =
     getInterventionFollowUpInsights(
-      getErgonomicEvents(),
+      ergonomicEvents,
       checkins
     ).slice(0, 3);
+
+  const currentWorkstation =
+    getCurrentWorkstation();
+
+  const contextInsights =
+    currentWorkstation
+      ? getContextInsights(
+          checkins,
+          ergonomicEvents,
+          currentWorkstation.id
+        ).slice(0, 3)
+      : [];
 
   const lastTenCheckins =
     checkins.slice(0, 10);
@@ -412,6 +437,32 @@ export default function ProgressScreen() {
                 </>
               )}
 
+              {contextInsights.length > 0 && (
+                <>
+                  <View style={styles.sectionHeaderRow}>
+                    <View style={styles.sectionHeaderTextBlock}>
+                      <Text style={styles.sectionTitle}>
+                        Contextes récurrents
+                      </Text>
+                      <Text style={styles.sectionSubtitle}>
+                        Situations qui reviennent dans vos check-ins pour le
+                        poste actuellement utilisé.
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.followUpSection}>
+                    {contextInsights.map((insight) => (
+                      <ContextInsightCard
+                        key={insight.id}
+                        insight={insight}
+                        heading="Contexte récurrent"
+                      />
+                    ))}
+                  </View>
+                </>
+              )}
+
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
                   <Text style={styles.statLabel}>Check-ins</Text>
@@ -497,6 +548,20 @@ export default function ProgressScreen() {
                   </Text>
                 </View>
 
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Activité</Text>
+                  <Text style={styles.detailValue}>
+                    {latestCheckin?.activity}
+                  </Text>
+                </View>
+
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Durée du contexte</Text>
+                  <Text style={styles.detailValue}>
+                    {latestCheckin?.durationCategory}
+                  </Text>
+                </View>
+
                 {latestCheckin?.note && latestCheckin.note.length > 0 && (
                   <View style={styles.noteBox}>
                     <Text style={styles.noteTitle}>Note</Text>
@@ -574,6 +639,10 @@ export default function ProgressScreen() {
 
                           <Text style={styles.historySubtitle}>
                             {checkin.workstationName}
+                          </Text>
+
+                          <Text style={styles.historySubtitle}>
+                            {checkin.activity} · {checkin.durationCategory}
                           </Text>
                         </View>
 

@@ -21,7 +21,7 @@ import {
   getDiscomfortCountsByZone,
   getErgonomicEvents,
   getPrimaryWorkstationId,
-  getTargetedChecksForZone,
+  getWorkstationErgonomicInsight,
   getWorkstations,
   setCurrentWorkstationId,
   setPrimaryWorkstationId,
@@ -111,6 +111,17 @@ export default function WorkstationsScreen() {
     router.push("/workstation-detail" as any);
   }
 
+  function handleOpenTargetedAdjustment(id: string, zone: string) {
+    setCurrentWorkstationId(id);
+    setRefreshKey((currentValue) => currentValue + 1);
+
+    router.push(
+      `/adjust-discomfort?zones=${encodeURIComponent(
+        zone
+      )}&targeted=true` as any
+    );
+  }
+
   function getEventsForWorkstation(workstationId: string) {
     return events.filter((event) => event.workstationId === workstationId);
   }
@@ -188,18 +199,15 @@ export default function WorkstationsScreen() {
                   ).length;
 
                   const adjustmentCount = workstationEvents.filter(
-                    (event) =>
-                      event.type === "adjustment" ||
-                      event.type === "discomfort"
+                    (event) => event.type === "adjustment"
                   ).length;
 
                   const discomfortTotal = Object.values(
                     discomfortCounts
                   ).reduce((total, count) => total + count, 0);
 
-                  const mostFrequentZone = Object.entries(
-                    discomfortCounts
-                  ).sort((a, b) => b[1] - a[1])[0];
+                  const workstationInsight =
+                    getWorkstationErgonomicInsight(workstation.id);
 
                   return (
                     <View
@@ -434,24 +442,38 @@ export default function WorkstationsScreen() {
                             )}
                           </View>
 
-                          {mostFrequentZone && (
+                          {workstationInsight && (
                             <View style={styles.insightBox}>
                               <Text style={styles.insightTitle}>
-                                Vérification ciblée
+                                {workstationInsight.title}
                               </Text>
 
                               <Text style={styles.insightText}>
-                                Vous avez signalé {mostFrequentZone[0]}{" "}
-                                {mostFrequentZone[1]} fois sur ce poste.
+                                {workstationInsight.message}
                               </Text>
 
                               <Text style={styles.insightText}>
                                 À revérifier :{" "}
-                                {getTargetedChecksForZone(
-                                  mostFrequentZone[0]
-                                ).join(", ")}
-                                .
+                                {workstationInsight.checks.join(", ")}.
                               </Text>
+
+                              <Text style={styles.insightText}>
+                                Références : CNESST · INRS · IRSST
+                              </Text>
+
+                              <PressableScale
+                                style={styles.secondaryButton}
+                                onPress={() =>
+                                  handleOpenTargetedAdjustment(
+                                    workstation.id,
+                                    workstationInsight.zone
+                                  )
+                                }
+                              >
+                                <Text style={styles.secondaryButtonText}>
+                                  Faire la vérification ciblée
+                                </Text>
+                              </PressableScale>
                             </View>
                           )}
 

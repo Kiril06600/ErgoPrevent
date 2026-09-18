@@ -18,6 +18,24 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import ContextInsightCard from "../components/ContextInsightCard";
+import {
+  CHECKINS_UPDATED_EVENT,
+  getDailyCheckins,
+  type DailyCheckin,
+} from "../lib/checkinSystem";
+import {
+  getPrimaryContextInsight,
+} from "../lib/contextEngine";
+import {
+  ERGONOMIC_SYSTEM_UPDATED_EVENT,
+  getCurrentWorkstation,
+  getErgonomicEvents,
+  type ErgonomicEvent,
+} from "../lib/ergonomicSystem";
+import {
+  getDeclarativeIndexLabel,
+} from "../lib/evidenceContent";
 import {
   IconBadge,
   RoutineIcon,
@@ -184,6 +202,12 @@ function LockIcon({
 
 export default function DashboardScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
+  const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
+    getDailyCheckins()
+  );
+  const [ergonomicEvents, setErgonomicEvents] = useState<ErgonomicEvent[]>(() =>
+    getErgonomicEvents()
+  );
 
   const { colors, mode } = useAppTheme();
   const layout = useResponsiveLayout();
@@ -192,6 +216,8 @@ export default function DashboardScreen() {
   useEffect(() => {
     function refreshStats() {
       setStats(getAppStats());
+      setCheckins(getDailyCheckins());
+      setErgonomicEvents(getErgonomicEvents());
     }
 
     refreshStats();
@@ -201,11 +227,15 @@ export default function DashboardScreen() {
     }
 
     window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
+    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshStats);
     window.addEventListener("focus", refreshStats);
     window.addEventListener("storage", refreshStats);
 
     return () => {
       window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
+      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshStats);
       window.removeEventListener("focus", refreshStats);
       window.removeEventListener("storage", refreshStats);
     };
@@ -216,8 +246,19 @@ export default function DashboardScreen() {
   const workstationAuditResult = stats.workstationAuditResult ?? null;
 
   const score = questionnaireResult?.score ?? 0;
-  const level = questionnaireResult?.level ?? "Questionnaire non complété";
+  const level = questionnaireResult
+    ? getDeclarativeIndexLabel(questionnaireResult.score)
+    : "Questionnaire non complété";
   const priorities = questionnaireResult?.priorities ?? [];
+
+  const currentWorkstation = getCurrentWorkstation();
+  const contextInsight = currentWorkstation
+    ? getPrimaryContextInsight(
+        checkins,
+        ergonomicEvents,
+        currentWorkstation.id
+      )
+    : null;
 
   const workstationScore = workstationAuditResult?.score ?? 0;
   const workstationLevel = workstationAuditResult?.level ?? "Audit non complété";
@@ -308,9 +349,18 @@ export default function DashboardScreen() {
             </Text>
           </View>
 
+          {contextInsight && (
+            <View style={{ marginHorizontal: layout.horizontalPadding }}>
+              <ContextInsightCard
+                insight={contextInsight}
+                heading="Contexte à surveiller"
+              />
+            </View>
+          )}
+
           <View style={styles.scoreGrid}>
             <View style={styles.scoreCard}>
-              <Text style={styles.scoreLabel}>Score TMS</Text>
+              <Text style={styles.scoreLabel}>Indice déclaratif</Text>
               <Text style={styles.score}>
                 {questionnaireResult ? score : "--"}
               </Text>
@@ -321,7 +371,7 @@ export default function DashboardScreen() {
             </View>
 
             <View style={styles.scoreCard}>
-              <Text style={styles.scoreLabel}>Score poste</Text>
+              <Text style={styles.scoreLabel}>Indice poste</Text>
               <Text style={styles.score}>
                 {workstationAuditResult ? workstationScore : "--"}
               </Text>
