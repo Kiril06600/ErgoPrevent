@@ -7,7 +7,7 @@ import {
   TextInput,
   StyleSheet,
 } from "react-native";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import {
   APP_STATS_UPDATED_EVENT,
   AppStats,
@@ -24,22 +24,22 @@ import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
+  CHECKINS_UPDATED_EVENT,
+  getDailyCheckins,
+  parseZoneText,
+  saveDailyCheckin,
+  type DailyCheckin,
+} from "../lib/checkinSystem";
+import {
+  getCurrentWorkstation,
+  getWorkstations,
+} from "../lib/ergonomicSystem";
+import {
   IconBadge,
   ProgressIcon,
   RoutineIcon,
   PlanIcon,
 } from "../components/ErgoIcons";
-
-type DailyCheckin = {
-  id: string;
-  createdAt: string;
-  date: string;
-  time: string;
-  painLevel: number;
-  fatigueLevel: string;
-  mainZone: string;
-  note: string;
-};
 
 type CheckinIconProps = {
   size?: number;
@@ -62,9 +62,6 @@ type QuickAction = {
     strokeWidth?: number;
   }>;
 };
-
-const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
-const CHECKINS_UPDATED_EVENT = "ergoprevent_checkins_updated";
 
 const fatigueOptions = ["Faible", "Moyenne", "Élevée"];
 
@@ -122,64 +119,12 @@ function getCurrentDateAndTime() {
   };
 }
 
-function normalizeCheckin(checkin: any, index: number): DailyCheckin {
-  const date = checkin.date ?? "Date inconnue";
-  const time = checkin.time ?? "00:00";
-
-  return {
-    id: checkin.id ?? `${date}-${time}-${index}`,
-    createdAt: checkin.createdAt ?? `${date}T${time}:00`,
-    date,
-    time,
-    painLevel: checkin.painLevel ?? 0,
-    fatigueLevel: checkin.fatigueLevel ?? "Moyenne",
-    mainZone: checkin.mainZone ?? "Aucune zone",
-    note: checkin.note ?? "",
-  };
-}
-
-function getSavedCheckins(): DailyCheckin[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  const savedData = window.localStorage.getItem(CHECKIN_STORAGE_KEY);
-
-  if (!savedData) {
-    return [];
-  }
-
-  try {
-    const parsedData = JSON.parse(savedData);
-
-    if (Array.isArray(parsedData)) {
-      return parsedData
-        .map((checkin, index) => normalizeCheckin(checkin, index))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }
-
-    return Object.values(parsedData)
-      .map((checkin, index) => normalizeCheckin(checkin, index))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch {
-    return [];
-  }
-}
-
-function saveNewCheckin(checkin: DailyCheckin) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  const savedCheckins = getSavedCheckins();
-  const updatedCheckins = [checkin, ...savedCheckins];
-
-  window.localStorage.setItem(
-    CHECKIN_STORAGE_KEY,
-    JSON.stringify(updatedCheckins)
-  );
-
-  window.dispatchEvent(new Event(CHECKINS_UPDATED_EVENT));
+function getParamValue(
+  value: string | string[] | undefined
+) {
+  return Array.isArray(value)
+    ? value[0] ?? ""
+    : value ?? "";
 }
 
 function PainIcon({
@@ -1072,16 +1017,80 @@ function getZoneIcon(zone: string): CheckinIcon {
 export default function DailyCheckinScreen() {
   const currentDateAndTime = getCurrentDateAndTime();
 
-  const [stats, setStats] = useState<AppStats>(() => getAppStats());
-  const [painLevel, setPainLevel] = useState(0);
-  const [fatigueLevel, setFatigueLevel] = useState("Moyenne");
-  const [mainZones, setMainZones] = useState<string[]>(["Aucune zone"]);
+  const params = useLocalSearchParams<{
+    workstationId?: string;
+    zones?: string;
+    linkedEventId?: string;
+  }>();
+
+  const workstations = getWorkstations();
+  const currentWorkstation = getCurrentWorkstation();
+
+  const requestedWorkstationId =
+    getParamValue(params.workstationId);
+
+  const requestedZones = parseZoneText(
+    getParamValue(params.zones)
+  );
+
+  const linkedEventId =
+    getParamValue(params.linkedEventId);
+
+  const initialWorkstationId =
+    workstations.some(
+      (workstation) =>
+        workstation.id === requestedWorkstationId
+    )
+      ? requestedWorkstationId
+      : currentWorkstation?.id ?? "";
+
+  const followUpMode =
+    linkedEventId.length > 0;
+
+  const followUpWorkstationLocked =
+    followUpMode;
+
+  const followUpZonesLocked =
+    followUpMode &&
+    requestedZones.length > 0;
+
+  const [stats, setStats] =
+    useState<AppStats>(() => getAppStats());
+
+  const [painLevel, setPainLevel] =
+    useState(0);
+
+  const [fatigueLevel, setFatigueLevel] =
+    useState("Moyenne");
+
+  const [mainZones, setMainZones] =
+    useState<string[]>(
+      requestedZones.length > 0
+        ? requestedZones
+        : ["Aucune zone"]
+    );
+
+  const [
+    selectedWorkstationId,
+    setSelectedWorkstationId,
+  ] = useState(initialWorkstationId);
+
   const [note, setNote] = useState("");
-  const [date, setDate] = useState(currentDateAndTime.date);
-  const [time, setTime] = useState(currentDateAndTime.time);
-  const [savedMessage, setSavedMessage] = useState("");
-  const [previousCheckins, setPreviousCheckins] = useState<DailyCheckin[]>(() =>
-    getSavedCheckins().slice(0, 8)
+
+  const [date, setDate] =
+    useState(currentDateAndTime.date);
+
+  const [time, setTime] =
+    useState(currentDateAndTime.time);
+
+  const [savedMessage, setSavedMessage] =
+    useState("");
+
+  const [
+    previousCheckins,
+    setPreviousCheckins,
+  ] = useState<DailyCheckin[]>(() =>
+    getDailyCheckins().slice(0, 8)
   );
 
   const { colors, mode } = useAppTheme();
@@ -1091,7 +1100,7 @@ export default function DailyCheckinScreen() {
   useEffect(() => {
     function refreshData() {
       setStats(getAppStats());
-      setPreviousCheckins(getSavedCheckins().slice(0, 8));
+      setPreviousCheckins(getDailyCheckins().slice(0, 8));
     }
 
     refreshData();
@@ -1122,10 +1131,23 @@ export default function DailyCheckinScreen() {
   }, []);
 
   const profile = stats.profile ?? null;
-  const selectedMainZone = mainZones[0] ?? "Aucune zone";
+
+  const selectedMainZone =
+    mainZones[0] ?? "Aucune zone";
+
   const selectedZonesText =
-    mainZones.length > 0 ? mainZones.join(", ") : "Aucune zone";
-  const SelectedZoneIcon = getZoneIcon(selectedMainZone);
+    mainZones.length > 0
+      ? mainZones.join(", ")
+      : "Aucune zone";
+
+  const selectedWorkstation =
+    workstations.find(
+      (workstation) =>
+        workstation.id === selectedWorkstationId
+    ) ?? null;
+
+  const SelectedZoneIcon =
+    getZoneIcon(selectedMainZone);
 
   function getPainMessage() {
     if (painLevel === 0) {
@@ -1176,6 +1198,12 @@ export default function DailyCheckinScreen() {
   }
 
   function handleSaveCheckin() {
+    const zonesToSave =
+      mainZones.filter(
+        (zone) =>
+          zone !== "Aucune zone"
+      );
+
     const newCheckin: DailyCheckin = {
       id: `${Date.now()}`,
       createdAt: `${date}T${time}:00`,
@@ -1183,26 +1211,53 @@ export default function DailyCheckinScreen() {
       time,
       painLevel,
       fatigueLevel,
-      mainZone: selectedZonesText,
+
+      mainZone:
+        zonesToSave.length > 0
+          ? zonesToSave.join(", ")
+          : "Aucune zone",
+
+      zones: zonesToSave,
       note,
+
+      workstationId:
+        selectedWorkstation?.id ?? "",
+
+      workstationName:
+        selectedWorkstation?.name ??
+        "Poste non précisé",
+
+      linkedEventId,
     };
 
-    saveNewCheckin(newCheckin);
+    saveDailyCheckin(newCheckin);
 
     markTodaysDailyPainNotificationsAsRead();
     addDailyCheckinCompletedNotificationIfNeeded();
 
-    const savedCheckins = getSavedCheckins();
+    const savedCheckins =
+      getDailyCheckins();
 
-    setPreviousCheckins(savedCheckins.slice(0, 8));
-    setSavedMessage("Nouveau check-in ajouté");
+    setPreviousCheckins(
+      savedCheckins.slice(0, 8)
+    );
 
-    const now = getCurrentDateAndTime();
+    setSavedMessage(
+      followUpMode
+        ? "Check-in de suivi enregistré"
+        : "Nouveau check-in ajouté"
+    );
+
+    const now =
+      getCurrentDateAndTime();
 
     setDate(now.date);
     setTime(now.time);
     setNote("");
-    setMainZones(["Aucune zone"]);
+
+    if (!followUpMode) {
+      setMainZones(["Aucune zone"]);
+    }
   }
 
   return (
@@ -1252,6 +1307,105 @@ export default function DailyCheckinScreen() {
               Chaque check-in est sauvegardé séparément avec une date et une
               heure. Vous pouvez donc en faire plusieurs dans la même journée.
             </Text>
+          </View>
+
+          {followUpMode && (
+            <View style={styles.card}>
+              <Text style={styles.sectionTitle}>
+                Check-in de suivi
+              </Text>
+
+              <Text style={styles.sectionSubtitle}>
+                Ce check-in est relié à l’intervention
+                que vous venez de terminer. Les résultats
+                seront comparés dans le temps sans
+                attribuer automatiquement une amélioration
+                ou une aggravation à l’intervention.
+              </Text>
+            </View>
+          )}
+
+          <View style={styles.card}>
+            <Text style={styles.sectionTitle}>
+              Poste associé
+            </Text>
+
+            <Text style={styles.sectionSubtitle}>
+              Associez le check-in au poste réellement
+              utilisé afin de garder des suivis comparables.
+            </Text>
+
+            {followUpWorkstationLocked ? (
+              <View style={styles.summaryRow}>
+                <Text style={styles.summaryLabel}>
+                  Poste lié
+                </Text>
+
+                <Text style={styles.summaryValue}>
+                  {selectedWorkstation?.name ??
+                    "Poste non précisé"}
+                </Text>
+              </View>
+            ) : (
+              <View style={styles.optionsContainer}>
+                <PressableScale
+                  style={[
+                    styles.optionButton,
+                    selectedWorkstationId === ""
+                      ? styles.optionButtonSelected
+                      : null,
+                  ]}
+                  onPress={() =>
+                    setSelectedWorkstationId("")
+                  }
+                >
+                  <Text
+                    style={[
+                      styles.optionText,
+                      selectedWorkstationId === ""
+                        ? styles.optionTextSelected
+                        : null,
+                    ]}
+                  >
+                    Sans poste précis
+                  </Text>
+                </PressableScale>
+
+                {workstations.map((workstation) => {
+                  const selected =
+                    selectedWorkstationId ===
+                    workstation.id;
+
+                  return (
+                    <PressableScale
+                      key={workstation.id}
+                      style={[
+                        styles.optionButton,
+                        selected
+                          ? styles.optionButtonSelected
+                          : null,
+                      ]}
+                      onPress={() =>
+                        setSelectedWorkstationId(
+                          workstation.id
+                        )
+                      }
+                    >
+                      <Text
+                        style={[
+                          styles.optionText,
+                          selected
+                            ? styles.optionTextSelected
+                            : null,
+                        ]}
+                      >
+                        {workstation.name}
+                      </Text>
+                    </PressableScale>
+                  );
+                })}
+              </View>
+            )}
           </View>
 
           <View style={styles.card}>
@@ -1442,6 +1596,7 @@ export default function DailyCheckinScreen() {
                       selected ? styles.zoneButtonSelected : null,
                     ]}
                     onPress={() => handleToggleZone(item)}
+                    disabled={followUpZonesLocked}
                   >
                     <IconBadge
                       size={layout.isMobile ? 32 : 34}
@@ -1541,6 +1696,14 @@ export default function DailyCheckinScreen() {
               <Text style={styles.summaryLabel}>Zone</Text>
               <Text style={styles.summaryValue}>{selectedZonesText}</Text>
             </View>
+
+            <View style={styles.summaryRow}>
+              <Text style={styles.summaryLabel}>Poste</Text>
+              <Text style={styles.summaryValue}>
+                {selectedWorkstation?.name ??
+                  "Poste non précisé"}
+              </Text>
+            </View>
           </View>
 
           {previousCheckins.length > 0 && (
@@ -1572,6 +1735,10 @@ export default function DailyCheckinScreen() {
                         <Text style={styles.historyText}>
                           Douleur : {checkin.painLevel}/10 · Fatigue :{" "}
                           {checkin.fatigueLevel} · Zone : {checkin.mainZone}
+                        </Text>
+
+                        <Text style={styles.historyText}>
+                          Poste : {checkin.workstationName}
                         </Text>
                       </View>
                     </View>

@@ -151,8 +151,7 @@ export function getReferenceSettings(
         )} cm, selon le confort des épaules`
       : "À compléter";
 
-  const screenDistanceRange =
-    profile?.progressiveLenses === "Oui" ? "55–75 cm" : "50–70 cm";
+  const screenDistanceRange = "50–70 cm environ";
 
   const screenHeightAdvice =
     profile?.progressiveLenses === "Oui"
@@ -305,10 +304,12 @@ export function addErgonomicEvent(
   };
 
   writeJson<ErgonomicEvent[]>(ERGONOMIC_EVENTS_KEY, [newEvent, ...events]);
+
+  return newEvent;
 }
 
 export function recordReset(workstation: Workstation | null) {
-  addErgonomicEvent({
+  return addErgonomicEvent({
     type: "reset",
     workstationId: workstation?.id ?? "",
     workstationName: workstation?.name ?? "Poste non défini",
@@ -336,28 +337,307 @@ export function getDiscomfortCountsByZone(workstationId?: string) {
   }, {});
 }
 
+export type ErgonomicEvidenceSource = {
+  organization: string;
+  title: string;
+  url: string;
+};
+
+export type WorkstationErgonomicInsight = {
+  zone: string;
+  count: number;
+  checks: string[];
+  isRepeated: boolean;
+  title: string;
+  message: string;
+  lastReportedAt: string;
+};
+
+export const ERGONOMIC_EVIDENCE_SOURCES: ErgonomicEvidenceSource[] = [
+  {
+    organization: "CNESST",
+    title: "Travail de bureau et ergonomie",
+    url: "https://www.cnesst.gouv.qc.ca/fr/prevention-securite/identifier-corriger-risques/liste-informations-prevention/travail-bureau-ergonomie",
+  },
+  {
+    organization: "CNESST",
+    title: "Ergonomie et télétravail",
+    url: "https://www.cnesst.gouv.qc.ca/fr/prevention-securite/identifier-corriger-risques/liste-informations-prevention/ergonomie-teletravail",
+  },
+  {
+    organization: "INRS",
+    title: "Travail sur écran — prévention des risques",
+    url: "https://www.inrs.fr/risques/travail-ecran/prevention-risques",
+  },
+  {
+    organization: "IRSST",
+    title:
+      "Impact du mobilier de bureau sur la posture et la sollicitation musculaire du membre supérieur",
+    url: "https://pharesst.irsst.qc.ca/rapports-scientifique/633/",
+  },
+];
+
 export function getTargetedChecksForZone(zone: string) {
-  if (zone === "Cou" || zone === "Maux de tête") {
-    return ["Écran", "Dossier", "Accoudoirs", "Distance de travail"];
+  if (zone === "Cou") {
+    return [
+      "Écran",
+      "Distance de travail",
+      "Accoudoirs",
+      "Hauteur du bureau",
+      "Pauses",
+    ];
+  }
+
+  if (zone === "Maux de tête") {
+    return [
+      "Écran",
+      "Distance de travail",
+      "Éclairage / reflets",
+      "Pauses",
+    ];
   }
 
   if (zone === "Épaules" || zone === "Bras") {
-    return ["Accoudoirs", "Souris", "Clavier", "Hauteur du bureau"];
+    return [
+      "Accoudoirs",
+      "Souris",
+      "Clavier",
+      "Hauteur du bureau",
+      "Appui des avant-bras",
+    ];
   }
 
   if (zone === "Poignets" || zone === "Doigts" || zone === "Coude") {
-    return ["Clavier", "Souris", "Appui des avant-bras", "Hauteur du bureau"];
+    return [
+      "Clavier",
+      "Souris",
+      "Alignement main-avant-bras",
+      "Hauteur du bureau",
+      "Appui des avant-bras",
+    ];
   }
 
   if (zone === "Dos" || zone === "Bassin") {
-    return ["Chaise", "Dossier", "Support lombaire", "Hauteur d’assise"];
+    return [
+      "Chaise",
+      "Dossier",
+      "Support lombaire",
+      "Hauteur d’assise",
+      "Profondeur d’assise",
+      "Appui des pieds",
+      "Pauses",
+    ];
   }
 
   if (zone === "Jambes" || zone === "Pieds") {
-    return ["Hauteur d’assise", "Appui des pieds", "Profondeur d’assise"];
+    return [
+      "Hauteur d’assise",
+      "Appui des pieds",
+      "Profondeur d’assise",
+      "Pauses",
+    ];
   }
 
   return ["Posture", "Écran", "Clavier / souris", "Pauses"];
+}
+
+export function getEvidenceBasedCheckInstruction(check: string) {
+  if (check === "Écran") {
+    return "Placez l’écran devant vous. Le haut de l’écran devrait se situer autour du niveau des yeux; il peut être placé plus bas si vous portez des verres progressifs.";
+  }
+
+  if (check === "Distance de travail") {
+    return "Gardez une distance de lecture confortable, généralement autour de 50 à 70 cm, soit environ une longueur de bras.";
+  }
+
+  if (check === "Éclairage / reflets") {
+    return "Réduisez les reflets gênants et adaptez l’angle, la luminosité et le contraste de l’écran à votre environnement.";
+  }
+
+  if (check === "Dossier") {
+    return "Réglez le dossier pour que le dos soit soutenu confortablement, en portant une attention particulière à la région lombaire.";
+  }
+
+  if (check === "Support lombaire") {
+    return "Le bas du dossier devrait soutenir la courbure naturelle du bas du dos sans créer de pression excessive.";
+  }
+
+  if (check === "Chaise") {
+    return "Réglez la chaise pour pouvoir vous asseoir au fond du siège avec le dos soutenu et les pieds en appui.";
+  }
+
+  if (check === "Hauteur d’assise") {
+    return "Réglez l’assise pour que les pieds reposent au sol ou sur un repose-pieds et que les cuisses restent confortablement soutenues.";
+  }
+
+  if (check === "Profondeur d’assise") {
+    return "L’arrière des genoux doit rester dégagé et ne pas être comprimé par le bord de l’assise.";
+  }
+
+  if (check === "Appui des pieds") {
+    return "Les pieds devraient être soutenus par le sol ou par un repose-pieds stable.";
+  }
+
+  if (check === "Accoudoirs") {
+    return "Réglez les accoudoirs pour soutenir les avant-bras sans faire remonter les épaules et sans empêcher de vous rapprocher du bureau.";
+  }
+
+  if (check === "Hauteur du bureau") {
+    return "La hauteur de travail devrait permettre de garder les épaules relâchées, les bras près du corps et les coudes dans une position confortable.";
+  }
+
+  if (check === "Clavier") {
+    return "Gardez le clavier proche, de préférence mince et peu incliné. Évitez de maintenir les poignets en extension pendant la frappe.";
+  }
+
+  if (check === "Souris") {
+    return "Placez la souris près du clavier afin d’éviter d’éloigner inutilement le bras et l’épaule.";
+  }
+
+  if (check === "Alignement main-avant-bras") {
+    return "Essayez de garder la main dans le prolongement de l’avant-bras plutôt que de maintenir le poignet dévié.";
+  }
+
+  if (check === "Appui des avant-bras") {
+    return "Un soutien des avant-bras peut réduire certaines sollicitations du cou et des épaules, mais il ne doit pas imposer une position fixe ou inconfortable au poignet. Alternez vos appuis selon la tâche.";
+  }
+
+  if (check === "Clavier / souris") {
+    return "Gardez le clavier et la souris proches de vous afin de limiter les positions contraignantes des épaules, des bras et des poignets.";
+  }
+
+  if (check === "Pauses") {
+    return "Changez régulièrement de position. Lors du travail sur écran, reposez aussi les yeux régulièrement; la CNESST propose notamment la règle 20-20-20.";
+  }
+
+  if (check === "Posture") {
+    return "Cherchez une posture confortable et naturelle plutôt qu’une position rigide. Variez régulièrement votre posture au cours du travail.";
+  }
+
+  return "Vérifiez que cet élément peut être utilisé confortablement, sans vous obliger à maintenir une posture contraignante.";
+}
+
+export function getEvidenceBasedImmediateAction(selectedZones: string[]) {
+  if (selectedZones.length === 0) {
+    return {
+      title: "Changer de position",
+      text: "Changez de position quelques instants et revérifiez les principaux éléments de votre poste.",
+    };
+  }
+
+  if (selectedZones.includes("Maux de tête")) {
+    return {
+      title: "Pause visuelle et vérification de l’écran",
+      text: "Regardez au loin pendant quelques instants, puis vérifiez la distance de l’écran, sa hauteur, les reflets et votre position. ErgoPrevent ne détermine pas la cause d’un mal de tête.",
+    };
+  }
+
+  if (
+    selectedZones.some(
+      (zone) => zone === "Cou" || zone === "Épaules" || zone === "Bras"
+    )
+  ) {
+    return {
+      title: "Relâcher et revérifier le poste",
+      text: "Changez de position, relâchez les épaules puis vérifiez la hauteur de travail, l’écran, les accoudoirs et la proximité du clavier et de la souris.",
+    };
+  }
+
+  if (
+    selectedZones.some(
+      (zone) =>
+        zone === "Poignets" || zone === "Doigts" || zone === "Coude"
+    )
+  ) {
+    return {
+      title: "Revérifier les outils de saisie",
+      text: "Rapprochez le clavier et la souris si nécessaire, puis vérifiez l’alignement de la main avec l’avant-bras et la hauteur de la surface de travail.",
+    };
+  }
+
+  if (
+    selectedZones.some((zone) => zone === "Dos" || zone === "Bassin")
+  ) {
+    return {
+      title: "Changer d’appui et revérifier la chaise",
+      text: "Changez de position puis vérifiez l’appui des pieds, la profondeur d’assise, le dossier et le soutien du bas du dos.",
+    };
+  }
+
+  if (
+    selectedZones.some((zone) => zone === "Jambes" || zone === "Pieds")
+  ) {
+    return {
+      title: "Changer de position et vérifier les appuis",
+      text: "Changez de position ou levez-vous quelques instants si votre activité le permet, puis vérifiez la hauteur d’assise, la profondeur de l’assise et l’appui des pieds.",
+    };
+  }
+
+  return {
+    title: "Changer de position et revérifier le poste",
+    text: "Variez votre posture et vérifiez les éléments du poste qui peuvent vous obliger à maintenir une position inconfortable.",
+  };
+}
+
+export function getWorkstationErgonomicInsight(
+  workstationId: string
+): WorkstationErgonomicInsight | null {
+  if (!workstationId) {
+    return null;
+  }
+
+  const discomfortEvents = getErgonomicEvents().filter(
+    (event) =>
+      event.type === "discomfort" &&
+      event.workstationId === workstationId &&
+      Boolean(event.zone)
+  );
+
+  if (discomfortEvents.length === 0) {
+    return null;
+  }
+
+  const counts = discomfortEvents.reduce<Record<string, number>>(
+    (accumulator, event) => {
+      const zone = event.zone ?? "Zone non précisée";
+      accumulator[zone] = (accumulator[zone] ?? 0) + 1;
+      return accumulator;
+    },
+    {}
+  );
+
+  const sortedZones = Object.entries(counts).sort((first, second) => {
+    if (second[1] !== first[1]) {
+      return second[1] - first[1];
+    }
+
+    const firstLatest =
+      discomfortEvents.find((event) => event.zone === first[0])?.createdAt ?? "";
+    const secondLatest =
+      discomfortEvents.find((event) => event.zone === second[0])?.createdAt ?? "";
+
+    return secondLatest.localeCompare(firstLatest);
+  });
+
+  const [zone, count] = sortedZones[0];
+  const lastReportedAt =
+    discomfortEvents.find((event) => event.zone === zone)?.createdAt ?? "";
+
+  const isRepeated = count >= 2;
+
+  return {
+    zone,
+    count,
+    checks: getTargetedChecksForZone(zone),
+    isRepeated,
+    title: isRepeated
+      ? "Inconfort répété à surveiller"
+      : "Zone récemment signalée",
+    message: isRepeated
+      ? `${zone} a été signalé ${count} fois sur ce poste. Cela indique une répétition dans votre historique, sans constituer un diagnostic.`
+      : `${zone} a été signalé sur ce poste. ErgoPrevent peut vous aider à revérifier les éléments ergonomiques associés.`,
+    lastReportedAt,
+  };
 }
 
 export function resetErgonomicSystem() {

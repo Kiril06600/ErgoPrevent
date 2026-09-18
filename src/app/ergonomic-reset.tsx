@@ -55,6 +55,7 @@ export default function ErgonomicResetScreen() {
 
   const [step, setStep] = useState(0);
   const [completed, setCompleted] = useState(false);
+  const [savedResetId, setSavedResetId] = useState("");
 
   const currentStep = resetSteps[step];
   const currentWorkstation = getCurrentWorkstation();
@@ -68,12 +69,14 @@ export default function ErgonomicResetScreen() {
       return;
     }
 
-    recordReset(currentWorkstation);
+    const resetEvent = recordReset(currentWorkstation);
+    setSavedResetId(resetEvent.id);
     setCompleted(true);
   }
 
   function handleRestart() {
     setStep(0);
+    setSavedResetId("");
     setCompleted(false);
   }
 
@@ -203,6 +206,29 @@ export default function ErgonomicResetScreen() {
                   <Text style={styles.primaryButtonText}>Refaire un reset</Text>
                   <Text style={styles.primaryButtonArrow}>→</Text>
                 </PressableScale>
+
+                {savedResetId.length > 0 && (
+                  <Link
+                    href={
+                      `/daily-checkin?workstationId=${encodeURIComponent(
+                        currentWorkstation?.id ?? ""
+                      )}&linkedEventId=${encodeURIComponent(
+                        savedResetId
+                      )}` as any
+                    }
+                    asChild
+                  >
+                    <PressableScale style={styles.secondaryButton}>
+                      <Text style={styles.secondaryButtonText}>
+                        Faire un check-in de suivi
+                      </Text>
+
+                      <Text style={styles.secondaryButtonArrow}>
+                        →
+                      </Text>
+                    </PressableScale>
+                  </Link>
+                )}
 
                 <Link href="/adjust-discomfort" asChild>
                   <PressableScale style={styles.secondaryButton}>

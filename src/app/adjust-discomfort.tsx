@@ -1,6 +1,13 @@
 import React, { useState } from "react";
-import { SafeAreaView, ScrollView, View, Text, StyleSheet } from "react-native";
-import { Link } from "expo-router";
+import {
+  SafeAreaView,
+  ScrollView,
+  View,
+  Text,
+  StyleSheet,
+  Linking,
+} from "react-native";
+import { Link, useLocalSearchParams } from "expo-router";
 import AnimatedScreen from "../components/AnimatedScreen";
 import BottomNav from "../components/BottomNav";
 import PressableScale from "../components/PressableScale";
@@ -8,8 +15,11 @@ import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
   addErgonomicEvent,
+  ERGONOMIC_EVIDENCE_SOURCES,
   getCurrentWorkstation,
   getErgonomicProfile,
+  getEvidenceBasedCheckInstruction,
+  getEvidenceBasedImmediateAction,
   getTargetedChecksForZone,
 } from "../lib/ergonomicSystem";
 
@@ -39,23 +49,51 @@ const activities = [
 
 const answerOptions = ["Oui", "Non", "Je ne sais pas"];
 
+function parseZonesParam(value: string | string[] | undefined) {
+  const rawValue = Array.isArray(value) ? value.join(",") : value ?? "";
+
+  if (!rawValue.trim()) {
+    return [];
+  }
+
+  return Array.from(
+    new Set(
+      rawValue
+        .split(",")
+        .map((zone) => zone.trim())
+        .filter((zone) => zones.includes(zone))
+    )
+  );
+}
+
 export default function AdjustDiscomfortScreen() {
   const { colors, mode } = useAppTheme();
   const styles = createStyles(colors, mode);
+  const params = useLocalSearchParams<{
+    zones?: string;
+    targeted?: string;
+  }>();
+
+  const initialZones = parseZonesParam(params.zones);
+  const targetedMode =
+    params.targeted === "true" && initialZones.length > 0;
 
   const profile = getErgonomicProfile();
   const currentWorkstation = getCurrentWorkstation();
 
-  const [step, setStep] = useState(0);
-  const [selectedZones, setSelectedZones] = useState<string[]>([]);
+  const [step, setStep] = useState(targetedMode ? 1 : 0);
+  const [selectedZones, setSelectedZones] =
+    useState<string[]>(initialZones);
   const [selectedActivity, setSelectedActivity] = useState("Ordinateur");
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [completed, setCompleted] = useState(false);
+  const [savedAdjustmentId, setSavedAdjustmentId] = useState("");
 
   const targetedChecks = getCombinedTargetedChecks(selectedZones);
   const selectedZonesText =
     selectedZones.length > 0 ? selectedZones.join(", ") : "Non précisé";
   const progressPercent = `${((step + 1) / 4) * 100}%` as `${number}%`;
+  const immediateAction = getEvidenceBasedImmediateAction(selectedZones);
 
   const canContinueFromZone = selectedZones.length > 0;
 
@@ -101,7 +139,7 @@ export default function AdjustDiscomfortScreen() {
       });
     });
 
-    addErgonomicEvent({
+    const adjustmentEvent = addErgonomicEvent({
       type: "adjustment",
       workstationId: currentWorkstation?.id ?? "",
       workstationName: currentWorkstation?.name ?? "Poste non défini",
@@ -113,6 +151,7 @@ export default function AdjustDiscomfortScreen() {
       )}`,
     });
 
+    setSavedAdjustmentId(adjustmentEvent.id);
     setCompleted(true);
   }
 
@@ -121,6 +160,7 @@ export default function AdjustDiscomfortScreen() {
     setSelectedZones([]);
     setSelectedActivity("Ordinateur");
     setAnswers({});
+    setSavedAdjustmentId("");
     setCompleted(false);
   }
 
@@ -167,6 +207,21 @@ export default function AdjustDiscomfortScreen() {
               </View>
             </View>
           </View>
+
+          {targetedMode && selectedZones.length > 0 && !completed && (
+            <View style={styles.targetedBanner}>
+              <Text style={styles.targetedBannerLabel}>
+                Recommandation personnalisée
+              </Text>
+              <Text style={styles.targetedBannerTitle}>
+                Vérification ciblée : {selectedZonesText}
+              </Text>
+              <Text style={styles.targetedBannerText}>
+                Cette vérification a été préparée à partir de l’historique
+                enregistré pour votre poste. Elle ne constitue pas un diagnostic.
+              </Text>
+            </View>
+          )}
 
           {!completed && (
             <View style={styles.progressBox}>
@@ -301,7 +356,7 @@ export default function AdjustDiscomfortScreen() {
                   <Text style={styles.checkTitle}>{check}</Text>
 
                   <Text style={styles.checkText}>
-                    {getCheckInstruction(check, selectedZonesText)}
+                    {getEvidenceBasedCheckInstruction(check)}
                   </Text>
 
                   <View style={styles.answerRow}>
@@ -345,11 +400,11 @@ export default function AdjustDiscomfortScreen() {
 
               <View style={styles.actionBox}>
                 <Text style={styles.actionTitle}>
-                  {getImmediateActionTitleForZones(selectedZones)}
+                  {immediateAction.title}
                 </Text>
 
                 <Text style={styles.actionText}>
-                  {getImmediateActionTextForZones(selectedZones)}
+                  {immediateAction.text}
                 </Text>
               </View>
 
@@ -410,6 +465,37 @@ export default function AdjustDiscomfortScreen() {
                   </Text>
                   <Text style={styles.nextActionPrimaryArrow}>→</Text>
                 </PressableScale>
+
+                {savedAdjustmentId.length > 0 && (
+                  <Link
+                    href={
+                      `/daily-checkin?workstationId=${encodeURIComponent(
+                        currentWorkstation?.id ?? ""
+                      )}&zones=${encodeURIComponent(
+                        selectedZonesText
+                      )}&linkedEventId=${encodeURIComponent(
+                        savedAdjustmentId
+                      )}` as any
+                    }
+                    asChild
+                  >
+                    <PressableScale
+                      style={styles.nextActionSecondaryButton}
+                    >
+                      <Text
+                        style={styles.nextActionSecondaryButtonText}
+                      >
+                        Faire un check-in de suivi
+                      </Text>
+
+                      <Text
+                        style={styles.nextActionSecondaryArrow}
+                      >
+                        →
+                      </Text>
+                    </PressableScale>
+                  </Link>
+                )}
 
                 <Link href="/ergonomic-reset" asChild>
                   <PressableScale style={styles.nextActionSecondaryButton}>
@@ -478,6 +564,36 @@ export default function AdjustDiscomfortScreen() {
             </Text>
           </View>
 
+          <View style={styles.evidenceBox}>
+            <Text style={styles.evidenceTitle}>
+              Références ergonomiques
+            </Text>
+
+            <Text style={styles.evidenceText}>
+              Les conseils de cette vérification s’appuient sur des
+              recommandations et travaux de la CNESST, de l’INRS et de l’IRSST.
+            </Text>
+
+            <View style={styles.evidenceLinks}>
+              {ERGONOMIC_EVIDENCE_SOURCES.map((source) => (
+                <PressableScale
+                  key={`${source.organization}-${source.title}`}
+                  style={styles.evidenceLink}
+                  onPress={() => {
+                    void Linking.openURL(source.url);
+                  }}
+                >
+                  <Text style={styles.evidenceOrganization}>
+                    {source.organization}
+                  </Text>
+                  <Text style={styles.evidenceLinkText}>
+                    {source.title} ↗
+                  </Text>
+                </PressableScale>
+              ))}
+            </View>
+          </View>
+
           <BottomNav />
         </ScrollView>
       </SafeAreaView>
@@ -491,126 +607,6 @@ function getCombinedTargetedChecks(selectedZones: string[]) {
   );
 
   return Array.from(new Set(combinedChecks));
-}
-
-function getImmediateActionTitleForZones(selectedZones: string[]) {
-  if (selectedZones.length > 1) {
-    return "Reset ciblé des zones sélectionnées";
-  }
-
-  return getImmediateActionTitle(selectedZones[0] ?? "");
-}
-
-function getImmediateActionTextForZones(selectedZones: string[]) {
-  if (selectedZones.length > 1) {
-    return "Commencez par relâcher les épaules, changer de position, regarder au loin, puis vérifiez les éléments ciblés pour les zones sélectionnées.";
-  }
-
-  return getImmediateActionText(selectedZones[0] ?? "");
-}
-
-function getCheckInstruction(check: string, zone: string) {
-  if (check === "Écran") {
-    return "Vérifiez que l’écran est devant vous, à une hauteur confortable, sans relever le menton.";
-  }
-
-  if (check === "Dossier") {
-    return "Vérifiez si vous êtes appuyé confortablement et si le dossier ne vous force pas dans une position figée.";
-  }
-
-  if (check === "Accoudoirs") {
-    return "Vérifiez que les épaules restent relâchées et que les accoudoirs ne les poussent pas vers le haut.";
-  }
-
-  if (check === "Distance de travail") {
-    return "Vérifiez que vous n’êtes pas trop avancé vers l’écran ou trop éloigné du clavier.";
-  }
-
-  if (check === "Souris") {
-    return "Vérifiez que la souris reste proche du clavier, sans devoir éloigner le bras.";
-  }
-
-  if (check === "Clavier") {
-    return "Vérifiez que les poignets restent neutres et que le clavier n’est pas trop loin.";
-  }
-
-  if (check === "Appui des avant-bras") {
-    return "Vérifiez que les avant-bras peuvent être soutenus sans hausser les épaules.";
-  }
-
-  if (check === "Hauteur du bureau") {
-    return "Vérifiez si le bureau vous force à lever les épaules ou à casser les poignets.";
-  }
-
-  if (check === "Chaise") {
-    return "Vérifiez que vous êtes stable, avec les pieds soutenus et les cuisses confortables.";
-  }
-
-  if (check === "Support lombaire") {
-    return "Vérifiez que le soutien se place dans la région lombaire sans pression excessive.";
-  }
-
-  if (check === "Hauteur d’assise") {
-    return "Vérifiez que les pieds sont bien soutenus et que l’assise n’est ni trop haute ni trop basse.";
-  }
-
-  if (check === "Appui des pieds") {
-    return "Vérifiez que les pieds reposent au sol ou sur un appui stable.";
-  }
-
-  if (check === "Profondeur d’assise") {
-    return "Vérifiez qu’il reste un petit espace confortable derrière les genoux.";
-  }
-
-  return `Vérifiez cet élément en lien avec la zone : ${zone}.`;
-}
-
-function getImmediateActionTitle(zone: string) {
-  if (zone === "Cou" || zone === "Maux de tête") {
-    return "Reset cervical de 90 secondes";
-  }
-
-  if (zone === "Épaules" || zone === "Bras") {
-    return "Relâchement épaules et bras";
-  }
-
-  if (zone === "Poignets" || zone === "Doigts" || zone === "Coude") {
-    return "Pause mains et poignets";
-  }
-
-  if (zone === "Dos" || zone === "Bassin") {
-    return "Reset dos et posture";
-  }
-
-  if (zone === "Jambes" || zone === "Pieds") {
-    return "Pause debout et appuis";
-  }
-
-  return "Reset ergonomique court";
-}
-
-function getImmediateActionText(zone: string) {
-  if (zone === "Cou" || zone === "Maux de tête") {
-    return "Relâchez les épaules, rentrez légèrement le menton sans forcer, regardez au loin, puis changez doucement de position.";
-  }
-
-  if (zone === "Épaules" || zone === "Bras") {
-    return "Relâchez les épaules, faites trois mouvements lents vers l’arrière, puis rapprochez les outils de travail.";
-  }
-
-  if (zone === "Poignets" || zone === "Doigts" || zone === "Coude") {
-    return "Relâchez les mains, ouvrez et fermez doucement les doigts, puis vérifiez la distance du clavier et de la souris.";
-  }
-
-  if (zone === "Dos" || zone === "Bassin") {
-    return "Changez d’appui, repositionnez le bassin, vérifiez le dossier et le soutien lombaire.";
-  }
-
-  if (zone === "Jambes" || zone === "Pieds") {
-    return "Levez-vous quelques instants, vérifiez l’appui des pieds et la hauteur d’assise.";
-  }
-
-  return "Changez de position, respirez, relâchez les épaules et bougez quelques instants.";
 }
 
 function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
@@ -706,6 +702,36 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       color: colors.text,
       fontSize: 12,
       fontWeight: "900",
+    },
+    targetedBanner: {
+      marginHorizontal: 24,
+      backgroundColor: colors.turquoiseSoft,
+      borderRadius: 24,
+      padding: 17,
+      marginBottom: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    targetedBannerLabel: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.7,
+      marginBottom: 5,
+    },
+    targetedBannerTitle: {
+      fontFamily: "Georgia",
+      color: colors.primary,
+      fontSize: 22,
+      lineHeight: 28,
+      marginBottom: 7,
+    },
+    targetedBannerText: {
+      color: colors.text,
+      fontSize: 14,
+      lineHeight: 21,
+      fontWeight: "700",
     },
     progressBox: {
       marginHorizontal: 24,
@@ -1036,6 +1062,54 @@ function createStyles(colors: ThemeColors, _mode: "light" | "dark") {
       fontSize: 15,
       fontWeight: "900",
       textAlign: "center",
+    },
+    evidenceBox: {
+      marginHorizontal: 24,
+      backgroundColor: colors.card,
+      borderRadius: 24,
+      padding: 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginBottom: 16,
+    },
+    evidenceTitle: {
+      fontFamily: "Georgia",
+      color: colors.primary,
+      fontSize: 21,
+      lineHeight: 27,
+      marginBottom: 7,
+    },
+    evidenceText: {
+      color: colors.textSoft,
+      fontSize: 13,
+      lineHeight: 20,
+      fontWeight: "700",
+      marginBottom: 12,
+    },
+    evidenceLinks: {
+      gap: 8,
+    },
+    evidenceLink: {
+      backgroundColor: colors.cardWarm,
+      borderRadius: 18,
+      paddingVertical: 11,
+      paddingHorizontal: 13,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    evidenceOrganization: {
+      color: colors.primary,
+      fontSize: 11,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+      marginBottom: 3,
+    },
+    evidenceLinkText: {
+      color: colors.text,
+      fontSize: 13,
+      lineHeight: 19,
+      fontWeight: "800",
     },
     warningBox: {
       marginHorizontal: 24,

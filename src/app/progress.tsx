@@ -19,23 +19,22 @@ import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
+  CHECKINS_UPDATED_EVENT,
+  deleteDailyCheckin,
+  getDailyCheckins,
+  getInterventionFollowUpInsights,
+  type DailyCheckin,
+} from "../lib/checkinSystem";
+import {
+  getErgonomicEvents,
+} from "../lib/ergonomicSystem";
+import {
   IconBadge,
   ProgressIcon,
   RoutineIcon,
   BreakIcon,
   PlanIcon,
 } from "../components/ErgoIcons";
-
-type DailyCheckin = {
-  id: string;
-  createdAt: string;
-  date: string;
-  time: string;
-  painLevel: number;
-  fatigueLevel: string;
-  mainZone: string;
-  note: string;
-};
 
 type AppRoute = "/daily-checkin" | "/routine" | "/dashboard";
 
@@ -58,10 +57,6 @@ type QuickAction = {
     strokeWidth?: number;
   }>;
 };
-
-const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
-
-const CHECKINS_UPDATED_EVENT = "ergoprevent_checkins_updated";
 
 const quickActions: QuickAction[] = [
   {
@@ -87,59 +82,6 @@ const quickActions: QuickAction[] = [
   },
 ];
 
-function normalizeCheckin(checkin: any, index: number): DailyCheckin {
-  const date = checkin.date ?? "Date inconnue";
-  const time = checkin.time ?? "00:00";
-
-  return {
-    id: checkin.id ?? `${date}-${time}-${index}`,
-    createdAt: checkin.createdAt ?? `${date}T${time}:00`,
-    date,
-    time,
-    painLevel: checkin.painLevel ?? 0,
-    fatigueLevel: checkin.fatigueLevel ?? "Moyenne",
-    mainZone: checkin.mainZone ?? "Aucune zone",
-    note: checkin.note ?? "",
-  };
-}
-
-function getSavedCheckins(): DailyCheckin[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  const savedData = window.localStorage.getItem(CHECKIN_STORAGE_KEY);
-
-  if (!savedData) {
-    return [];
-  }
-
-  try {
-    const parsedData = JSON.parse(savedData);
-
-    if (Array.isArray(parsedData)) {
-      return parsedData
-        .map((checkin, index) => normalizeCheckin(checkin, index))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }
-
-    return Object.values(parsedData)
-      .map((checkin, index) => normalizeCheckin(checkin, index))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch {
-    return [];
-  }
-}
-
-function saveCheckins(checkins: DailyCheckin[]) {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.setItem(CHECKIN_STORAGE_KEY, JSON.stringify(checkins));
-  window.dispatchEvent(new Event(CHECKINS_UPDATED_EVENT));
-}
-
 function getAveragePain(checkins: DailyCheckin[]) {
   if (checkins.length === 0) {
     return 0;
@@ -154,14 +96,16 @@ function getMostFrequentZone(checkins: DailyCheckin[]) {
   const zoneCounts: Record<string, number> = {};
 
   checkins.forEach((checkin) => {
-    if (checkin.mainZone === "Aucune zone") {
-      return;
-    }
-
-    zoneCounts[checkin.mainZone] = (zoneCounts[checkin.mainZone] ?? 0) + 1;
+    checkin.zones.forEach((zone) => {
+      zoneCounts[zone] =
+        (zoneCounts[zone] ?? 0) + 1;
+    });
   });
 
-  const sortedZones = Object.entries(zoneCounts).sort((a, b) => b[1] - a[1]);
+  const sortedZones =
+    Object.entries(zoneCounts).sort(
+      (a, b) => b[1] - a[1]
+    );
 
   if (sortedZones.length === 0) {
     return "Aucune zone dominante";
@@ -220,23 +164,23 @@ function getTrendMessage(checkins: DailyCheckin[]): TrendMessage {
 
   if (recentAverage < olderAverage) {
     return {
-      title: "Tendance favorable",
-      text: "Votre douleur moyenne récente semble plus basse que dans les premiers check-ins.",
+      title: "Intensité récente plus faible",
+      text: "Vos check-ins récents rapportent en moyenne une intensité plus faible que les plus anciens. Il s’agit d’une tendance descriptive et non d’une preuve qu’une intervention en est la cause.",
       kind: "good",
     };
   }
 
   if (recentAverage > olderAverage) {
     return {
-      title: "Tendance à surveiller",
-      text: "Votre douleur moyenne récente semble plus élevée. Essayez de renforcer les pauses, les ajustements et les exercices doux.",
+      title: "Intensité récente plus élevée",
+      text: "Vos check-ins récents rapportent en moyenne une intensité plus élevée que les plus anciens. Cette évolution est descriptive et ne permet pas d’en attribuer la cause à un réglage précis.",
       kind: "watch",
     };
   }
 
   return {
-    title: "Tendance stable",
-    text: "Votre douleur moyenne semble relativement stable pour le moment.",
+    title: "Intensité récente similaire",
+    text: "Vos check-ins récents rapportent une intensité moyenne similaire aux plus anciens.",
     kind: "stable",
   };
 }
@@ -256,7 +200,7 @@ function getCheckinsToday(checkins: DailyCheckin[]) {
 export default function ProgressScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
-    getSavedCheckins()
+    getDailyCheckins()
   );
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
 
@@ -267,7 +211,7 @@ export default function ProgressScreen() {
   useEffect(() => {
     function refreshData() {
       setStats(getAppStats());
-      setCheckins(getSavedCheckins());
+      setCheckins(getDailyCheckins());
     }
 
     refreshData();
@@ -300,19 +244,22 @@ export default function ProgressScreen() {
   const trend = getTrendMessage(checkins);
   const todayCheckins = getCheckinsToday(checkins);
 
-  const lastTenCheckins = checkins.slice(0, 10);
+  const followUpInsights =
+    getInterventionFollowUpInsights(
+      getErgonomicEvents(),
+      checkins
+    ).slice(0, 3);
+
+  const lastTenCheckins =
+    checkins.slice(0, 10);
 
   const latestPainPercent = latestCheckin
     ? Math.round((latestCheckin.painLevel / 10) * 100)
     : 0;
 
   function handleDeleteCheckin(checkinId: string) {
-    const updatedCheckins = checkins.filter(
-      (checkin) => checkin.id !== checkinId
-    );
-
-    setCheckins(updatedCheckins);
-    saveCheckins(updatedCheckins);
+    deleteDailyCheckin(checkinId);
+    setCheckins(getDailyCheckins());
     setDeleteConfirmId(null);
   }
 
@@ -398,6 +345,73 @@ export default function ProgressScreen() {
                 <Text style={styles.heroText}>{trend.text}</Text>
               </View>
 
+              {followUpInsights.length > 0 && (
+                <>
+                  <View style={styles.sectionHeaderRow}>
+                    <View style={styles.sectionHeaderTextBlock}>
+                      <Text style={styles.sectionTitle}>
+                        Suivi après interventions
+                      </Text>
+
+                      <Text style={styles.sectionSubtitle}>
+                        Comparaisons descriptives entre
+                        vos mesures avant et après les
+                        interventions reliées à un
+                        check-in de suivi.
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={styles.followUpSection}>
+                    {followUpInsights.map((insight) => {
+                      const targetedHref =
+                        insight.zones.length > 0
+                          ? (`/adjust-discomfort?zones=${encodeURIComponent(
+                              insight.zones.join(", ")
+                            )}&targeted=true` as any)
+                          : ("/adjust-discomfort" as any);
+
+                      return (
+                        <View
+                          key={insight.interventionId}
+                          style={styles.followUpCard}
+                        >
+                          <Text style={styles.followUpLabel}>
+                            {insight.interventionType === "adjustment"
+                              ? "Après ajustement"
+                              : "Après reset"}{" "}
+                            · {insight.workstationName}
+                          </Text>
+
+                          <Text style={styles.followUpTitle}>
+                            {insight.title}
+                          </Text>
+
+                          <Text style={styles.followUpText}>
+                            {insight.text}
+                          </Text>
+
+                          {insight.zones.length > 0 && (
+                            <Text style={styles.followUpMeta}>
+                              Zones suivies :{" "}
+                              {insight.zones.join(", ")}
+                            </Text>
+                          )}
+
+                          <Link href={targetedHref} asChild>
+                            <PressableScale style={styles.followUpButton}>
+                              <Text style={styles.followUpButtonText}>
+                                Revérifier ce contexte
+                              </Text>
+                            </PressableScale>
+                          </Link>
+                        </View>
+                      );
+                    })}
+                  </View>
+                </>
+              )}
+
               <View style={styles.statsGrid}>
                 <View style={styles.statCard}>
                   <Text style={styles.statLabel}>Check-ins</Text>
@@ -476,6 +490,13 @@ export default function ProgressScreen() {
                   </Text>
                 </View>
 
+                <View style={styles.detailRow}>
+                  <Text style={styles.detailLabel}>Poste</Text>
+                  <Text style={styles.detailValue}>
+                    {latestCheckin?.workstationName}
+                  </Text>
+                </View>
+
                 {latestCheckin?.note && latestCheckin.note.length > 0 && (
                   <View style={styles.noteBox}>
                     <Text style={styles.noteTitle}>Note</Text>
@@ -549,6 +570,10 @@ export default function ProgressScreen() {
                           </Text>
                           <Text style={styles.historySubtitle}>
                             {checkin.mainZone} · fatigue {checkin.fatigueLevel}
+                          </Text>
+
+                          <Text style={styles.historySubtitle}>
+                            {checkin.workstationName}
                           </Text>
                         </View>
 
@@ -1150,6 +1175,71 @@ function createStyles(
       lineHeight: isMobile ? 19 : 20,
       color: colors.textSoft,
     },
+    followUpSection: {
+      marginHorizontal: horizontalPadding,
+      gap: 12,
+      marginBottom: isMobile ? 22 : 24,
+    },
+
+    followUpCard: {
+      backgroundColor: colors.turquoiseSoft,
+      borderRadius: isMobile ? 22 : 24,
+      padding: isMobile ? 16 : 18,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+
+    followUpLabel: {
+      color: colors.textMuted,
+      fontSize: 11,
+      fontWeight: "900",
+      textTransform: "uppercase",
+      letterSpacing: 0.6,
+      marginBottom: 6,
+    },
+
+    followUpTitle: {
+      fontFamily: "Georgia",
+      color: colors.primary,
+      fontSize: isMobile ? 20 : 22,
+      lineHeight: isMobile ? 25 : 28,
+      marginBottom: 7,
+    },
+
+    followUpText: {
+      color: colors.text,
+      fontSize: isMobile ? 13 : 14,
+      lineHeight: isMobile ? 20 : 21,
+      fontWeight: "700",
+      marginBottom: 8,
+    },
+
+    followUpMeta: {
+      color: colors.textSoft,
+      fontSize: 12,
+      lineHeight: 18,
+      fontWeight: "800",
+      marginBottom: 10,
+    },
+
+    followUpButton: {
+      backgroundColor: colors.card,
+      borderRadius: 999,
+      paddingVertical: 11,
+      paddingHorizontal: 14,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+
+    followUpButtonText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: "900",
+      textAlign: "center",
+    },
+
     summaryCard: {
       marginHorizontal: horizontalPadding,
       backgroundColor: colors.secondaryLight,
