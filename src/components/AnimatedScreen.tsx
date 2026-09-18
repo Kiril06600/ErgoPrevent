@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useState } from "react";
 import { Animated, StyleProp, ViewStyle } from "react-native";
 
 type AnimatedScreenProps = {
@@ -7,7 +7,7 @@ type AnimatedScreenProps = {
 };
 
 export default function AnimatedScreen({ children, style }: AnimatedScreenProps) {
-  const opacity = useRef(new Animated.Value(0)).current;
+  const [opacity] = useState(() => new Animated.Value(0));
 
   useEffect(() => {
     Animated.timing(opacity, {

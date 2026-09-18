@@ -358,7 +358,7 @@ export default function InstallWorkstationScreen() {
 
               <View style={styles.referenceBox}>
                 <Text style={styles.referenceLabel}>
-                  Hauteur de référence de l’assise
+                  Repère personnel pour l’assise
                 </Text>
                 <Text style={styles.referenceValue}>
                   {references.seatHeightRange}
@@ -610,7 +610,7 @@ export default function InstallWorkstationScreen() {
               </Text>
 
               <View style={styles.referenceBox}>
-                <Text style={styles.referenceLabel}>Référence selon le profil</Text>
+                <Text style={styles.referenceLabel}>Repère personnel du profil</Text>
                 <Text style={styles.referenceValue}>
                   {references.deskHeightRange}
                 </Text>

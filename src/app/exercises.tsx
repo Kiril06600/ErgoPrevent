@@ -19,6 +19,7 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import { CONTEXT_EVIDENCE_LABEL } from "../lib/evidenceContent";
 import {
   IconBadge,
   BreakIcon,
@@ -107,148 +108,150 @@ const exercises: Exercise[] = [
     id: "neck-mobility",
     category: "Cou",
     title: "Mobilité douce du cou",
-    duration: "1 min",
+    duration: "≈ 1 min",
     level: "Facile",
     description:
-      "Un mouvement simple pour relâcher la tension cervicale après une période assise.",
+      "Un exemple de mouvement confortable pour varier doucement la position du cou pendant une pause.",
     steps: [
-      "Asseyez-vous droit, épaules détendues.",
-      "Inclinez doucement la tête vers la droite, puis vers la gauche.",
-      "Gardez le mouvement lent, sans forcer.",
-      "Répétez 5 fois de chaque côté.",
+      "Installez-vous confortablement, épaules relâchées.",
+      "Tournez ou inclinez doucement la tête dans une amplitude confortable.",
+      "Revenez au centre entre les mouvements.",
+      "Arrêtez si le mouvement provoque une douleur ou un symptôme inhabituel.",
     ],
   },
   {
     id: "chin-tuck",
     category: "Cou",
-    title: "Rétraction cervicale",
-    duration: "1 min",
+    title: "Mouvement cervical vers l’arrière",
+    duration: "≈ 1 min",
     level: "Facile",
     description:
-      "Un exercice utile pour contrebalancer la posture tête avancée devant l’écran.",
+      "Un mouvement volontaire du cou proposé comme variation, sans chercher à imposer ou corriger une posture unique.",
     steps: [
-      "Regardez droit devant vous.",
-      "Rentrez doucement le menton vers l’arrière.",
-      "Gardez la nuque longue, sans baisser la tête.",
-      "Maintenez 3 secondes, puis relâchez.",
+      "Regardez devant vous dans une position confortable.",
+      "Reculez très légèrement la tête sans forcer.",
+      "Relâchez immédiatement si la position est inconfortable.",
+      "Alternez ensuite avec une autre position naturelle.",
     ],
   },
   {
     id: "thoracic-extension",
     category: "Dos",
-    title: "Extension du haut du dos",
-    duration: "2 min",
+    title: "Changer la position du haut du dos",
+    duration: "≈ 2 min",
     level: "Facile",
     description:
-      "Un exercice pour ouvrir le haut du dos et réduire la raideur liée à la position assise.",
+      "Un exemple de variation du haut du dos pour interrompre une position assise statique.",
     steps: [
-      "Asseyez-vous au bord de votre chaise.",
-      "Placez les mains derrière la tête.",
-      "Ouvrez doucement la poitrine vers le haut.",
-      "Revenez lentement et répétez 6 à 8 fois.",
+      "Asseyez-vous de façon stable.",
+      "Ouvrez doucement le haut du tronc dans une amplitude confortable.",
+      "Revenez lentement à une position naturelle.",
+      "Ne forcez pas l’amplitude.",
     ],
   },
   {
     id: "standing-reset",
     category: "Dos",
-    title: "Reset debout",
-    duration: "2 min",
+    title: "Pause debout",
+    duration: "≈ 2 min",
     level: "Très facile",
     description:
-      "Une mini-pause pour quitter la position assise et relancer le mouvement.",
+      "Une courte occasion de quitter la position assise et de varier les appuis.",
     steps: [
-      "Levez-vous doucement.",
-      "Marchez sur place ou dans la pièce.",
-      "Relâchez les épaules.",
-      "Respirez lentement pendant 30 secondes.",
+      "Levez-vous si votre situation de travail le permet.",
+      "Marchez quelques instants ou changez simplement d’appui.",
+      "Laissez les épaules et les bras dans une position confortable.",
+      "Reprenez ensuite votre activité dans une position qui vous convient.",
     ],
   },
   {
     id: "shoulder-rolls",
     category: "Épaules",
-    title: "Cercles d’épaules",
-    duration: "1 min",
+    title: "Mouvements d’épaules",
+    duration: "≈ 1 min",
     level: "Facile",
-    description: "Un exercice rapide pour relâcher les trapèzes et les épaules.",
+    description:
+      "Un exemple de mouvement lent pour varier la position des épaules pendant une pause.",
     steps: [
-      "Gardez les bras détendus le long du corps.",
-      "Faites 8 cercles d’épaules vers l’arrière.",
-      "Faites ensuite 8 cercles vers l’avant.",
-      "Gardez le mouvement lent et confortable.",
+      "Gardez les bras détendus.",
+      "Bougez doucement les épaules dans une direction confortable.",
+      "Changez de direction si cela reste confortable.",
+      "Évitez tout mouvement forcé.",
     ],
   },
   {
     id: "scapular-squeeze",
     category: "Épaules",
-    title: "Rétraction des omoplates",
-    duration: "1 min",
+    title: "Mouvement des omoplates",
+    duration: "≈ 1 min",
     level: "Facile",
     description:
-      "Un exercice simple pour activer le haut du dos et relâcher la posture arrondie.",
+      "Un mouvement doux du haut du dos proposé comme variation pendant une période statique.",
     steps: [
-      "Asseyez-vous ou tenez-vous debout.",
-      "Rapprochez doucement les omoplates.",
-      "Gardez les épaules basses.",
-      "Maintenez 3 secondes, puis relâchez.",
+      "Asseyez-vous ou restez debout confortablement.",
+      "Rapprochez légèrement les omoplates sans forcer.",
+      "Relâchez les épaules.",
+      "Revenez à une position naturelle.",
     ],
   },
   {
     id: "wrist-mobility",
     category: "Poignets",
     title: "Mobilité des poignets",
-    duration: "1 min",
+    duration: "≈ 1 min",
     level: "Facile",
     description:
-      "Une courte routine pour relâcher les poignets après clavier ou souris.",
+      "Un exemple de mouvement doux pour changer la position des poignets et des mains.",
     steps: [
-      "Tendez les bras devant vous.",
-      "Faites des cercles lents avec les poignets.",
-      "Changez de direction après 10 secondes.",
-      "Secouez doucement les mains pour relâcher.",
+      "Relâchez les mains.",
+      "Bougez lentement les poignets dans une amplitude confortable.",
+      "Changez de direction si cela reste confortable.",
+      "Évitez de forcer une position douloureuse.",
     ],
   },
   {
     id: "finger-stretch",
     category: "Poignets",
-    title: "Étirement des doigts",
-    duration: "1 min",
+    title: "Ouvrir et fermer les mains",
+    duration: "≈ 1 min",
     level: "Facile",
     description:
-      "Un exercice très simple pour réduire la tension dans les mains et les doigts.",
+      "Une variation simple de la position des mains pendant une pause.",
     steps: [
-      "Ouvrez les mains largement.",
-      "Écartez doucement les doigts.",
-      "Fermez les mains sans serrer fort.",
-      "Répétez 8 à 10 fois.",
+      "Ouvrez doucement les mains.",
+      "Écartez les doigts sans forcer.",
+      "Refermez les mains sans serrer fortement.",
+      "Gardez le mouvement confortable.",
     ],
   },
   {
     id: "calf-raises",
     category: "Jambes",
-    title: "Montées sur pointes",
-    duration: "1 min",
+    title: "Variation debout",
+    duration: "≈ 1 min",
     level: "Facile",
     description:
-      "Un mouvement debout pour stimuler les jambes pendant une pause courte.",
+      "Un exemple de mouvement debout pour varier les appuis lorsque la situation le permet.",
     steps: [
-      "Tenez-vous debout près d’un support si besoin.",
-      "Montez doucement sur la pointe des pieds.",
-      "Redescendez lentement.",
-      "Répétez 10 à 15 fois.",
+      "Placez-vous près d’un support si nécessaire.",
+      "Déplacez doucement le poids du corps ou montez légèrement sur les pointes.",
+      "Revenez lentement à un appui stable.",
+      "Arrêtez si vous ne vous sentez pas stable.",
     ],
   },
   {
     id: "seated-leg-extension",
     category: "Jambes",
-    title: "Extension des jambes assis",
-    duration: "1 min",
+    title: "Bouger les jambes assis",
+    duration: "≈ 1 min",
     level: "Facile",
-    description: "Un exercice discret à faire assis pour bouger les jambes.",
+    description:
+      "Un exemple de mouvement des jambes pour interrompre une position assise immobile.",
     steps: [
-      "Asseyez-vous avec les pieds au sol.",
-      "Tendez une jambe devant vous.",
-      "Maintenez 2 secondes.",
-      "Alternez avec l’autre jambe.",
+      "Gardez une position assise stable.",
+      "Déplacez doucement une jambe dans une amplitude confortable.",
+      "Reposez le pied puis changez de côté.",
+      "Évitez toute position qui augmente l’inconfort.",
     ],
   },
 ];
@@ -977,9 +980,12 @@ export default function ExercisesScreen() {
           <View style={styles.tipBox}>
             <Text style={styles.tipTitle}>Conseil</Text>
             <Text style={styles.tipText}>
-              Les exercices doivent rester confortables. Ne forcez pas un
-              mouvement douloureux. En cas de douleur importante ou persistante,
-              consultez un professionnel.
+              Ces mouvements sont des exemples de variation pendant une pause,
+              pas des traitements d’une douleur. Les sources CNESST, INRS et
+              IRSST soutiennent surtout le mouvement régulier, la variation des
+              postures et l’alternance des tâches. Arrêtez un mouvement qui
+              augmente la douleur ou provoque un symptôme inhabituel. Références :
+              {CONTEXT_EVIDENCE_LABEL}.
             </Text>
           </View>
 

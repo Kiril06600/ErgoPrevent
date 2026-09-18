@@ -188,7 +188,7 @@ const sections: ExploreSection[] = [
       {
         label: "Résumé",
         title: "Dashboard",
-        text: "Consulter scores, points et habitudes.",
+        text: "Consulter indices, points et habitudes.",
         href: "/dashboard",
         Icon: PlanIcon,
       },

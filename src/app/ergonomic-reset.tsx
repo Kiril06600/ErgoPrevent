@@ -29,7 +29,7 @@ const resetSteps = [
   {
     title: "Épaules",
     time: "20 sec",
-    text: "Relâchez les épaules et réalisez 3 mouvements lents.",
+    text: "Relâchez les épaules et réalisez quelques mouvements lents et confortables.",
     detail:
       "Montez légèrement les épaules, relâchez-les, puis faites quelques cercles doux.",
   },
@@ -45,7 +45,7 @@ const resetSteps = [
     time: "20 sec",
     text: "Levez-vous quelques instants ou changez simplement d’appui.",
     detail:
-      "Quelques pas, un changement d’appui ou une courte pause debout suffisent.",
+      "Quelques pas, un changement d’appui ou une courte pause debout sont des façons simples de varier la posture.",
   },
 ];
 
@@ -92,8 +92,8 @@ export default function ErgonomicResetScreen() {
             <Text style={styles.pageTitle}>Reset ergonomique</Text>
 
             <Text style={styles.subtitle}>
-              Une intervention très courte pour bouger, relâcher les tensions et
-              reprendre le travail dans une position plus confortable.
+              Une intervention très courte pour interrompre une posture statique,
+              changer de position et reposer brièvement le regard.
             </Text>
           </View>
 
@@ -113,8 +113,11 @@ export default function ErgonomicResetScreen() {
             </View>
 
             <Text style={styles.contextText}>
-              Le reset ne remplace pas l’installation complète du poste. Il sert
-              simplement à se remettre en mouvement pendant la journée.
+              Le reset ne remplace pas l’installation complète du poste. Les
+              durées affichées sont des repères pratiques de l’interface, pas des
+              seuils scientifiques. Le principe repose sur la variation des
+              postures, des tâches et le repos visuel recommandés par la CNESST,
+              l’INRS et l’IRSST.
             </Text>
 
             {!currentWorkstation && (

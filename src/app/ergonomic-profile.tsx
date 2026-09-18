@@ -14,6 +14,10 @@ import PressableScale from "../components/PressableScale";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
+  getAppStats,
+  saveUserProfile,
+} from "../lib/storage";
+import {
   DominantEye,
   DominantHand,
   ErgonomicProfile,
@@ -118,6 +122,18 @@ export default function ErgonomicProfileScreen() {
 
   function handleSaveProfile() {
     saveErgonomicProfile(currentProfile);
+
+    const appProfile = getAppStats().profile;
+
+    if (appProfile) {
+      saveUserProfile({
+        ...appProfile,
+        dominantHand,
+        dominantEye,
+        progressiveLenses,
+      });
+    }
+
     setMessage("Profil ergonomique sauvegardé");
   }
 
@@ -226,9 +242,10 @@ export default function ErgonomicProfileScreen() {
             />
 
             <Text style={styles.helpText}>
-              C’est la hauteur approximative du sol jusqu’à l’arrière du genou
-              en position assise. Elle aide à proposer une plage de hauteur
-              d’assise.
+              C’est une mesure personnelle du sol jusqu’à l’arrière du genou
+              en position assise. Elle sert de repère descriptif; le réglage
+              final doit surtout permettre un appui stable des pieds et garder
+              l’arrière des genoux dégagé.
             </Text>
 
             <Text style={styles.label}>Hauteur des coudes assis</Text>
@@ -242,9 +259,10 @@ export default function ErgonomicProfileScreen() {
             />
 
             <Text style={styles.helpText}>
-              C’est la hauteur approximative du sol jusqu’au coude lorsque vous
-              êtes assis confortablement. Elle aide à proposer une référence
-              pour le bureau et les accoudoirs.
+              C’est une mesure personnelle du sol jusqu’au coude lorsque vous
+              êtes assis confortablement. Elle sert de repère descriptif; le
+              réglage final doit surtout permettre de garder les épaules
+              relâchées et les coudes dans une position confortable.
             </Text>
           </View>
 
@@ -353,8 +371,10 @@ export default function ErgonomicProfileScreen() {
             <Text style={styles.sectionTitle}>Réglages de référence</Text>
 
             <Text style={styles.sectionText}>
-              Ces valeurs ne sont pas des règles médicales. Elles servent de
-              repères de départ pour installer ou revérifier un poste.
+              Vos mesures sont des repères personnels, pas des réglages calculés
+              à appliquer automatiquement. Les critères d’ajustement affichés
+              ici suivent les recommandations CNESST et INRS : appuis stables,
+              épaules relâchées, genoux dégagés et écran adapté à la vision.
             </Text>
 
             <View style={styles.referenceRow}>

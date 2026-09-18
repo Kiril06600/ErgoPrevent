@@ -19,10 +19,10 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import { CONTEXT_EVIDENCE_LABEL } from "../lib/evidenceContent";
 import {
   IconBadge,
   BreakIcon,
-  EducationIcon,
   PlanIcon,
   PostureIcon,
   ProgressIcon,
@@ -111,119 +111,119 @@ const capsules: Capsule[] = [
     title: "La posture parfaite n’existe pas",
     readingTime: "2 min",
     intro:
-      "En ergonomie, l’objectif n’est pas de rester dans une posture parfaite toute la journée. Le plus important est de varier les positions.",
+      "Une posture confortable et adaptée est utile, mais la prévention ne repose pas sur une position unique à maintenir toute la journée.",
     keyPoints: [
-      "Une posture peut devenir inconfortable si elle est maintenue trop longtemps.",
-      "Changer de position régulièrement réduit les contraintes répétées.",
-      "Le confort dépend aussi du poste, des pauses, de la fatigue et des habitudes.",
+      "La posture statique prolongée est un facteur important lors du travail de bureau.",
+      "Le poste doit être adapté à la tâche et à la personne.",
+      "Varier les positions et les tâches réduit le temps passé dans une même posture.",
     ],
     practicalTip:
-      "Au lieu de chercher une posture parfaite, essayez de changer légèrement de position toutes les 20 à 30 minutes.",
+      "Changez de position régulièrement et alternez avec une autre tâche lorsque c’est possible. La fréquence des pauses doit être adaptée au travail réel.",
   },
   {
     id: "microbreaks",
     category: "Pauses",
-    title: "Les micro-pauses sont utiles",
+    title: "Des pauses courtes et régulières",
     readingTime: "2 min",
     intro:
-      "Une pause n’a pas besoin d’être longue pour être utile. Même une pause de 1 à 2 minutes peut aider à relâcher les tensions.",
+      "Lors d’un travail continu sur écran, la CNESST, l’INRS et l’IRSST recommandent d’intégrer de courtes pauses régulières et d’alterner les tâches lorsque c’est possible.",
     keyPoints: [
-      "Les micro-pauses interrompent l’immobilité prolongée.",
-      "Elles peuvent être utilisées pour marcher, respirer ou mobiliser doucement une zone.",
-      "Elles sont plus faciles à intégrer qu’une longue pause occasionnelle.",
+      "Une pause interrompt une période de posture statique et de fixation visuelle.",
+      "Changer de posture ou réaliser une petite tâche hors écran peut faire partie de la récupération.",
+      "La durée et la fréquence doivent être adaptées à la tâche plutôt que suivre une règle universelle.",
     ],
     practicalTip:
-      "Essayez la règle 25/2 : 25 minutes de travail, puis 2 minutes de pause active.",
+      "Utilisez la minuterie comme un rappel personnalisable, puis ajustez la fréquence des pauses à votre activité et à vos contraintes.",
   },
   {
     id: "screen-height",
     category: "Écran",
-    title: "La hauteur de l’écran compte",
+    title: "Ajuster l’écran à la vision",
     readingTime: "2 min",
     intro:
-      "Un écran trop bas peut favoriser une flexion prolongée du cou, surtout lors des longues périodes de travail.",
+      "L’écran devrait être placé devant vous, à une distance de lecture confortable, sans vous obliger à maintenir le cou dans une position contraignante.",
     keyPoints: [
-      "L’écran devrait être placé devant vous, pas trop décalé sur le côté.",
-      "Un écran trop bas peut augmenter les contraintes au cou.",
-      "Avec un ordinateur portable, un support peut être utile pour les longues sessions.",
+      "La distance œil-écran est généralement de 50 à 70 cm, soit environ une longueur de bras.",
+      "Le haut de l’écran se place autour du niveau des yeux.",
+      "Avec des verres progressifs, un écran plus bas permet souvent de lire sans relever la tête.",
     ],
     practicalTip:
-      "Si vous travaillez longtemps sur portable, utilisez idéalement un support, un clavier externe et une souris externe.",
+      "Ajustez la hauteur, la distance, la luminosité et les reflets en fonction de votre écran et de votre vision.",
   },
   {
     id: "pain-signal",
     category: "Douleur",
-    title: "La douleur est un signal à écouter",
+    title: "Suivre l’inconfort dans son contexte",
     readingTime: "2 min",
     intro:
-      "Une douleur légère et temporaire peut arriver, mais une douleur persistante, forte ou inhabituelle doit être prise au sérieux.",
+      "Une note de douleur ne mesure pas à elle seule un risque ergonomique. Elle peut toutefois servir de repère personnel lorsqu’elle est suivie dans le temps et reliée à la situation de travail.",
     keyPoints: [
-      "Le suivi de la douleur aide à repérer les tendances.",
-      "Une augmentation progressive mérite d’être surveillée.",
-      "Il faut éviter de forcer un mouvement douloureux.",
+      "Notez la zone, l’activité, le poste et la durée du contexte.",
+      "Cherchez les situations qui reviennent plutôt qu’une cause unique.",
+      "Les TMS sont multifactoriels : plusieurs facteurs peuvent se combiner.",
     ],
     practicalTip:
-      "Utilisez le check-in pour noter la douleur, la fatigue et la zone concernée. Consultez un professionnel si la douleur vous inquiète.",
+      "Utilisez le check-in pour documenter ce qui se passe. Si une douleur est forte, persistante, inhabituelle ou inquiétante, demandez un avis professionnel.",
   },
   {
     id: "mouse-position",
     category: "Posture",
-    title: "La souris doit rester proche",
+    title: "Garder la souris près du clavier",
     readingTime: "1 min",
     intro:
-      "Une souris placée trop loin peut augmenter la tension dans l’épaule, le bras et le haut du dos.",
+      "La souris et les autres dispositifs de pointage devraient être placés de façon à limiter la portée du bras et à respecter autant que possible l’alignement main-avant-bras.",
     keyPoints: [
-      "Gardez le coude près du corps autant que possible.",
-      "Évitez de travailler longtemps avec le bras tendu.",
-      "Rapprocher la souris peut réduire les tensions à l’épaule.",
+      "Placez la souris près du clavier.",
+      "Évitez une position qui oblige à maintenir le bras éloigné du corps.",
+      "Revérifiez aussi la hauteur de travail et l’appui des avant-bras.",
     ],
     practicalTip:
-      "Placez la souris à côté du clavier, proche de vous, et relâchez régulièrement l’épaule.",
+      "Rapprochez la souris et observez si vous pouvez travailler avec l’épaule relâchée et la main dans le prolongement de l’avant-bras.",
   },
   {
     id: "habits-small",
     category: "Habitudes",
-    title: "Commencer petit fonctionne mieux",
+    title: "Agir aussi sur l’organisation du travail",
     readingTime: "2 min",
     intro:
-      "Les changements durables commencent souvent par de petites actions faciles à répéter.",
+      "La prévention ergonomique ne dépend pas seulement du mobilier. L’organisation du travail, les tâches, les pauses et la possibilité de varier l’activité comptent aussi.",
     keyPoints: [
-      "Une routine trop ambitieuse est difficile à maintenir.",
-      "Deux ou trois petites actions par jour peuvent déjà aider.",
-      "La régularité compte plus que la perfection.",
+      "Les facteurs de risque ne surviennent pas isolément.",
+      "Alterner les tâches peut réduire l’exposition prolongée à une même contrainte.",
+      "Une modification doit être réévaluée pour vérifier qu’elle n’a pas déplacé le problème.",
     ],
     practicalTip:
-      "Choisissez une seule action simple aujourd’hui : un check-in, une pause ou un exercice court.",
+      "Quand un inconfort revient, notez le contexte puis testez une modification ciblée et réévaluez ensuite la situation.",
   },
   {
     id: "movement-variety",
     category: "Habitudes",
-    title: "Le mouvement est une stratégie clé",
+    title: "Varier les positions et les tâches",
     readingTime: "2 min",
     intro:
-      "Le corps tolère mieux les efforts lorsqu’il peut alterner entre différentes positions et mouvements.",
+      "Le travail de bureau expose souvent à une posture statique. Bouger régulièrement et alterner les positions fait partie des mesures de prévention recommandées.",
     keyPoints: [
-      "Rester immobile longtemps peut favoriser l’inconfort.",
-      "Bouger régulièrement aide à varier les contraintes.",
-      "La marche, les étirements doux et les changements de posture sont utiles.",
+      "Évitez de maintenir longtemps une même posture.",
+      "Profitez des pauses pour vous lever ou changer de position lorsque la tâche le permet.",
+      "Une tâche hors écran peut aussi offrir une variation utile.",
     ],
     practicalTip:
-      "Programmez une courte pause active dans votre journée, même si elle ne dure que 2 minutes.",
+      "Cherchez plusieurs occasions courtes de changer de position au cours de la journée plutôt qu’une seule longue période de mouvement.",
   },
   {
     id: "fatigue-role",
     category: "Douleur",
-    title: "La fatigue influence les tensions",
+    title: "Le contexte de travail est multifactoriel",
     readingTime: "2 min",
     intro:
-      "La fatigue peut modifier la posture, réduire l’attention portée au confort et augmenter la perception des tensions.",
+      "Les TMS sont multifactoriels. Les facteurs biomécaniques, psychosociaux, l’environnement physique et les caractéristiques individuelles peuvent se combiner.",
     keyPoints: [
-      "Une journée fatiguante peut augmenter les inconforts.",
-      "Le stress et le manque de sommeil peuvent aussi jouer un rôle.",
-      "Suivre la fatigue aide à mieux comprendre les variations de douleur.",
+      "La durée, la fréquence et l’intensité des contraintes varient selon la tâche.",
+      "L’organisation du travail et les facteurs psychosociaux peuvent aussi contribuer au contexte.",
+      "Un suivi personnel peut montrer des associations, mais il ne permet pas de prouver une cause.",
     ],
     practicalTip:
-      "Dans votre check-in, notez aussi la fatigue. Cela peut aider à repérer des liens avec les douleurs.",
+      "Utilisez vos check-ins comme des repères descriptifs et évitez d’attribuer automatiquement une variation à un seul réglage.",
   },
 ];
 
@@ -749,9 +749,10 @@ export default function EducationScreen() {
           <View style={styles.warningBox}>
             <Text style={styles.warningTitle}>À retenir</Text>
             <Text style={styles.warningText}>
-              Ces capsules sont éducatives. Elles ne remplacent pas une
+              Ces capsules sont éducatives et s’appuient sur des repères de la
+              CNESST, de l’INRS et de l’IRSST. Elles ne remplacent pas une
               évaluation personnalisée par un professionnel de la santé ou de
-              l’ergonomie.
+              l’ergonomie. Références : {CONTEXT_EVIDENCE_LABEL}.
             </Text>
           </View>
 

@@ -20,6 +20,11 @@ import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
+  CONTEXT_EVIDENCE_LABEL,
+  getWorkstationIndexLabel,
+  getWorkstationIndexMessage,
+} from "../lib/evidenceContent";
+import {
   IconBadge,
   ProgressIcon,
   PlanIcon,
@@ -126,30 +131,6 @@ function calculateScore(answers: Record<string, number>) {
   const maxScore = questions.length * 2;
 
   return Math.round((total / maxScore) * 100);
-}
-
-function getLevel(score: number) {
-  if (score >= 80) {
-    return "Poste bien ajusté";
-  }
-
-  if (score >= 60) {
-    return "Ajustements légers recommandés";
-  }
-
-  return "Ajustements prioritaires recommandés";
-}
-
-function getMessage(score: number) {
-  if (score >= 80) {
-    return "Votre poste semble globalement bien ajusté. Continuez à varier vos positions et à prendre des pauses.";
-  }
-
-  if (score >= 60) {
-    return "Votre poste semble acceptable, mais certains ajustements pourraient améliorer votre confort.";
-  }
-
-  return "Plusieurs éléments du poste pourraient être améliorés. Priorisez les ajustements simples : écran, appuis, souris, clavier et pauses.";
 }
 
 function getPriorities(answers: Record<string, number>) {
@@ -1050,7 +1031,7 @@ export default function WorkstationAuditScreen() {
   const allQuestionsCompleted = completedQuestions === totalQuestions;
 
   const score = calculateScore(answers);
-  const level = getLevel(score);
+  const level = getWorkstationIndexLabel(score);
   const priorities = getPriorities(answers);
 
   const previousResult = stats.workstationAuditResult ?? null;
@@ -1143,7 +1124,7 @@ export default function WorkstationAuditScreen() {
                 <View style={styles.previousTextBlock}>
                   <Text style={styles.previousLabel}>Dernier audit</Text>
                   <Text style={styles.previousLevel}>
-                    {previousResult.level}
+                    {getWorkstationIndexLabel(previousResult.score)}
                   </Text>
                 </View>
 
@@ -1161,7 +1142,7 @@ export default function WorkstationAuditScreen() {
                 </Text>
               ) : (
                 <Text style={styles.previousText}>
-                  Aucune priorité majeure détectée.
+                  Aucun point prioritaire détecté dans cet audit.
                 </Text>
               )}
             </View>
@@ -1257,8 +1238,8 @@ export default function WorkstationAuditScreen() {
             <View style={styles.infoBox}>
               <Text style={styles.infoTitle}>À compléter</Text>
               <Text style={styles.infoText}>
-                Répondez à toutes les questions pour calculer votre score de
-                poste.
+                Répondez à toutes les questions pour calculer votre indice
+                interne de poste.
               </Text>
             </View>
           )}
@@ -1277,14 +1258,16 @@ export default function WorkstationAuditScreen() {
 
           {showResult && (
             <View style={styles.resultCard}>
-              <Text style={styles.resultLabel}>Résultat</Text>
+              <Text style={styles.resultLabel}>Indice interne du poste</Text>
 
               <Text style={styles.resultScore}>{score}</Text>
               <Text style={styles.resultScoreSmall}>/100</Text>
 
               <Text style={styles.resultLevel}>{level}</Text>
 
-              <Text style={styles.resultText}>{getMessage(score)}</Text>
+              <Text style={styles.resultText}>
+                {getWorkstationIndexMessage(score)}
+              </Text>
 
               {priorities.length > 0 ? (
                 <>
@@ -1321,7 +1304,7 @@ export default function WorkstationAuditScreen() {
                 </>
               ) : (
                 <Text style={styles.resultText}>
-                  Aucun ajustement majeur détecté pour le moment.
+                  Aucun point prioritaire détecté pour le moment.
                 </Text>
               )}
 
@@ -1350,8 +1333,11 @@ export default function WorkstationAuditScreen() {
           <View style={styles.warningBox}>
             <Text style={styles.warningTitle}>À retenir</Text>
             <Text style={styles.warningText}>
-              Cet audit est un outil éducatif. Il ne remplace pas une
-              évaluation ergonomique complète par un professionnel.
+              Les questions s’appuient sur des repères de la CNESST, de l’INRS
+              et de l’IRSST. L’indice 0–100 est toutefois un outil interne de
+              priorisation d’ErgoPrevent : ce n’est pas un score validé de
+              risque ergonomique et il ne remplace pas une évaluation par un
+              professionnel. Références : {CONTEXT_EVIDENCE_LABEL}.
             </Text>
           </View>
 
@@ -1412,7 +1398,7 @@ export default function WorkstationAuditScreen() {
                 <Text style={styles.quickLabel}>Résumé</Text>
                 <Text style={styles.quickTitle}>Dashboard</Text>
                 <Text style={styles.quickText}>
-                  Consultez vos scores et votre progression.
+                  Consultez vos indices et votre progression.
                 </Text>
 
                 <View style={styles.quickArrowCircle}>

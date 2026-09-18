@@ -186,6 +186,11 @@ export function getContextInsights(
           (
             followUp.zones.length === 0 ||
             followUp.zones.includes(zone)
+          ) &&
+          (
+            followUp.activity === "Non précisée" ||
+            activity === "Non précisée" ||
+            followUp.activity === activity
           )
       ) ?? null;
 

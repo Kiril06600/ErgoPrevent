@@ -60,7 +60,7 @@ const secondaryActions: MainAction[] = [
   },
   {
     title: "Exercices",
-    text: "Bouger et relâcher les tensions.",
+    text: "Voir des exemples de mouvements pour varier les positions.",
     href: "/exercises",
   },
   {
@@ -70,7 +70,7 @@ const secondaryActions: MainAction[] = [
   },
   {
     title: "Questionnaire",
-    text: "Évaluer vos risques TMS.",
+    text: "Repérer vos symptômes et habitudes.",
     href: "/questionnaire",
   },
 ];

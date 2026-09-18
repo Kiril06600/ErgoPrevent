@@ -19,6 +19,7 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import { CONTEXT_EVIDENCE_LABEL } from "../lib/evidenceContent";
 import {
   IconBadge,
   BreakIcon,
@@ -155,7 +156,9 @@ export default function TimerScreen() {
 
         if (timerMode === "work" || timerMode === "longWork") {
           setTimerMode("break");
-          setMessage("Temps de pause. Prenez 2 minutes pour bouger.");
+          setMessage(
+            "Temps de pause. Profitez-en pour quitter l’écran, changer de position ou bouger."
+          );
           return BREAK_DURATION;
         }
 
@@ -197,10 +200,10 @@ export default function TimerScreen() {
 
   const modeText =
     timerMode === "work"
-      ? "Travaillez pendant 30 minutes, puis prenez une courte pause."
+      ? "Repère de minuterie choisi dans ErgoPrevent. Adaptez la fréquence des pauses à votre tâche et changez régulièrement de position."
       : timerMode === "longWork"
-      ? "Travaillez pendant 1 heure, puis prenez une courte pause active."
-      : "Levez-vous, marchez, respirez ou faites un mouvement doux.";
+      ? "Repère de minuterie choisi dans ErgoPrevent. Une heure n’est pas un seuil ergonomique universel : interrompez plus tôt une posture statique si nécessaire."
+      : "Cette pause de 2 minutes est un format pratique de l’application, pas une durée scientifique obligatoire. Profitez-en pour changer de position ou quitter l’écran.";
 
   function handleStartPause() {
     setIsRunning((currentValue) => !currentValue);
@@ -435,9 +438,11 @@ export default function TimerScreen() {
           <View style={styles.tipBox}>
             <Text style={styles.tipTitle}>Conseil</Text>
             <Text style={styles.tipText}>
-              Vous n’avez pas besoin d’une longue pause pour créer un effet
-              utile. Deux minutes peuvent suffire pour changer de position,
-              relâcher les épaules et réactiver le mouvement.
+              Les durées 30 min, 1 h et 2 min sont des repères de minuterie
+              proposés par ErgoPrevent, pas des seuils scientifiques. La CNESST,
+              l’INRS et l’IRSST recommandent surtout des pauses courtes et
+              régulières, la variation des postures et l’alternance des tâches
+              selon le travail réel. Références : {CONTEXT_EVIDENCE_LABEL}.
             </Text>
           </View>
 

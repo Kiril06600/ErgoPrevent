@@ -257,7 +257,7 @@ export default function AdjustDiscomfortScreen() {
 
               <Text style={styles.sectionText}>
                 Choisissez une ou plusieurs zones. L’application ne pose pas de
-                diagnostic : elle vous aide seulement à vérifier les causes
+                diagnostic : elle vous aide seulement à vérifier des facteurs
                 ergonomiques simples.
               </Text>
 

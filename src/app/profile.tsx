@@ -16,6 +16,17 @@ import {
   resetAppStats,
 } from "../lib/storage";
 import {
+  clearAllErgoPreventLocalData,
+  getErgoPreventStorageSnapshot,
+} from "../lib/dataManagement";
+import {
+  getErgonomicProfile,
+  saveErgonomicProfile,
+  type DominantEye,
+  type DominantHand,
+  type ProgressiveLenses,
+} from "../lib/ergonomicSystem";
+import {
   getNotificationSettings,
   NotificationSettings,
   NOTIFICATION_SETTINGS_UPDATED_EVENT,
@@ -37,14 +48,6 @@ import {
   MoonIcon,
 } from "../components/ErgoIcons";
 
-type ExtendedProfileFields = {
-  dateOfBirth?: string;
-  sex?: string;
-  dominantHand?: string;
-  dominantEye?: string;
-  progressiveLenses?: string;
-};
-
 const statuses = ["Étudiant", "Travailleur", "Télétravailleur", "Autre"];
 
 const goals = [
@@ -57,14 +60,15 @@ const goals = [
 
 const sexOptions = ["Femme", "Homme", "Autre", "Préfère ne pas répondre"];
 
-const dominantHandOptions = ["Droite", "Gauche", "Ambidextre"];
+const dominantHandOptions: DominantHand[] = ["Droite", "Gauche", "Ambidextre"];
 
-const dominantEyeOptions = ["Droit", "Gauche", "Je ne sais pas"];
+const dominantEyeOptions: DominantEye[] = ["Droit", "Gauche", "Je ne sais pas"];
 
-const progressiveLensesOptions = ["Oui", "Non", "Je ne sais pas"];
-
-const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
-const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
+const progressiveLensesOptions: ProgressiveLenses[] = [
+  "Oui",
+  "Non",
+  "Je ne sais pas",
+];
 
 const CHECKINS_UPDATED_EVENT = "ergoprevent_checkins_updated";
 const ROUTINE_UPDATED_EVENT = "ergoprevent_routine_updated";
@@ -87,7 +91,7 @@ const quickActions: QuickAction[] = [
   {
     label: "Résumé",
     title: "Dashboard",
-    text: "Voir vos scores et points.",
+    text: "Voir vos indices et points.",
     href: "/dashboard",
     Icon: ProgressIcon,
   },
@@ -113,36 +117,6 @@ const quickActions: QuickAction[] = [
     Icon: ProfileIcon,
   },
 ];
-
-function readLocalStorageValue(key: string) {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const value = window.localStorage.getItem(key);
-
-  if (!value) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-}
-
-function removeExtraLocalData() {
-  if (typeof window === "undefined") {
-    return;
-  }
-
-  window.localStorage.removeItem(CHECKIN_STORAGE_KEY);
-  window.localStorage.removeItem(ROUTINE_STORAGE_KEY);
-
-  window.dispatchEvent(new Event(CHECKINS_UPDATED_EVENT));
-  window.dispatchEvent(new Event(ROUTINE_UPDATED_EVENT));
-}
 
 function calculateAgeFromBirthDate(dateOfBirth: string) {
   if (!dateOfBirth.trim()) {
@@ -178,7 +152,7 @@ function calculateAgeFromBirthDate(dateOfBirth: string) {
 export default function ProfileScreen() {
   const initialStats = getAppStats();
   const savedProfile = initialStats.profile;
-  const savedExtraProfile = (savedProfile ?? {}) as ExtendedProfileFields;
+  const savedErgonomicProfile = getErgonomicProfile();
 
   const [stats, setStats] = useState<AppStats>(initialStats);
   const [firstName, setFirstName] = useState(savedProfile?.firstName ?? "");
@@ -189,18 +163,25 @@ export default function ProfileScreen() {
   );
 
   const [dateOfBirth, setDateOfBirth] = useState(
-    savedExtraProfile.dateOfBirth ?? ""
+    savedProfile?.dateOfBirth ?? ""
   );
-  const [sex, setSex] = useState(savedExtraProfile.sex ?? "");
-  const [dominantHand, setDominantHand] = useState(
-    savedExtraProfile.dominantHand ?? ""
+  const [sex, setSex] = useState(savedProfile?.sex ?? "");
+  const [dominantHand, setDominantHand] = useState<DominantHand>(
+    savedErgonomicProfile?.dominantHand ??
+      savedProfile?.dominantHand ??
+      ""
   );
-  const [dominantEye, setDominantEye] = useState(
-    savedExtraProfile.dominantEye ?? ""
+  const [dominantEye, setDominantEye] = useState<DominantEye>(
+    savedErgonomicProfile?.dominantEye ??
+      savedProfile?.dominantEye ??
+      ""
   );
-  const [progressiveLenses, setProgressiveLenses] = useState(
-    savedExtraProfile.progressiveLenses ?? ""
-  );
+  const [progressiveLenses, setProgressiveLenses] =
+    useState<ProgressiveLenses>(
+      savedErgonomicProfile?.progressiveLenses ??
+        savedProfile?.progressiveLenses ??
+        ""
+    );
 
   const [notificationSettings, setNotificationSettings] =
     useState<NotificationSettings>(() => getNotificationSettings());
@@ -280,10 +261,7 @@ export default function ProfileScreen() {
   const exportedData = JSON.stringify(
     {
       appStats: stats,
-      checkins: readLocalStorageValue(CHECKIN_STORAGE_KEY),
-      routine: readLocalStorageValue(ROUTINE_STORAGE_KEY),
-      themeMode: mode,
-      notificationSettings,
+      localData: getErgoPreventStorageSnapshot(),
       currentProfileForm: {
         firstName,
         status,
@@ -312,7 +290,21 @@ export default function ProfileScreen() {
       dominantHand,
       dominantEye,
       progressiveLenses,
-    } as any);
+    });
+
+    const currentErgonomicProfile = getErgonomicProfile();
+
+    saveErgonomicProfile({
+      heightCm: currentErgonomicProfile?.heightCm ?? "",
+      poplitealHeightCm:
+        currentErgonomicProfile?.poplitealHeightCm ?? "",
+      seatedElbowHeightCm:
+        currentErgonomicProfile?.seatedElbowHeightCm ?? "",
+      dominantHand,
+      dominantEye,
+      progressiveLenses,
+      updatedAt: new Date().toISOString(),
+    });
 
     setStats(updatedStats);
     setSavedMessage("Profil sauvegardé");
@@ -322,7 +314,7 @@ export default function ProfileScreen() {
   function handleResetData() {
     const resetStats = resetAppStats();
 
-    removeExtraLocalData();
+    clearAllErgoPreventLocalData();
 
     setStats(resetStats);
     setFirstName("");
@@ -851,14 +843,14 @@ export default function ProfileScreen() {
                 <Text style={styles.summaryMiniNumber}>
                   {questionnaireScore !== undefined ? questionnaireScore : "--"}
                 </Text>
-                <Text style={styles.summaryMiniLabel}>Score TMS</Text>
+                <Text style={styles.summaryMiniLabel}>Indice déclaratif</Text>
               </View>
 
               <View style={styles.summaryMiniCard}>
                 <Text style={styles.summaryMiniNumber}>
                   {workstationScore !== undefined ? workstationScore : "--"}
                 </Text>
-                <Text style={styles.summaryMiniLabel}>Score poste</Text>
+                <Text style={styles.summaryMiniLabel}>Indice poste</Text>
               </View>
 
               <View style={styles.summaryMiniCard}>
@@ -993,7 +985,7 @@ export default function ProfileScreen() {
           <View style={styles.warningBox}>
             <Text style={styles.warningTitle}>Réinitialisation</Text>
             <Text style={styles.warningText}>
-              La réinitialisation supprime le profil, les scores, les pauses, les
+              La réinitialisation supprime le profil, les indices, les pauses, les
               exercices, les capsules, les points, les routines et les check-ins
               sauvegardés sur cet appareil.
             </Text>
@@ -1012,8 +1004,10 @@ export default function ProfileScreen() {
             <View style={styles.confirmBox}>
               <Text style={styles.confirmTitle}>Confirmer la réinitialisation</Text>
               <Text style={styles.confirmText}>
-                Cette action supprimera toutes les données locales de
-                l’application sur cet appareil.
+                Cette action supprimera toutes les données ErgoPrevent
+                enregistrées localement sur cet appareil : profil, postes,
+                historique ergonomique, check-ins, routine, notifications et
+                état d’onboarding.
               </Text>
 
               <PressableScale

@@ -27,6 +27,7 @@ import {
   CHECKINS_UPDATED_EVENT,
   CHECKIN_ACTIVITY_OPTIONS,
   CHECKIN_DURATION_OPTIONS,
+  createDailyCheckinId,
   getDailyCheckins,
   parseZoneText,
   saveDailyCheckin,
@@ -1020,6 +1021,13 @@ function getZoneIcon(zone: string): CheckinIcon {
   }
 }
 
+function renderZoneIcon(
+  zone: string,
+  props: CheckinIconProps
+) {
+  return React.createElement(getZoneIcon(zone), props);
+}
+
 export default function DailyCheckinScreen() {
   const currentDateAndTime = getCurrentDateAndTime();
 
@@ -1182,9 +1190,6 @@ export default function DailyCheckinScreen() {
         workstation.id === selectedWorkstationId
     ) ?? null;
 
-  const SelectedZoneIcon =
-    getZoneIcon(selectedMainZone);
-
   function getPainMessage() {
     return getPainTrackingMessage(painLevel);
   }
@@ -1229,7 +1234,7 @@ export default function DailyCheckinScreen() {
       );
 
     const newCheckin: DailyCheckin = {
-      id: `${Date.now()}`,
+      id: createDailyCheckinId(),
       createdAt: `${date}T${time}:00`,
       date,
       time,
@@ -1672,10 +1677,10 @@ export default function DailyCheckinScreen() {
                 backgroundColor={colors.backgroundSoft}
                 borderColor={colors.border}
               >
-                <SelectedZoneIcon
-                  size={layout.isMobile ? 20 : 22}
-                  color={colors.text}
-                />
+                {renderZoneIcon(selectedMainZone, {
+                  size: layout.isMobile ? 20 : 22,
+                  color: colors.text,
+                })}
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
@@ -1689,7 +1694,6 @@ export default function DailyCheckinScreen() {
             <View style={styles.zoneGrid}>
               {zoneOptions.map((item) => {
                 const selected = mainZones.includes(item);
-                const ZoneIcon = getZoneIcon(item);
 
                 return (
                   <PressableScale
@@ -1708,10 +1712,10 @@ export default function DailyCheckinScreen() {
                       }
                       borderColor={selected ? colors.border : "transparent"}
                     >
-                      <ZoneIcon
-                        size={layout.isMobile ? 16 : 17}
-                        color={selected ? colors.black : colors.text}
-                      />
+                      {renderZoneIcon(item, {
+                        size: layout.isMobile ? 16 : 17,
+                        color: selected ? colors.black : colors.text,
+                      })}
                     </IconBadge>
 
                     <Text
@@ -1761,10 +1765,10 @@ export default function DailyCheckinScreen() {
                 backgroundColor={colors.turquoiseSoft}
                 borderColor={colors.border}
               >
-                <SelectedZoneIcon
-                  size={layout.isMobile ? 20 : 22}
-                  color={colors.text}
-                />
+                {renderZoneIcon(selectedMainZone, {
+                  size: layout.isMobile ? 20 : 22,
+                  color: colors.text,
+                })}
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
@@ -1824,8 +1828,6 @@ export default function DailyCheckinScreen() {
               <Text style={styles.sectionTitle}>Derniers check-ins</Text>
 
               {previousCheckins.map((checkin) => {
-                const HistoryIcon = getZoneIcon(checkin.mainZone);
-
                 return (
                   <View key={checkin.id} style={styles.historyCard}>
                     <View style={styles.historyTopRow}>
@@ -1834,10 +1836,10 @@ export default function DailyCheckinScreen() {
                         backgroundColor={colors.backgroundSoft}
                         borderColor={colors.border}
                       >
-                        <HistoryIcon
-                          size={layout.isMobile ? 17 : 18}
-                          color={colors.text}
-                        />
+                        {renderZoneIcon(checkin.mainZone, {
+                          size: layout.isMobile ? 17 : 18,
+                          color: colors.text,
+                        })}
                       </IconBadge>
 
                       <View style={styles.historyTextBlock}>

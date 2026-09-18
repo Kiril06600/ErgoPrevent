@@ -13,8 +13,6 @@ export function useAppStats() {
   }
 
   useEffect(() => {
-    refreshStats();
-
     if (typeof window === "undefined") {
       return;
     }

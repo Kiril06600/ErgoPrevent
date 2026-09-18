@@ -199,3 +199,27 @@ export function getEvidenceBasedPlanRecommendations(
     ]
   );
 }
+
+export function getWorkstationIndexLabel(score: number) {
+  if (score >= 80) {
+    return "Peu de points à revoir";
+  }
+
+  if (score >= 60) {
+    return "Quelques points à revoir";
+  }
+
+  return "Plusieurs points à revoir";
+}
+
+export function getWorkstationIndexMessage(score: number) {
+  if (score >= 80) {
+    return "Vos réponses font ressortir peu de points à revoir dans cet audit. Continuez néanmoins à varier les positions et à ajuster le poste selon la tâche et votre confort. Cet indice est un outil interne de priorisation, pas une mesure validée du risque ergonomique.";
+  }
+
+  if (score >= 60) {
+    return "Vos réponses font ressortir quelques éléments du poste à revérifier. Utilisez les priorités affichées pour guider la vérification. Cet indice est un outil interne de priorisation, pas une mesure validée du risque ergonomique.";
+  }
+
+  return "Vos réponses font ressortir plusieurs éléments du poste à revérifier. Priorisez les éléments affichés et réévaluez le résultat après les changements. Cet indice est un outil interne de priorisation, pas une mesure validée du risque ergonomique.";
+}

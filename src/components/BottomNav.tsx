@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Platform,
   View,
@@ -30,7 +30,14 @@ const navItems: NavItem[] = [
   {
     label: "Accueil",
     href: "/",
-    activePaths: ["/"],
+    activePaths: [
+      "/",
+      "/workstations",
+      "/workstation-detail",
+      "/install-workstation",
+      "/ergonomic-reset",
+      "/adjust-discomfort",
+    ],
     iconName: "home",
   },
   {
@@ -54,7 +61,7 @@ const navItems: NavItem[] = [
   {
     label: "Profil",
     href: "/profile",
-    activePaths: ["/profile", "/export-data"],
+    activePaths: ["/profile", "/export-data", "/ergonomic-profile"],
     iconName: "user",
   },
 ];
@@ -82,8 +89,8 @@ export default function BottomNav({ fixed = false }: BottomNavProps) {
   const activeIndex = activeIndexFromPath >= 0 ? activeIndexFromPath : 0;
   const itemWidth = containerWidth > 0 ? containerWidth / navItems.length : 0;
 
-  const indicatorTranslateX = useRef(new Animated.Value(0)).current;
-  const indicatorScale = useRef(new Animated.Value(1)).current;
+  const [indicatorTranslateX] = useState(() => new Animated.Value(0));
+  const [indicatorScale] = useState(() => new Animated.Value(1));
 
   useEffect(() => {
     if (itemWidth <= 0) {

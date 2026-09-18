@@ -19,23 +19,24 @@ import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
 import {
+  CHECKINS_UPDATED_EVENT,
+  getDailyCheckins,
+  type DailyCheckin,
+} from "../lib/checkinSystem";
+import {
+  getErgoPreventStorageSnapshot,
+} from "../lib/dataManagement";
+import {
+  getDeclarativeIndexLabel,
+  getWorkstationIndexLabel,
+} from "../lib/evidenceContent";
+import {
   IconBadge,
   ProfileIcon,
   ProgressIcon,
   PlanIcon,
   RoutineIcon,
 } from "../components/ErgoIcons";
-
-type DailyCheckin = {
-  id: string;
-  createdAt: string;
-  date: string;
-  time: string;
-  painLevel: number;
-  fatigueLevel: string;
-  mainZone: string;
-  note: string;
-};
 
 type ExportIconProps = {
   size?: number;
@@ -57,11 +58,6 @@ type QuickAction = {
   }>;
 };
 
-const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
-const ROUTINE_STORAGE_KEY = "ergoprevent_daily_routine";
-const THEME_STORAGE_KEY = "ergoprevent_theme_mode";
-
-const CHECKINS_UPDATED_EVENT = "ergoprevent_checkins_updated";
 const ROUTINE_UPDATED_EVENT = "ergoprevent_routine_updated";
 
 const quickActions: QuickAction[] = [
@@ -75,7 +71,7 @@ const quickActions: QuickAction[] = [
   {
     label: "Résumé",
     title: "Dashboard",
-    text: "Voir vos scores et points.",
+    text: "Voir vos indices et points.",
     href: "/dashboard",
     Icon: ProgressIcon,
   },
@@ -94,68 +90,6 @@ const quickActions: QuickAction[] = [
     Icon: PlanIcon,
   },
 ];
-
-function normalizeCheckin(checkin: any, index: number): DailyCheckin {
-  const date = checkin.date ?? "Date inconnue";
-  const time = checkin.time ?? "00:00";
-
-  return {
-    id: checkin.id ?? `${date}-${time}-${index}`,
-    createdAt: checkin.createdAt ?? `${date}T${time}:00`,
-    date,
-    time,
-    painLevel: checkin.painLevel ?? 0,
-    fatigueLevel: checkin.fatigueLevel ?? "Moyenne",
-    mainZone: checkin.mainZone ?? "Aucune zone",
-    note: checkin.note ?? "",
-  };
-}
-
-function getSavedCheckins(): DailyCheckin[] {
-  if (typeof window === "undefined") {
-    return [];
-  }
-
-  const savedData = window.localStorage.getItem(CHECKIN_STORAGE_KEY);
-
-  if (!savedData) {
-    return [];
-  }
-
-  try {
-    const parsedData = JSON.parse(savedData);
-
-    if (Array.isArray(parsedData)) {
-      return parsedData
-        .map((checkin, index) => normalizeCheckin(checkin, index))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    }
-
-    return Object.values(parsedData)
-      .map((checkin, index) => normalizeCheckin(checkin, index))
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  } catch {
-    return [];
-  }
-}
-
-function readLocalStorageValue(key: string) {
-  if (typeof window === "undefined") {
-    return null;
-  }
-
-  const value = window.localStorage.getItem(key);
-
-  if (!value) {
-    return null;
-  }
-
-  try {
-    return JSON.parse(value);
-  } catch {
-    return value;
-  }
-}
 
 function escapeCsvValue(value: string | number | null | undefined) {
   const text = value === null || value === undefined ? "" : String(value);
@@ -182,7 +116,11 @@ function convertCheckinsToCsv(checkins: DailyCheckin[]) {
     "heure",
     "douleur_sur_10",
     "fatigue",
-    "zone_principale",
+    "zones",
+    "poste",
+    "activite",
+    "duree_contexte",
+    "intervention_liee",
     "note",
   ];
 
@@ -192,7 +130,11 @@ function convertCheckinsToCsv(checkins: DailyCheckin[]) {
     checkin.time,
     checkin.painLevel,
     checkin.fatigueLevel,
-    checkin.mainZone,
+    checkin.zones.join(" | "),
+    checkin.workstationName,
+    checkin.activity,
+    checkin.durationCategory,
+    checkin.linkedEventId,
     checkin.note,
   ]);
 
@@ -208,14 +150,14 @@ function convertSummaryToCsv(stats: AppStats, checkins: DailyCheckin[]) {
     ["Statut", stats.profile?.status ?? ""],
     ["Profession", stats.profile?.profession ?? ""],
     ["Objectif principal", stats.profile?.mainGoal ?? ""],
-    ["Score TMS", stats.questionnaireResult?.score ?? ""],
-    ["Niveau TMS", stats.questionnaireResult?.level ?? ""],
+    ["Indice déclaratif interne", stats.questionnaireResult?.score ?? ""],
+    ["Libellé indice déclaratif", stats.questionnaireResult ? getDeclarativeIndexLabel(stats.questionnaireResult.score) : ""],
     [
       "Priorités TMS",
       stats.questionnaireResult?.priorities?.join(" | ") ?? "",
     ],
-    ["Score poste", stats.workstationAuditResult?.score ?? ""],
-    ["Niveau poste", stats.workstationAuditResult?.level ?? ""],
+    ["Indice poste interne", stats.workstationAuditResult?.score ?? ""],
+    ["Libellé indice poste", stats.workstationAuditResult ? getWorkstationIndexLabel(stats.workstationAuditResult.score) : ""],
     [
       "Priorités poste",
       stats.workstationAuditResult?.priorities?.join(" | ") ?? "",
@@ -269,20 +211,16 @@ function getMostFrequentZone(checkins: DailyCheckin[]) {
   const zoneCounts: Record<string, number> = {};
 
   checkins.forEach((checkin) => {
-    if (checkin.mainZone === "Aucune zone") {
-      return;
-    }
-
-    zoneCounts[checkin.mainZone] = (zoneCounts[checkin.mainZone] ?? 0) + 1;
+    checkin.zones.forEach((zone) => {
+      zoneCounts[zone] = (zoneCounts[zone] ?? 0) + 1;
+    });
   });
 
-  const sortedZones = Object.entries(zoneCounts).sort((a, b) => b[1] - a[1]);
+  const sortedZones = Object.entries(zoneCounts).sort(
+    (a, b) => b[1] - a[1]
+  );
 
-  if (sortedZones.length === 0) {
-    return "Aucune zone dominante";
-  }
-
-  return sortedZones[0][0];
+  return sortedZones[0]?.[0] ?? "Aucune zone dominante";
 }
 
 function createPdfReportHtml(stats: AppStats, checkins: DailyCheckin[]) {
@@ -305,6 +243,9 @@ function createPdfReportHtml(stats: AppStats, checkins: DailyCheckin[]) {
                 <td>${escapeHtml(checkin.painLevel)}/10</td>
                 <td>${escapeHtml(checkin.fatigueLevel)}</td>
                 <td>${escapeHtml(checkin.mainZone)}</td>
+                <td>${escapeHtml(checkin.workstationName)}</td>
+                <td>${escapeHtml(checkin.activity)}</td>
+                <td>${escapeHtml(checkin.durationCategory)}</td>
                 <td>${escapeHtml(checkin.note || "-")}</td>
               </tr>
             `
@@ -312,7 +253,7 @@ function createPdfReportHtml(stats: AppStats, checkins: DailyCheckin[]) {
           .join("")
       : `
           <tr>
-            <td colspan="6">Aucun check-in sauvegardé.</td>
+            <td colspan="9">Aucun check-in sauvegardé.</td>
           </tr>
         `;
 
@@ -417,23 +358,31 @@ function createPdfReportHtml(stats: AppStats, checkins: DailyCheckin[]) {
           <div><span class="label">Objectif :</span> ${escapeHtml(profile?.mainGoal || "-")}</div>
         </div>
 
-        <h2>Scores</h2>
+        <h2>Indices internes</h2>
         <div class="box grid">
           <div>
-            <span class="label">Score TMS :</span>
+            <span class="label">Indice déclaratif :</span>
             ${questionnaire ? `${escapeHtml(questionnaire.score)}/100` : "-"}
           </div>
           <div>
-            <span class="label">Niveau TMS :</span>
-            ${escapeHtml(questionnaire?.level || "-")}
+            <span class="label">Libellé indice déclaratif :</span>
+            ${escapeHtml(
+              questionnaire
+                ? getDeclarativeIndexLabel(questionnaire.score)
+                : "-"
+            )}
           </div>
           <div>
-            <span class="label">Score poste :</span>
+            <span class="label">Indice poste :</span>
             ${workstation ? `${escapeHtml(workstation.score)}/100` : "-"}
           </div>
           <div>
-            <span class="label">Niveau poste :</span>
-            ${escapeHtml(workstation?.level || "-")}
+            <span class="label">Libellé indice poste :</span>
+            ${escapeHtml(
+              workstation
+                ? getWorkstationIndexLabel(workstation.score)
+                : "-"
+            )}
           </div>
         </div>
 
@@ -472,6 +421,9 @@ function createPdfReportHtml(stats: AppStats, checkins: DailyCheckin[]) {
               <th>Douleur</th>
               <th>Fatigue</th>
               <th>Zone</th>
+              <th>Poste</th>
+              <th>Activité</th>
+              <th>Durée</th>
               <th>Note</th>
             </tr>
           </thead>
@@ -703,7 +655,7 @@ function DownloadIcon({
 export default function ExportDataScreen() {
   const [stats, setStats] = useState<AppStats>(() => getAppStats());
   const [checkins, setCheckins] = useState<DailyCheckin[]>(() =>
-    getSavedCheckins()
+    getDailyCheckins()
   );
   const [message, setMessage] = useState("");
 
@@ -714,7 +666,7 @@ export default function ExportDataScreen() {
   useEffect(() => {
     function refreshData() {
       setStats(getAppStats());
-      setCheckins(getSavedCheckins());
+      setCheckins(getDailyCheckins());
     }
 
     refreshData();
@@ -751,8 +703,7 @@ export default function ExportDataScreen() {
   const fullExportData = {
     appStats,
     checkins,
-    routine: readLocalStorageValue(ROUTINE_STORAGE_KEY),
-    themeMode: readLocalStorageValue(THEME_STORAGE_KEY),
+    localData: getErgoPreventStorageSnapshot(),
     exportedAt: new Date().toISOString(),
   };
 
@@ -1051,7 +1002,7 @@ export default function ExportDataScreen() {
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Score TMS</Text>
+              <Text style={styles.summaryLabel}>Indice déclaratif</Text>
               <Text style={styles.summaryValue}>
                 {appStats.questionnaireResult
                   ? `${appStats.questionnaireResult.score}/100`
@@ -1060,7 +1011,7 @@ export default function ExportDataScreen() {
             </View>
 
             <View style={styles.summaryRow}>
-              <Text style={styles.summaryLabel}>Score poste</Text>
+              <Text style={styles.summaryLabel}>Indice poste</Text>
               <Text style={styles.summaryValue}>
                 {appStats.workstationAuditResult
                   ? `${appStats.workstationAuditResult.score}/100`

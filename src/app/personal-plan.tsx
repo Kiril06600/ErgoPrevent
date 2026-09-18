@@ -104,6 +104,13 @@ function getPriorityIcon(priority: string): PlanIconType {
   return PlanIcon;
 }
 
+function renderPriorityIcon(
+  priority: string,
+  props: PlanIconProps
+) {
+  return React.createElement(getPriorityIcon(priority), props);
+}
+
 const quickActions: QuickAction[] = [
   {
     label: "Poste",
@@ -206,7 +213,6 @@ export default function PersonalPlanScreen() {
       contextInsight
   );
   const firstPriority = mainPriorities[0] ?? "Habitudes";
-  const FirstPriorityIcon = getPriorityIcon(firstPriority);
 
   return (
     <AnimatedScreen>
@@ -220,7 +226,7 @@ export default function PersonalPlanScreen() {
             <Text style={styles.pageTitle}>Votre plan</Text>
 
             <Text style={styles.subtitle}>
-              Transformez vos scores en actions simples à appliquer dès
+              Transformez vos indices et priorités en actions simples à appliquer dès
               aujourd’hui.
             </Text>
           </View>
@@ -296,10 +302,10 @@ export default function PersonalPlanScreen() {
                   </View>
 
                   <View style={styles.heroIconBubble}>
-                    <FirstPriorityIcon
-                      size={layout.isMobile ? 22 : 25}
-                      color={colors.text}
-                    />
+                    {renderPriorityIcon(firstPriority, {
+                      size: layout.isMobile ? 22 : 25,
+                      color: colors.text,
+                    })}
                   </View>
                 </View>
 

@@ -1,6 +1,11 @@
 import React from "react";
-import { Image, ImageSourcePropType, StyleSheet, View } from "react-native";
-import { useWindowDimensions } from "react-native";
+import {
+  Image,
+  ImageSourcePropType,
+  StyleSheet,
+  View,
+  useWindowDimensions,
+} from "react-native";
 import { useAppTheme } from "../theme/ThemeContext";
 
 type AppLogoProps = {

@@ -122,7 +122,7 @@ const routineTasks: RoutineTask[] = [
     id: "plan",
     label: "Plan",
     title: "Consulter mon plan personnalisé",
-    text: "Regardez vos priorités et les actions recommandées selon vos scores.",
+    text: "Regardez vos priorités et les actions recommandées selon vos indices.",
     href: "/personal-plan",
     buttonText: "Voir mon plan",
     Icon: PlanIcon,

@@ -33,13 +33,13 @@ const defaultNotificationSettings: NotificationSettings = {
 const legacyDemoTitles = ["Bilan du jour disponible", "Rappel de posture"];
 
 const positiveMessages = [
-  "Chaque petit geste compte. Votre constance aide votre corps à mieux récupérer.",
-  "Prendre une minute pour vous écouter est déjà une vraie action de prévention.",
-  "Un bon suivi commence par une observation simple et régulière.",
-  "Votre confort au travail se construit progressivement, un jour à la fois.",
-  "Même une courte pause peut faire une différence dans votre journée.",
-  "Écouter vos douleurs tôt permet souvent d’éviter qu’elles s’installent.",
-  "Aujourd’hui, l’objectif n’est pas la perfection : seulement rester attentif à votre corps.",
+  "Chaque check-in ajoute un point de repère à votre suivi.",
+  "Prendre une minute pour observer votre contexte aide à documenter les situations qui reviennent.",
+  "Un suivi utile commence par des observations simples et régulières.",
+  "Une courte pause peut être l’occasion de changer de position ou de quitter l’écran.",
+  "Si un inconfort revient, notez le poste, l’activité et la durée du contexte.",
+  "Varier les tâches et les postures fait partie des stratégies de prévention ergonomique.",
+  "L’objectif du suivi est d’observer des tendances, pas de chercher une posture parfaite.",
 ];
 
 function notifyNotificationsUpdated(notifications: AppNotification[]) {
@@ -464,7 +464,7 @@ export function addDailyCheckinCompletedNotificationIfNeeded() {
     id: createNotificationId(),
     title: "Bilan enregistré",
     message:
-      "Bravo, vous avez pris un moment pour écouter votre corps aujourd’hui.",
+      "Votre check-in a été enregistré et ajoute un nouveau point de repère à votre suivi.",
     createdAt: now.toISOString(),
     read: false,
     category: "positive",

@@ -29,6 +29,7 @@ export type InterventionFollowUpInsight = {
   workstationId: string;
   workstationName: string;
   zones: string[];
+  activity: string;
   baselineAverage: number | null;
   followUpAverage: number;
   baselineCount: number;
@@ -43,6 +44,10 @@ const CHECKIN_STORAGE_KEY = "ergoprevent_daily_checkins";
 
 export const CHECKINS_UPDATED_EVENT =
   "ergoprevent_checkins_updated";
+
+export function createDailyCheckinId() {
+  return `checkin-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
 
 export const CHECKIN_ACTIVITY_OPTIONS = [
   "Ordinateur",
@@ -289,163 +294,158 @@ export function getInterventionFollowUpInsights(
   ergonomicEvents: ErgonomicEvent[],
   checkins: DailyCheckin[]
 ): InterventionFollowUpInsight[] {
-  const interventions =
-    ergonomicEvents.filter(
-      (event) =>
-        event.type === "adjustment" ||
-        event.type === "reset"
-    );
-
-  const insights:
-    InterventionFollowUpInsight[] = [];
-
-  interventions.forEach(
-    (event) => {
-      const linkedFollowUps =
-        checkins
-          .filter(
-            (checkin) =>
-              checkin.linkedEventId ===
-              event.id
-          )
-          .sort((a, b) =>
-            a.createdAt.localeCompare(
-              b.createdAt
-            )
-          );
-
-      if (
-        linkedFollowUps.length === 0
-      ) {
-        return;
-      }
-
-      const eventZones =
-        parseZoneText(
-          event.zone ?? ""
-        );
-
-      const baselineCandidates =
-        checkins
-          .filter(
-            (checkin) =>
-              checkin.createdAt <
-                event.createdAt &&
-              checkin.workstationId ===
-                event.workstationId &&
-              checkinMatchesZones(
-                checkin,
-                eventZones
-              )
-          )
-          .sort((a, b) =>
-            b.createdAt.localeCompare(
-              a.createdAt
-            )
-          )
-          .slice(0, 3);
-
-      const baselineAverage =
-        averagePain(
-          baselineCandidates
-        );
-
-      const followUpAverage =
-        averagePain(
-          linkedFollowUps
-        ) ?? 0;
-
-      let direction:
-        FollowUpDirection =
-        "insufficient";
-
-      let title =
-        "Suivi après intervention";
-
-      let text =
-        "Un suivi a été enregistré après cette intervention, mais il n’y a pas encore de mesure antérieure comparable pour décrire l’évolution.";
-
-      if (
-        baselineAverage !== null
-      ) {
-        if (
-          followUpAverage <
-          baselineAverage
-        ) {
-          direction = "lower";
-          title =
-            "Intensité rapportée plus faible";
-        } else if (
-          followUpAverage >
-          baselineAverage
-        ) {
-          direction = "higher";
-          title =
-            "Intensité rapportée plus élevée";
-        } else {
-          direction = "stable";
-          title =
-            "Intensité rapportée similaire";
-        }
-
-        const directionText =
-          direction === "lower"
-            ? "plus faible"
-            : direction === "higher"
-              ? "plus élevée"
-              : "similaire";
-
-        text =
-          `Avant l’intervention : ${baselineAverage}/10 en moyenne ` +
-          `(${baselineCandidates.length} mesure${baselineCandidates.length > 1 ? "s" : ""}). ` +
-          `Suivi lié : ${followUpAverage}/10 en moyenne ` +
-          `(${linkedFollowUps.length} mesure${linkedFollowUps.length > 1 ? "s" : ""}). ` +
-          `L’intensité rapportée est ${directionText}. ` +
-          `Cette comparaison décrit une évolution temporelle et ne prouve pas que l’intervention en est la cause.`;
-      }
-
-      insights.push({
-        interventionId:
-          event.id,
-
-        interventionType:
-          event.type as
-            | "adjustment"
-            | "reset",
-
-        workstationId:
-          event.workstationId,
-
-        workstationName:
-          event.workstationName ||
-          "Poste non précisé",
-
-        zones:
-          eventZones,
-
-        baselineAverage,
-        followUpAverage,
-
-        baselineCount:
-          baselineCandidates.length,
-
-        followUpCount:
-          linkedFollowUps.length,
-
-        direction,
-        title,
-        text,
-
-        createdAt:
-          event.createdAt,
-      });
-    }
+  const interventions = ergonomicEvents.filter(
+    (event) =>
+      event.type === "adjustment" ||
+      event.type === "reset"
   );
 
-  return insights.sort(
-    (a, b) =>
-      b.createdAt.localeCompare(
-        a.createdAt
+  const insights: InterventionFollowUpInsight[] = [];
+
+  interventions.forEach((event) => {
+    const linkedFollowUps = checkins
+      .filter(
+        (checkin) =>
+          checkin.linkedEventId === event.id
       )
+      .sort((a, b) =>
+        a.createdAt.localeCompare(b.createdAt)
+      );
+
+    if (linkedFollowUps.length === 0) {
+      return;
+    }
+
+    const eventZones = parseZoneText(event.zone ?? "");
+    const linkedZones = Array.from(
+      new Set(
+        linkedFollowUps.flatMap(
+          (checkin) => checkin.zones
+        )
+      )
+    );
+
+    const comparisonZones =
+      eventZones.length > 0
+        ? eventZones
+        : linkedZones;
+
+    const linkedActivity =
+      linkedFollowUps.find(
+        (checkin) =>
+          checkin.activity !== "Non précisée"
+      )?.activity ?? "Non précisée";
+
+    const comparisonActivity =
+      linkedActivity !== "Non précisée"
+        ? linkedActivity
+        : event.activity?.trim() ||
+          "Non précisée";
+
+    const baselineCandidates = checkins
+      .filter((checkin) => {
+        if (
+          checkin.createdAt >= event.createdAt ||
+          checkin.workstationId !== event.workstationId
+        ) {
+          return false;
+        }
+
+        if (
+          !checkinMatchesZones(
+            checkin,
+            comparisonZones
+          )
+        ) {
+          return false;
+        }
+
+        if (
+          comparisonActivity !== "Non précisée" &&
+          checkin.activity !== comparisonActivity
+        ) {
+          return false;
+        }
+
+        return true;
+      })
+      .sort((a, b) =>
+        b.createdAt.localeCompare(a.createdAt)
+      )
+      .slice(0, 3);
+
+    const baselineAverage =
+      averagePain(baselineCandidates);
+
+    const followUpAverage =
+      averagePain(linkedFollowUps) ?? 0;
+
+    let direction: FollowUpDirection =
+      "insufficient";
+
+    let title =
+      "Suivi après intervention";
+
+    let text =
+      "Un suivi a été enregistré après cette intervention, mais il n’y a pas encore de mesure antérieure suffisamment comparable pour décrire l’évolution.";
+
+    if (baselineAverage !== null) {
+      if (followUpAverage < baselineAverage) {
+        direction = "lower";
+        title =
+          "Intensité rapportée plus faible";
+      } else if (
+        followUpAverage > baselineAverage
+      ) {
+        direction = "higher";
+        title =
+          "Intensité rapportée plus élevée";
+      } else {
+        direction = "stable";
+        title =
+          "Intensité rapportée similaire";
+      }
+
+      const directionText =
+        direction === "lower"
+          ? "plus faible"
+          : direction === "higher"
+            ? "plus élevée"
+            : "similaire";
+
+      text =
+        `Avant l’intervention : ${baselineAverage}/10 en moyenne ` +
+        `(${baselineCandidates.length} mesure${baselineCandidates.length > 1 ? "s" : ""} comparable${baselineCandidates.length > 1 ? "s" : ""}). ` +
+        `Suivi lié : ${followUpAverage}/10 en moyenne ` +
+        `(${linkedFollowUps.length} mesure${linkedFollowUps.length > 1 ? "s" : ""}). ` +
+        `L’intensité rapportée est ${directionText}. ` +
+        `Cette comparaison reste descriptive et ne prouve pas que l’intervention en est la cause.`;
+    }
+
+    insights.push({
+      interventionId: event.id,
+      interventionType:
+        event.type as "adjustment" | "reset",
+      workstationId: event.workstationId,
+      workstationName:
+        event.workstationName ||
+        "Poste non précisé",
+      zones: comparisonZones,
+      activity: comparisonActivity,
+      baselineAverage,
+      followUpAverage,
+      baselineCount:
+        baselineCandidates.length,
+      followUpCount:
+        linkedFollowUps.length,
+      direction,
+      title,
+      text,
+      createdAt: event.createdAt,
+    });
+  });
+
+  return insights.sort((a, b) =>
+    b.createdAt.localeCompare(a.createdAt)
   );
 }

@@ -423,6 +423,12 @@ export default function ProgressScreen() {
                             </Text>
                           )}
 
+                          {insight.activity !== "Non précisée" && (
+                            <Text style={styles.followUpMeta}>
+                              Activité comparable : {insight.activity}
+                            </Text>
+                          )}
+
                           <Link href={targetedHref} asChild>
                             <PressableScale style={styles.followUpButton}>
                               <Text style={styles.followUpButtonText}>

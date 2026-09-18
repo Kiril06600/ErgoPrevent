@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useState } from "react";
 import {
   Animated,
   Pressable,
@@ -27,7 +27,7 @@ export default function PressableScale({
   onPressOut,
   ...props
 }: PressableScaleProps) {
-  const scale = useRef(new Animated.Value(1)).current;
+  const [scale] = useState(() => new Animated.Value(1));
   const [isPressed, setIsPressed] = useState(false);
 
   function animateTo(value: number) {

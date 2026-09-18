@@ -35,6 +35,7 @@ import {
 } from "../lib/ergonomicSystem";
 import {
   getDeclarativeIndexLabel,
+  getWorkstationIndexLabel,
 } from "../lib/evidenceContent";
 import {
   IconBadge,
@@ -108,7 +109,7 @@ const quickActions: QuickAction[] = [
   {
     label: "Évaluer",
     title: "Questionnaire",
-    text: "Mettre à jour le score TMS.",
+    text: "Mettre à jour l’indice déclaratif.",
     href: "/questionnaire",
     Icon: EducationIcon,
   },
@@ -261,7 +262,9 @@ export default function DashboardScreen() {
     : null;
 
   const workstationScore = workstationAuditResult?.score ?? 0;
-  const workstationLevel = workstationAuditResult?.level ?? "Audit non complété";
+  const workstationLevel = workstationAuditResult
+    ? getWorkstationIndexLabel(workstationAuditResult.score)
+    : "Audit non complété";
   const workstationPriorities = workstationAuditResult?.priorities ?? [];
 
   const completedBreaks = stats.completedBreaks ?? 0;
@@ -325,7 +328,7 @@ export default function DashboardScreen() {
             </Text>
 
             <Text style={styles.subtitle}>
-              Suivez votre progression, vos scores et vos habitudes de
+              Suivez votre progression, vos indices et vos habitudes de
               prévention.
             </Text>
           </View>

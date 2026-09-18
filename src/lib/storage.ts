@@ -17,6 +17,11 @@ export type UserProfile = {
   status: string;
   profession: string;
   mainGoal: string;
+  dateOfBirth?: string;
+  sex?: string;
+  dominantHand?: "Droite" | "Gauche" | "Ambidextre" | "";
+  dominantEye?: "Droit" | "Gauche" | "Je ne sais pas" | "";
+  progressiveLenses?: "Oui" | "Non" | "Je ne sais pas" | "";
 };
 
 export type AppStats = {

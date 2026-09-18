@@ -1,5 +1,6 @@
 import React, {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useMemo,
@@ -241,6 +242,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     const savedMode = window.localStorage.getItem(THEME_STORAGE_KEY);
 
     if (savedMode === "light" || savedMode === "dark") {
+      // Hydratation volontaire de la préférence sauvegardée côté client.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setMode(savedMode);
       applyGlobalWebBackground(savedMode);
       return;
@@ -253,7 +256,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     applyGlobalWebBackground(mode);
   }, [mode]);
 
-  function setThemeMode(nextMode: ThemeMode) {
+  const setThemeMode = useCallback((nextMode: ThemeMode) => {
     setMode(nextMode);
 
     if (typeof window !== "undefined") {
@@ -261,11 +264,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }
 
     applyGlobalWebBackground(nextMode);
-  }
+  }, []);
 
-  function toggleTheme() {
+  const toggleTheme = useCallback(() => {
     setThemeMode(mode === "dark" ? "light" : "dark");
-  }
+  }, [mode, setThemeMode]);
 
   const colors = mode === "dark" ? darkColors : lightColors;
 
@@ -276,7 +279,7 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       toggleTheme,
       setThemeMode,
     }),
-    [mode, colors]
+    [mode, colors, toggleTheme, setThemeMode]
   );
 
   return <ThemeContext.Provider value={value}>{children}</ThemeContext.Provider>;

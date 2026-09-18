@@ -105,16 +105,6 @@ function writeJson<T>(key: string, value: T) {
   emitErgonomicUpdate();
 }
 
-function toNumber(value: string) {
-  const number = Number(value.replace(",", "."));
-
-  return Number.isFinite(number) ? number : null;
-}
-
-function formatRange(min: number, max: number) {
-  return `${Math.round(min)}–${Math.round(max)} cm`;
-}
-
 export function getErgonomicProfile(): ErgonomicProfile | null {
   return readJson<ErgonomicProfile | null>(ERGONOMIC_PROFILE_KEY, null);
 }
@@ -129,34 +119,27 @@ export function saveErgonomicProfile(profile: ErgonomicProfile) {
 export function getReferenceSettings(
   profile: ErgonomicProfile | null
 ): ReferenceSettings {
-  const poplitealHeight = profile ? toNumber(profile.poplitealHeightCm) : null;
-  const seatedElbowHeight = profile
-    ? toNumber(profile.seatedElbowHeightCm)
-    : null;
+  const poplitealMeasure = profile?.poplitealHeightCm.trim() ?? "";
+  const elbowMeasure = profile?.seatedElbowHeightCm.trim() ?? "";
 
-  const seatHeightRange =
-    poplitealHeight !== null
-      ? formatRange(poplitealHeight - 1, poplitealHeight + 2)
-      : "À compléter";
+  const seatHeightRange = poplitealMeasure
+    ? `Mesure personnelle : ${poplitealMeasure} cm. Ajustez ensuite l’assise pour garder les pieds en appui stable et l’arrière des genoux dégagé.`
+    : "À compléter. L’assise doit permettre un appui stable des pieds et laisser l’arrière des genoux dégagé.";
 
-  const deskHeightRange =
-    seatedElbowHeight !== null
-      ? formatRange(seatedElbowHeight + 1, seatedElbowHeight + 4)
-      : "À compléter";
+  const deskHeightRange = elbowMeasure
+    ? `Mesure personnelle du coude assis : ${elbowMeasure} cm. Ajustez la surface de travail pour garder les épaules relâchées et les coudes dans une position confortable.`
+    : "À compléter. Ajustez la surface de travail pour garder les épaules relâchées et les coudes dans une position confortable.";
 
   const armrestReference =
-    seatedElbowHeight !== null
-      ? `Autour de ${Math.round(
-          seatedElbowHeight
-        )} cm, selon le confort des épaules`
-      : "À compléter";
+    "Soutenez les avant-bras sans faire remonter les épaules et sans empêcher de vous rapprocher du plan de travail.";
 
-  const screenDistanceRange = "50–70 cm environ";
+  const screenDistanceRange =
+    "Environ une longueur de bras; la distance œil-écran est généralement de 50 à 70 cm selon la taille et la résolution de l’écran.";
 
   const screenHeightAdvice =
     profile?.progressiveLenses === "Oui"
-      ? "Avec des verres progressifs, évitez un écran trop haut. Le regard doit rester confortable sans extension du cou."
-      : "Le haut de l’écran devrait être autour du niveau visuel, sans relever le menton.";
+      ? "Avec des verres progressifs, placez l’écran plus bas afin de lire sans relever la tête."
+      : "Placez le haut de l’écran autour du niveau des yeux et ajustez selon votre confort visuel.";
 
   return {
     seatHeightRange,
