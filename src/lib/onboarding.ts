@@ -1,3 +1,5 @@
+import { appStorage, emitAppEvent, isAppStorageAvailable } from "./appRuntime";
+
 export type OnboardingData = {
   firstName: string;
   status: string;
@@ -13,19 +15,19 @@ export const ONBOARDING_DATA_KEY = "ergoprevent_onboarding_data";
 export const ONBOARDING_UPDATED_EVENT = "ergoprevent_onboarding_updated";
 
 export function isOnboardingCompleted() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return false;
   }
 
-  return window.localStorage.getItem(ONBOARDING_COMPLETED_KEY) === "true";
+  return appStorage.getItem(ONBOARDING_COMPLETED_KEY) === "true";
 }
 
 export function getOnboardingData(): OnboardingData | null {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return null;
   }
 
-  const savedData = window.localStorage.getItem(ONBOARDING_DATA_KEY);
+  const savedData = appStorage.getItem(ONBOARDING_DATA_KEY);
 
   if (!savedData) {
     return null;
@@ -39,30 +41,30 @@ export function getOnboardingData(): OnboardingData | null {
 }
 
 export function saveOnboardingData(data: OnboardingData) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.setItem(ONBOARDING_DATA_KEY, JSON.stringify(data));
-  window.dispatchEvent(new Event(ONBOARDING_UPDATED_EVENT));
+  appStorage.setItem(ONBOARDING_DATA_KEY, JSON.stringify(data));
+  emitAppEvent(ONBOARDING_UPDATED_EVENT);
 }
 
 export function completeOnboarding(data: OnboardingData) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
   saveOnboardingData(data);
-  window.localStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
-  window.dispatchEvent(new Event(ONBOARDING_UPDATED_EVENT));
+  appStorage.setItem(ONBOARDING_COMPLETED_KEY, "true");
+  emitAppEvent(ONBOARDING_UPDATED_EVENT);
 }
 
 export function resetOnboarding() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.removeItem(ONBOARDING_COMPLETED_KEY);
-  window.localStorage.removeItem(ONBOARDING_DATA_KEY);
-  window.dispatchEvent(new Event(ONBOARDING_UPDATED_EVENT));
+  appStorage.removeItem(ONBOARDING_COMPLETED_KEY);
+  appStorage.removeItem(ONBOARDING_DATA_KEY);
+  emitAppEvent(ONBOARDING_UPDATED_EVENT);
 }

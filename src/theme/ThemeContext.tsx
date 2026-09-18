@@ -7,6 +7,7 @@ import React, {
   useState,
 } from "react";
 import { darkColors, lightColors, ThemeColors } from "./colors";
+import { appStorage, isAppStorageAvailable } from "../lib/appRuntime";
 
 export type ThemeMode = "light" | "dark";
 
@@ -235,11 +236,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const [mode, setMode] = useState<ThemeMode>("dark");
 
   useEffect(() => {
-    if (typeof window === "undefined") {
+    if (!isAppStorageAvailable()) {
       return;
     }
 
-    const savedMode = window.localStorage.getItem(THEME_STORAGE_KEY);
+    const savedMode = appStorage.getItem(THEME_STORAGE_KEY);
 
     if (savedMode === "light" || savedMode === "dark") {
       // Hydratation volontaire de la préférence sauvegardée côté client.
@@ -259,8 +260,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const setThemeMode = useCallback((nextMode: ThemeMode) => {
     setMode(nextMode);
 
-    if (typeof window !== "undefined") {
-      window.localStorage.setItem(THEME_STORAGE_KEY, nextMode);
+    if (isAppStorageAvailable()) {
+      appStorage.setItem(THEME_STORAGE_KEY, nextMode);
     }
 
     applyGlobalWebBackground(nextMode);

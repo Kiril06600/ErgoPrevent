@@ -18,6 +18,13 @@ import PressableScale from "../components/PressableScale";
 import { useResponsiveLayout } from "../hooks/useResponsiveLayout";
 import { ThemeColors } from "../theme/colors";
 import { useAppTheme } from "../theme/ThemeContext";
+import {
+  appStorage,
+  emitAppEvent,
+  isAppStorageAvailable,
+  subscribeAppEvent,
+  subscribeAppRefreshSignals,
+} from "../lib/appRuntime";
 import ContextInsightCard from "../components/ContextInsightCard";
 import {
   CHECKINS_UPDATED_EVENT,
@@ -158,12 +165,12 @@ function getTodayKey() {
 }
 
 function getCompletedTasksForToday() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return [];
   }
 
   const todayKey = getTodayKey();
-  const savedData = window.localStorage.getItem(ROUTINE_STORAGE_KEY);
+  const savedData = appStorage.getItem(ROUTINE_STORAGE_KEY);
 
   if (!savedData) {
     return [];
@@ -178,12 +185,12 @@ function getCompletedTasksForToday() {
 }
 
 function saveCompletedTasksForToday(taskIds: string[]) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
   const todayKey = getTodayKey();
-  const savedData = window.localStorage.getItem(ROUTINE_STORAGE_KEY);
+  const savedData = appStorage.getItem(ROUTINE_STORAGE_KEY);
 
   let parsedData = {};
 
@@ -198,8 +205,8 @@ function saveCompletedTasksForToday(taskIds: string[]) {
     [todayKey]: taskIds,
   };
 
-  window.localStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(updatedData));
-  window.dispatchEvent(new Event(ROUTINE_UPDATED_EVENT));
+  appStorage.setItem(ROUTINE_STORAGE_KEY, JSON.stringify(updatedData));
+  emitAppEvent(ROUTINE_UPDATED_EVENT);
 }
 
 export default function RoutineScreen() {
@@ -228,24 +235,31 @@ export default function RoutineScreen() {
 
     refreshData();
 
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-    window.addEventListener(ROUTINE_UPDATED_EVENT, refreshData);
-    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
-    window.addEventListener("focus", refreshData);
-    window.addEventListener("storage", refreshData);
+    const unsubscribeStats = subscribeAppEvent(
+      APP_STATS_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeRoutine = subscribeAppEvent(
+      ROUTINE_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeCheckins = subscribeAppEvent(
+      CHECKINS_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeErgonomic = subscribeAppEvent(
+      ERGONOMIC_SYSTEM_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(refreshData);
 
     return () => {
-      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-      window.removeEventListener(ROUTINE_UPDATED_EVENT, refreshData);
-      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
-      window.removeEventListener("focus", refreshData);
-      window.removeEventListener("storage", refreshData);
+      unsubscribeStats();
+      unsubscribeRoutine();
+      unsubscribeCheckins();
+      unsubscribeErgonomic();
+      unsubscribeRefreshSignals();
     };
   }, []);
 

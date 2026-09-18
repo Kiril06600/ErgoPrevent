@@ -1,3 +1,5 @@
+import { appStorage, emitAppEvent, isAppStorageAvailable } from "./appRuntime";
+
 export type DominantHand = "Droite" | "Gauche" | "Ambidextre" | "";
 export type DominantEye = "Droit" | "Gauche" | "Je ne sais pas" | "";
 export type ProgressiveLenses = "Oui" | "Non" | "Je ne sais pas" | "";
@@ -67,11 +69,11 @@ export const ERGONOMIC_SYSTEM_UPDATED_EVENT =
   "ergoprevent_ergonomic_system_updated";
 
 function emitErgonomicUpdate() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.dispatchEvent(new Event(ERGONOMIC_SYSTEM_UPDATED_EVENT));
+  emitAppEvent(ERGONOMIC_SYSTEM_UPDATED_EVENT);
 }
 
 function createId(prefix: string) {
@@ -79,11 +81,11 @@ function createId(prefix: string) {
 }
 
 function readJson<T>(key: string, fallback: T): T {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return fallback;
   }
 
-  const savedData = window.localStorage.getItem(key);
+  const savedData = appStorage.getItem(key);
 
   if (!savedData) {
     return fallback;
@@ -97,11 +99,11 @@ function readJson<T>(key: string, fallback: T): T {
 }
 
 function writeJson<T>(key: string, value: T) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.setItem(key, JSON.stringify(value));
+  appStorage.setItem(key, JSON.stringify(value));
   emitErgonomicUpdate();
 }
 
@@ -151,20 +153,20 @@ export function getReferenceSettings(
 }
 
 export function getPrimaryWorkstationId() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return "";
   }
 
-  return window.localStorage.getItem(PRIMARY_WORKSTATION_KEY) ?? "";
+  return appStorage.getItem(PRIMARY_WORKSTATION_KEY) ?? "";
 }
 
 export function setPrimaryWorkstationId(id: string) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.setItem(PRIMARY_WORKSTATION_KEY, id);
-  window.localStorage.setItem(CURRENT_WORKSTATION_KEY, id);
+  appStorage.setItem(PRIMARY_WORKSTATION_KEY, id);
+  appStorage.setItem(CURRENT_WORKSTATION_KEY, id);
   emitErgonomicUpdate();
 }
 
@@ -190,19 +192,19 @@ export function getWorkstations(): Workstation[] {
 }
 
 export function getCurrentWorkstationId() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return "";
   }
 
-  return window.localStorage.getItem(CURRENT_WORKSTATION_KEY) ?? "";
+  return appStorage.getItem(CURRENT_WORKSTATION_KEY) ?? "";
 }
 
 export function setCurrentWorkstationId(id: string) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.setItem(CURRENT_WORKSTATION_KEY, id);
+  appStorage.setItem(CURRENT_WORKSTATION_KEY, id);
   emitErgonomicUpdate();
 }
 
@@ -634,14 +636,14 @@ export function getWorkstationErgonomicInsight(
 }
 
 export function resetErgonomicSystem() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.removeItem(ERGONOMIC_PROFILE_KEY);
-  window.localStorage.removeItem(WORKSTATIONS_KEY);
-  window.localStorage.removeItem(CURRENT_WORKSTATION_KEY);
-  window.localStorage.removeItem(PRIMARY_WORKSTATION_KEY);
-  window.localStorage.removeItem(ERGONOMIC_EVENTS_KEY);
+  appStorage.removeItem(ERGONOMIC_PROFILE_KEY);
+  appStorage.removeItem(WORKSTATIONS_KEY);
+  appStorage.removeItem(CURRENT_WORKSTATION_KEY);
+  appStorage.removeItem(PRIMARY_WORKSTATION_KEY);
+  appStorage.removeItem(ERGONOMIC_EVENTS_KEY);
   emitErgonomicUpdate();
 }

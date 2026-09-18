@@ -1,3 +1,5 @@
+import { appStorage, emitAppEvent, isAppStorageAvailable } from "./appRuntime";
+
 const ERGOPREVENT_STORAGE_PREFIX = "ergoprevent_";
 
 const ERGOPREVENT_UPDATE_EVENTS = [
@@ -22,7 +24,7 @@ export function getErgoPreventStorageSnapshot(): Record<
   string,
   unknown
 > {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return {};
   }
 
@@ -30,10 +32,10 @@ export function getErgoPreventStorageSnapshot(): Record<
 
   for (
     let index = 0;
-    index < window.localStorage.length;
+    index < appStorage.length;
     index += 1
   ) {
-    const key = window.localStorage.key(index);
+    const key = appStorage.key(index);
 
     if (
       !key ||
@@ -45,7 +47,7 @@ export function getErgoPreventStorageSnapshot(): Record<
     }
 
     const value =
-      window.localStorage.getItem(key);
+      appStorage.getItem(key);
 
     if (value === null) {
       continue;
@@ -69,7 +71,7 @@ export function getErgoPreventStorageSnapshot(): Record<
 }
 
 export function clearAllErgoPreventLocalData() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
@@ -77,10 +79,10 @@ export function clearAllErgoPreventLocalData() {
 
   for (
     let index = 0;
-    index < window.localStorage.length;
+    index < appStorage.length;
     index += 1
   ) {
-    const key = window.localStorage.key(index);
+    const key = appStorage.key(index);
 
     if (
       key &&
@@ -93,18 +95,10 @@ export function clearAllErgoPreventLocalData() {
   }
 
   keysToRemove.forEach((key) => {
-    window.localStorage.removeItem(key);
+    appStorage.removeItem(key);
   });
 
-  ERGOPREVENT_UPDATE_EVENTS.forEach(
-    (eventName) => {
-      window.dispatchEvent(
-        new Event(eventName)
-      );
-    }
-  );
-
-  window.dispatchEvent(
-    new Event("storage")
-  );
+  ERGOPREVENT_UPDATE_EVENTS.forEach((eventName) => {
+    emitAppEvent(eventName);
+  });
 }

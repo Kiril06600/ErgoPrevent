@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { subscribeAppEvent, subscribeAppRefreshSignals } from "../lib/appRuntime";
 import { SafeAreaView, ScrollView, View, Text, StyleSheet } from "react-native";
 import { useRouter } from "expo-router";
 import AnimatedScreen from "../components/AnimatedScreen";
@@ -26,18 +27,17 @@ export default function WorkstationDetailScreen() {
       setRefreshKey((currentValue) => currentValue + 1);
     }
 
-    if (typeof window === "undefined") {
-      return;
-    }
+    const unsubscribeEvent1 = subscribeAppEvent(
+      ERGONOMIC_SYSTEM_UPDATED_EVENT,
+      refresh
+    );
 
-    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refresh);
-    window.addEventListener("focus", refresh);
-    window.addEventListener("storage", refresh);
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(refresh);
 
     return () => {
-      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refresh);
-      window.removeEventListener("focus", refresh);
-      window.removeEventListener("storage", refresh);
+      unsubscribeEvent1();
+      unsubscribeRefreshSignals();
     };
   }, []);
 

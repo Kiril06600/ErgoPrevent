@@ -1,3 +1,5 @@
+import { appStorage, emitAppEvent, isAppStorageAvailable } from "./appRuntime";
+
 export type QuestionnaireResult = {
   score: number;
   level: string;
@@ -53,23 +55,19 @@ const defaultStats: AppStats = {
 };
 
 function notifyAppStatsUpdated(stats: AppStats) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.dispatchEvent(
-    new CustomEvent(APP_STATS_UPDATED_EVENT, {
-      detail: stats,
-    })
-  );
+  emitAppEvent(APP_STATS_UPDATED_EVENT, stats);
 }
 
 export function getAppStats(): AppStats {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return defaultStats;
   }
 
-  const savedData = window.localStorage.getItem(STORAGE_KEY);
+  const savedData = appStorage.getItem(STORAGE_KEY);
 
   if (!savedData) {
     return defaultStats;
@@ -92,17 +90,17 @@ export function getAppStats(): AppStats {
       points: parsedData.points ?? 0,
     };
   } catch {
-    window.localStorage.removeItem(STORAGE_KEY);
+    appStorage.removeItem(STORAGE_KEY);
     return defaultStats;
   }
 }
 
 export function saveAppStats(stats: AppStats) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
+  appStorage.setItem(STORAGE_KEY, JSON.stringify(stats));
   notifyAppStatsUpdated(stats);
 }
 
@@ -120,11 +118,11 @@ export function saveUserProfile(profile: UserProfile) {
 }
 
 export function resetAppStats() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return defaultStats;
   }
 
-  window.localStorage.removeItem(STORAGE_KEY);
+  appStorage.removeItem(STORAGE_KEY);
   notifyAppStatsUpdated(defaultStats);
 
   return defaultStats;

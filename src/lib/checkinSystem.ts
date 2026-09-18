@@ -1,4 +1,5 @@
 import type { ErgonomicEvent } from "./ergonomicSystem";
+import { appStorage, emitAppEvent, isAppStorageAvailable } from "./appRuntime";
 
 export type DailyCheckin = {
   id: string;
@@ -162,12 +163,12 @@ function normalizeCheckin(
 }
 
 export function getDailyCheckins(): DailyCheckin[] {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return [];
   }
 
   const savedData =
-    window.localStorage.getItem(
+    appStorage.getItem(
       CHECKIN_STORAGE_KEY
     );
 
@@ -204,7 +205,7 @@ export function getDailyCheckins(): DailyCheckin[] {
 export function saveDailyCheckin(
   checkin: DailyCheckin
 ) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
@@ -217,7 +218,7 @@ export function saveDailyCheckin(
         item.id !== normalized.id
     );
 
-  window.localStorage.setItem(
+  appStorage.setItem(
     CHECKIN_STORAGE_KEY,
     JSON.stringify([
       normalized,
@@ -225,17 +226,13 @@ export function saveDailyCheckin(
     ])
   );
 
-  window.dispatchEvent(
-    new Event(
-      CHECKINS_UPDATED_EVENT
-    )
-  );
+  emitAppEvent(CHECKINS_UPDATED_EVENT);
 }
 
 export function deleteDailyCheckin(
   checkinId: string
 ) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
@@ -245,16 +242,12 @@ export function deleteDailyCheckin(
         checkin.id !== checkinId
     );
 
-  window.localStorage.setItem(
+  appStorage.setItem(
     CHECKIN_STORAGE_KEY,
     JSON.stringify(updated)
   );
 
-  window.dispatchEvent(
-    new Event(
-      CHECKINS_UPDATED_EVENT
-    )
-  );
+  emitAppEvent(CHECKINS_UPDATED_EVENT);
 }
 
 function averagePain(

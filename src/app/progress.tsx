@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { subscribeAppEvent, subscribeAppRefreshSignals } from "../lib/appRuntime";
 import {
   SafeAreaView,
   ScrollView,
@@ -227,22 +228,27 @@ export default function ProgressScreen() {
 
     refreshData();
 
-    if (typeof window === "undefined") {
-      return;
-    }
+    const unsubscribeEvent1 = subscribeAppEvent(
+      APP_STATS_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeEvent2 = subscribeAppEvent(
+      CHECKINS_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeEvent3 = subscribeAppEvent(
+      ERGONOMIC_SYSTEM_UPDATED_EVENT,
+      refreshData
+    );
 
-    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-    window.addEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
-    window.addEventListener("focus", refreshData);
-    window.addEventListener("storage", refreshData);
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(refreshData);
 
     return () => {
-      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-      window.removeEventListener(ERGONOMIC_SYSTEM_UPDATED_EVENT, refreshData);
-      window.removeEventListener("focus", refreshData);
-      window.removeEventListener("storage", refreshData);
+      unsubscribeEvent1();
+      unsubscribeEvent2();
+      unsubscribeEvent3();
+      unsubscribeRefreshSignals();
     };
   }, []);
 

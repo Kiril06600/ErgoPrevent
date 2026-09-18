@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { subscribeAppEvent, subscribeAppRefreshSignals } from "../lib/appRuntime";
 import {
   APP_STATS_UPDATED_EVENT,
   AppStats,
@@ -13,39 +14,24 @@ export function useAppStats() {
   }
 
   useEffect(() => {
-    if (typeof window === "undefined") {
-      return;
-    }
+    const unsubscribeStats = subscribeAppEvent<AppStats>(
+      APP_STATS_UPDATED_EVENT,
+      (updatedStats) => {
+        if (updatedStats) {
+          setStats(updatedStats);
+          return;
+        }
 
-    function handleStatsUpdate(event: Event) {
-      const customEvent = event as CustomEvent<AppStats>;
-
-      if (customEvent.detail) {
-        setStats(customEvent.detail);
-        return;
+        refreshStats();
       }
+    );
 
-      refreshStats();
-    }
-
-    const statsUpdateListener = handleStatsUpdate as EventListener;
-
-    window.addEventListener(APP_STATS_UPDATED_EVENT, statsUpdateListener);
-    window.addEventListener("storage", refreshStats);
-    window.addEventListener("focus", refreshStats);
-
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", refreshStats);
-    }
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(refreshStats);
 
     return () => {
-      window.removeEventListener(APP_STATS_UPDATED_EVENT, statsUpdateListener);
-      window.removeEventListener("storage", refreshStats);
-      window.removeEventListener("focus", refreshStats);
-
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", refreshStats);
-      }
+      unsubscribeStats();
+      unsubscribeRefreshSignals();
     };
   }, []);
 

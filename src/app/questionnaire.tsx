@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { subscribeAppEvent, subscribeAppRefreshSignals } from "../lib/appRuntime";
 import {
   SafeAreaView,
   ScrollView,
@@ -885,26 +886,17 @@ export default function QuestionnaireScreen() {
 
     refreshStats();
 
-    if (typeof window === "undefined") {
-      return;
-    }
+    const unsubscribeEvent1 = subscribeAppEvent(
+      APP_STATS_UPDATED_EVENT,
+      refreshStats
+    );
 
-    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-    window.addEventListener("focus", refreshStats);
-    window.addEventListener("storage", refreshStats);
-
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", refreshStats);
-    }
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(refreshStats);
 
     return () => {
-      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-      window.removeEventListener("focus", refreshStats);
-      window.removeEventListener("storage", refreshStats);
-
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", refreshStats);
-      }
+      unsubscribeEvent1();
+      unsubscribeRefreshSignals();
     };
   }, []);
 

@@ -1,4 +1,5 @@
 import { useEffect } from "react";
+import { subscribeAppEvent, subscribeAppRefreshSignals } from "../lib/appRuntime";
 import { usePathname, useRouter } from "expo-router";
 import {
   isOnboardingCompleted,
@@ -25,18 +26,16 @@ export default function OnboardingGate() {
 
     checkOnboardingStatus();
 
-    if (typeof window === "undefined") {
-      return;
-    }
-
-    window.addEventListener(ONBOARDING_UPDATED_EVENT, checkOnboardingStatus);
-    window.addEventListener("storage", checkOnboardingStatus);
-    window.addEventListener("focus", checkOnboardingStatus);
+    const unsubscribeOnboarding = subscribeAppEvent(
+      ONBOARDING_UPDATED_EVENT,
+      checkOnboardingStatus
+    );
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(checkOnboardingStatus);
 
     return () => {
-      window.removeEventListener(ONBOARDING_UPDATED_EVENT, checkOnboardingStatus);
-      window.removeEventListener("storage", checkOnboardingStatus);
-      window.removeEventListener("focus", checkOnboardingStatus);
+      unsubscribeOnboarding();
+      unsubscribeRefreshSignals();
     };
   }, [pathname, router]);
 

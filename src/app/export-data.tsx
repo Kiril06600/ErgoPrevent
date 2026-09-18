@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { subscribeAppEvent, subscribeAppRefreshSignals } from "../lib/appRuntime";
 import {
   SafeAreaView,
   ScrollView,
@@ -671,30 +672,27 @@ export default function ExportDataScreen() {
 
     refreshData();
 
-    if (typeof window === "undefined") {
-      return;
-    }
+    const unsubscribeEvent1 = subscribeAppEvent(
+      APP_STATS_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeEvent2 = subscribeAppEvent(
+      CHECKINS_UPDATED_EVENT,
+      refreshData
+    );
+    const unsubscribeEvent3 = subscribeAppEvent(
+      ROUTINE_UPDATED_EVENT,
+      refreshData
+    );
 
-    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-    window.addEventListener(ROUTINE_UPDATED_EVENT, refreshData);
-    window.addEventListener("focus", refreshData);
-    window.addEventListener("storage", refreshData);
-
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", refreshData);
-    }
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(refreshData);
 
     return () => {
-      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshData);
-      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshData);
-      window.removeEventListener(ROUTINE_UPDATED_EVENT, refreshData);
-      window.removeEventListener("focus", refreshData);
-      window.removeEventListener("storage", refreshData);
-
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", refreshData);
-      }
+      unsubscribeEvent1();
+      unsubscribeEvent2();
+      unsubscribeEvent3();
+      unsubscribeRefreshSignals();
     };
   }, []);
 
@@ -756,7 +754,11 @@ export default function ExportDataScreen() {
   }
 
   function handlePrintPdfReport() {
-    if (typeof window === "undefined") {
+    if (
+      typeof document === "undefined" ||
+      typeof window === "undefined" ||
+      typeof window.open !== "function"
+    ) {
       setMessage("Rapport PDF non disponible sur cet appareil.");
       return;
     }

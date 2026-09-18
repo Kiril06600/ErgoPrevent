@@ -1,3 +1,5 @@
+import "../lib/installNativeStorage";
+
 import { Stack, usePathname } from "expo-router";
 import { ThemeProvider } from "../theme/ThemeContext";
 import BottomNav from "../components/BottomNav";

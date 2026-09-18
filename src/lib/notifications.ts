@@ -1,3 +1,5 @@
+import { appStorage, emitAppEvent, isAppStorageAvailable } from "./appRuntime";
+
 export type NotificationCategory = "daily-pain" | "positive";
 
 export type AppNotification = {
@@ -43,27 +45,19 @@ const positiveMessages = [
 ];
 
 function notifyNotificationsUpdated(notifications: AppNotification[]) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.dispatchEvent(
-    new CustomEvent(NOTIFICATIONS_UPDATED_EVENT, {
-      detail: notifications,
-    })
-  );
+  emitAppEvent(NOTIFICATIONS_UPDATED_EVENT, notifications);
 }
 
 function notifyNotificationSettingsUpdated(settings: NotificationSettings) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.dispatchEvent(
-    new CustomEvent(NOTIFICATION_SETTINGS_UPDATED_EVENT, {
-      detail: settings,
-    })
-  );
+  emitAppEvent(NOTIFICATION_SETTINGS_UPDATED_EVENT, settings);
 }
 
 function createNotificationId() {
@@ -81,11 +75,11 @@ function getTodayKey(date = new Date()) {
 }
 
 function getGeneratedNotificationKeys(): string[] {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return [];
   }
 
-  const savedData = window.localStorage.getItem(GENERATED_NOTIFICATIONS_KEY);
+  const savedData = appStorage.getItem(GENERATED_NOTIFICATIONS_KEY);
 
   if (!savedData) {
     return [];
@@ -100,17 +94,17 @@ function getGeneratedNotificationKeys(): string[] {
 
     return parsedData;
   } catch {
-    window.localStorage.removeItem(GENERATED_NOTIFICATIONS_KEY);
+    appStorage.removeItem(GENERATED_NOTIFICATIONS_KEY);
     return [];
   }
 }
 
 function saveGeneratedNotificationKeys(keys: string[]) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.setItem(GENERATED_NOTIFICATIONS_KEY, JSON.stringify(keys));
+  appStorage.setItem(GENERATED_NOTIFICATIONS_KEY, JSON.stringify(keys));
 }
 
 function getPositiveMessageForDate(dateKey: string) {
@@ -144,11 +138,11 @@ function createAutomaticNotification({
 }
 
 export function getNotificationSettings(): NotificationSettings {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return defaultNotificationSettings;
   }
 
-  const savedData = window.localStorage.getItem(NOTIFICATION_SETTINGS_KEY);
+  const savedData = appStorage.getItem(NOTIFICATION_SETTINGS_KEY);
 
   if (!savedData) {
     return defaultNotificationSettings;
@@ -162,17 +156,17 @@ export function getNotificationSettings(): NotificationSettings {
       ...parsedData,
     };
   } catch {
-    window.localStorage.removeItem(NOTIFICATION_SETTINGS_KEY);
+    appStorage.removeItem(NOTIFICATION_SETTINGS_KEY);
     return defaultNotificationSettings;
   }
 }
 
 export function saveNotificationSettings(settings: NotificationSettings) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return defaultNotificationSettings;
   }
 
-  window.localStorage.setItem(
+  appStorage.setItem(
     NOTIFICATION_SETTINGS_KEY,
     JSON.stringify(settings)
   );
@@ -222,11 +216,11 @@ export function setPositiveMessagesEnabled(enabled: boolean) {
 }
 
 export function getNotifications(): AppNotification[] {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return [];
   }
 
-  const savedData = window.localStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
+  const savedData = appStorage.getItem(NOTIFICATIONS_STORAGE_KEY);
 
   if (!savedData) {
     return [];
@@ -241,17 +235,17 @@ export function getNotifications(): AppNotification[] {
 
     return parsedData;
   } catch {
-    window.localStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
+    appStorage.removeItem(NOTIFICATIONS_STORAGE_KEY);
     return [];
   }
 }
 
 export function saveNotifications(notifications: AppNotification[]) {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return;
   }
 
-  window.localStorage.setItem(
+  appStorage.setItem(
     NOTIFICATIONS_STORAGE_KEY,
     JSON.stringify(notifications)
   );
@@ -338,8 +332,8 @@ export function deleteNotification(notificationId: string) {
 }
 
 export function clearNotifications() {
-  if (typeof window !== "undefined") {
-    window.localStorage.removeItem(GENERATED_NOTIFICATIONS_KEY);
+  if (isAppStorageAvailable()) {
+    appStorage.removeItem(GENERATED_NOTIFICATIONS_KEY);
   }
 
   saveNotifications([]);
@@ -348,7 +342,7 @@ export function clearNotifications() {
 }
 
 export function seedInitialNotificationsIfNeeded() {
-  if (typeof window === "undefined") {
+  if (!isAppStorageAvailable()) {
     return [];
   }
 

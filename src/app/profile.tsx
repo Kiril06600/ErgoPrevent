@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { subscribeAppEvent, subscribeAppRefreshSignals } from "../lib/appRuntime";
 import {
   SafeAreaView,
   ScrollView,
@@ -202,50 +203,38 @@ export default function ProfileScreen() {
       setNotificationSettings(getNotificationSettings());
     }
 
-    refreshStats();
-    refreshNotificationSettings();
-
-    if (typeof window === "undefined") {
-      return;
+    function refreshAll() {
+      refreshStats();
+      refreshNotificationSettings();
     }
 
-    window.addEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-    window.addEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
-    window.addEventListener(ROUTINE_UPDATED_EVENT, refreshStats);
-    window.addEventListener(
+    refreshAll();
+
+    const unsubscribeStats = subscribeAppEvent(
+      APP_STATS_UPDATED_EVENT,
+      refreshStats
+    );
+    const unsubscribeCheckins = subscribeAppEvent(
+      CHECKINS_UPDATED_EVENT,
+      refreshStats
+    );
+    const unsubscribeRoutine = subscribeAppEvent(
+      ROUTINE_UPDATED_EVENT,
+      refreshStats
+    );
+    const unsubscribeNotificationSettings = subscribeAppEvent(
       NOTIFICATION_SETTINGS_UPDATED_EVENT,
       refreshNotificationSettings
     );
-    window.addEventListener("focus", refreshStats);
-    window.addEventListener("focus", refreshNotificationSettings);
-    window.addEventListener("storage", refreshStats);
-    window.addEventListener("storage", refreshNotificationSettings);
-
-    if (typeof document !== "undefined") {
-      document.addEventListener("visibilitychange", refreshStats);
-      document.addEventListener("visibilitychange", refreshNotificationSettings);
-    }
+    const unsubscribeRefreshSignals =
+      subscribeAppRefreshSignals(refreshAll);
 
     return () => {
-      window.removeEventListener(APP_STATS_UPDATED_EVENT, refreshStats);
-      window.removeEventListener(CHECKINS_UPDATED_EVENT, refreshStats);
-      window.removeEventListener(ROUTINE_UPDATED_EVENT, refreshStats);
-      window.removeEventListener(
-        NOTIFICATION_SETTINGS_UPDATED_EVENT,
-        refreshNotificationSettings
-      );
-      window.removeEventListener("focus", refreshStats);
-      window.removeEventListener("focus", refreshNotificationSettings);
-      window.removeEventListener("storage", refreshStats);
-      window.removeEventListener("storage", refreshNotificationSettings);
-
-      if (typeof document !== "undefined") {
-        document.removeEventListener("visibilitychange", refreshStats);
-        document.removeEventListener(
-          "visibilitychange",
-          refreshNotificationSettings
-        );
-      }
+      unsubscribeStats();
+      unsubscribeCheckins();
+      unsubscribeRoutine();
+      unsubscribeNotificationSettings();
+      unsubscribeRefreshSignals();
     };
   }, []);
 
