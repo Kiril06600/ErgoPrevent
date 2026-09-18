@@ -502,7 +502,7 @@ export default function ProfileScreen() {
               </IconBadge>
 
               <View style={styles.cardHeaderText}>
-                <Text style={styles.sectionTitle}>Notifications</Text>
+                <Text style={styles.sectionTitle}>Rappels dans l’application</Text>
                 <Text style={styles.sectionSubtitle}>
                   Choisissez les rappels que vous souhaitez recevoir dans
                   l’application.
@@ -516,7 +516,7 @@ export default function ProfileScreen() {
                 onPress={handleToggleNotifications}
               >
                 <View style={styles.settingTextBlock}>
-                  <Text style={styles.settingTitle}>Notifications activées</Text>
+                  <Text style={styles.settingTitle}>Rappels internes activés</Text>
                   <Text style={styles.settingDescription}>
                     Active ou désactive tous les rappels internes de
                     l’application.
@@ -928,14 +928,15 @@ export default function ProfileScreen() {
               <View style={styles.cardHeaderText}>
                 <Text style={styles.sectionTitle}>Données locales</Text>
                 <Text style={styles.sectionSubtitle}>
-                  Vos données restent dans ce navigateur.
+                  Vos données restent sur cet appareil.
                 </Text>
               </View>
             </View>
 
             <Text style={styles.dataText}>
-              Vos données sont sauvegardées uniquement dans ce navigateur, sur cet
-              appareil. Elles ne sont pas envoyées vers une base de données externe.
+              Vos données sont sauvegardées localement sur cet appareil. Dans la
+              version actuelle d’ErgoPrevent, elles ne sont pas envoyées vers une
+              base de données externe.
             </Text>
 
             <PressableScale
@@ -970,6 +971,16 @@ export default function ProfileScreen() {
               <Text style={styles.primaryButtonArrow}>→</Text>
             </PressableScale>
           </Link>
+
+          <View style={{ marginHorizontal: 24, marginBottom: 16 }}>
+            <Link href={"/privacy" as any} asChild>
+              <PressableScale style={styles.secondaryButtonInside}>
+                <Text style={styles.secondaryButtonText}>
+                  Politique de confidentialité
+                </Text>
+              </PressableScale>
+            </Link>
+          </View>
 
           <View style={styles.warningBox}>
             <Text style={styles.warningTitle}>Réinitialisation</Text>

@@ -61,7 +61,7 @@ const navItems: NavItem[] = [
   {
     label: "Profil",
     href: "/profile",
-    activePaths: ["/profile", "/export-data", "/ergonomic-profile"],
+    activePaths: ["/profile", "/export-data", "/ergonomic-profile", "/privacy"],
     iconName: "user",
   },
 ];

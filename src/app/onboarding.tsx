@@ -430,7 +430,8 @@ export default function OnboardingScreen() {
             <Text style={styles.infoTitle}>Après cette étape</Text>
             <Text style={styles.infoText}>
               Vous arriverez sur la page Explorer. Ensuite, vous pourrez faire le
-              questionnaire complet dans votre profil quand vous serez prêt.
+              questionnaire complet dans votre profil quand vous serez prêt. La
+              politique de confidentialité reste accessible depuis le Profil.
             </Text>
           </View>
         </ScrollView>

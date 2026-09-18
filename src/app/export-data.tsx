@@ -28,6 +28,10 @@ import {
   getErgoPreventStorageSnapshot,
 } from "../lib/dataManagement";
 import {
+  exportPdfFromHtml,
+  exportTextFile,
+} from "../lib/fileExport";
+import {
   getDeclarativeIndexLabel,
   getWorkstationIndexLabel,
 } from "../lib/evidenceContent";
@@ -173,29 +177,6 @@ function convertSummaryToCsv(stats: AppStats, checkins: DailyCheckin[]) {
   return rows
     .map((row) => row.map((value) => escapeCsvValue(value)).join(","))
     .join("\n");
-}
-
-function downloadTextFile(filename: string, content: string, mimeType: string) {
-  if (typeof document === "undefined") {
-    return false;
-  }
-
-  const blob = new Blob([content], {
-    type: `${mimeType};charset=utf-8`,
-  });
-
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-
-  link.href = url;
-  link.download = filename;
-  document.body.appendChild(link);
-  link.click();
-  document.body.removeChild(link);
-
-  URL.revokeObjectURL(url);
-
-  return true;
 }
 
 function getAveragePain(checkins: DailyCheckin[]) {
@@ -708,75 +689,65 @@ export default function ExportDataScreen() {
   const averagePain = getAveragePain(checkins);
   const mostFrequentZone = getMostFrequentZone(checkins);
 
-  function handleDownloadCheckinsCsv() {
+  async function handleDownloadCheckinsCsv() {
     const csvContent = convertCheckinsToCsv(checkins);
-    const success = downloadTextFile(
-      "ergoprevent-checkins.csv",
-      csvContent,
-      "text/csv"
-    );
+    const result = await exportTextFile({
+      filename: "ergoprevent-checkins.csv",
+      content: csvContent,
+      mimeType: "text/csv",
+      dialogTitle: "Exporter les check-ins ErgoPrevent",
+    });
 
     setMessage(
-      success
-        ? "Export CSV des check-ins téléchargé"
-        : "Export non disponible sur cet appareil."
+      result.success
+        ? "Export CSV prêt à être enregistré ou partagé."
+        : result.message
     );
   }
 
-  function handleDownloadSummaryCsv() {
+  async function handleDownloadSummaryCsv() {
     const csvContent = convertSummaryToCsv(appStats, checkins);
-    const success = downloadTextFile(
-      "ergoprevent-resume.csv",
-      csvContent,
-      "text/csv"
-    );
+    const result = await exportTextFile({
+      filename: "ergoprevent-resume.csv",
+      content: csvContent,
+      mimeType: "text/csv",
+      dialogTitle: "Exporter le résumé ErgoPrevent",
+    });
 
     setMessage(
-      success
-        ? "Résumé CSV téléchargé"
-        : "Export non disponible sur cet appareil."
+      result.success
+        ? "Résumé CSV prêt à être enregistré ou partagé."
+        : result.message
     );
   }
 
-  function handleDownloadJson() {
+  async function handleDownloadJson() {
     const jsonContent = JSON.stringify(fullExportData, null, 2);
-    const success = downloadTextFile(
-      "ergoprevent-donnees-completes.json",
-      jsonContent,
-      "application/json"
-    );
+    const result = await exportTextFile({
+      filename: "ergoprevent-donnees-completes.json",
+      content: jsonContent,
+      mimeType: "application/json",
+      dialogTitle: "Exporter les données ErgoPrevent",
+    });
 
     setMessage(
-      success
-        ? "Export JSON complet téléchargé"
-        : "Export non disponible sur cet appareil."
+      result.success
+        ? "Export JSON complet prêt à être enregistré ou partagé."
+        : result.message
     );
   }
 
-  function handlePrintPdfReport() {
-    if (
-      typeof document === "undefined" ||
-      typeof window === "undefined" ||
-      typeof window.open !== "function"
-    ) {
-      setMessage("Rapport PDF non disponible sur cet appareil.");
-      return;
-    }
+  async function handlePrintPdfReport() {
+    const result = await exportPdfFromHtml({
+      html: createPdfReportHtml(appStats, checkins),
+      dialogTitle: "Exporter le rapport ErgoPrevent",
+    });
 
-    const reportWindow = window.open("", "_blank");
-
-    if (!reportWindow) {
-      setMessage(
-        "Le rapport n’a pas pu s’ouvrir. Vérifiez si votre navigateur bloque les fenêtres."
-      );
-      return;
-    }
-
-    reportWindow.document.open();
-    reportWindow.document.write(createPdfReportHtml(appStats, checkins));
-    reportWindow.document.close();
-
-    setMessage("Rapport PDF ouvert. Utilisez Enregistrer en PDF.");
+    setMessage(
+      result.success
+        ? "Rapport PDF prêt à être enregistré ou partagé."
+        : result.message
+    );
   }
 
   return (
@@ -791,8 +762,8 @@ export default function ExportDataScreen() {
             <Text style={styles.pageTitle}>Exporter</Text>
 
             <Text style={styles.subtitle}>
-              Téléchargez vos données en CSV, en JSON ou générez un rapport
-              imprimable en PDF.
+              Exportez vos données en CSV ou JSON et générez un rapport PDF,
+              sur le web comme sur iPhone ou Android.
             </Text>
           </View>
 
@@ -816,8 +787,8 @@ export default function ExportDataScreen() {
             </View>
 
             <Text style={styles.heroText}>
-              Les exports sont générés directement dans votre navigateur. Les
-              données ne sont pas envoyées vers un serveur externe.
+              Les exports sont générés localement sur cet appareil. ErgoPrevent
+              ne les envoie pas vers un serveur externe.
             </Text>
           </View>
 
@@ -1070,9 +1041,9 @@ export default function ExportDataScreen() {
           <View style={styles.warningBox}>
             <Text style={styles.warningTitle}>À retenir</Text>
             <Text style={styles.warningText}>
-              Après export, le fichier téléchargé est sous votre responsabilité.
-              Évitez de partager ces fichiers s’ils contiennent des informations
-              personnelles ou de santé.
+              Après export ou partage, le fichier est sous votre responsabilité.
+              Il peut contenir des informations personnelles ou liées à votre
+              bien-être; choisissez soigneusement où vous l’enregistrez ou l’envoyez.
             </Text>
           </View>
 
