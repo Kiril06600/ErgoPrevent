@@ -61,7 +61,7 @@ export default function WorkstationDetailScreen() {
   ).length;
 
   const adjustmentCount = workstationEvents.filter(
-    (event) => event.type === "adjustment" || event.type === "discomfort"
+    (event) => event.type === "adjustment"
   ).length;
 
   const mostFrequentZone = Object.entries(discomfortCounts).sort(
@@ -74,6 +74,10 @@ export default function WorkstationDetailScreen() {
 
   function goToAdjust() {
     router.push("/adjust-discomfort" as any);
+  }
+
+  function goToReset() {
+    router.push("/ergonomic-reset" as any);
   }
 
   function goToWorkstations() {
@@ -143,6 +147,10 @@ export default function WorkstationDetailScreen() {
             </Text>
 
             <View style={styles.quickButtonsRow}>
+              <PressableScale style={styles.secondaryButton} onPress={goToReset}>
+                <Text style={styles.secondaryButtonText}>Faire un reset</Text>
+              </PressableScale>
+
               <PressableScale style={styles.secondaryButton} onPress={goToAdjust}>
                 <Text style={styles.secondaryButtonText}>Ajuster un inconfort</Text>
               </PressableScale>
